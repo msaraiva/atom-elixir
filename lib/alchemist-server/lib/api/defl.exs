@@ -34,7 +34,7 @@ defmodule Alchemist.API.Defl do
     do_post_process(file, line)
   end
 
-  defp post_process({mod, file}, f, _, fun) do
+  defp post_process({mod, file}, _f, _, fun) do
     file_metadata = case Ast.parse_file(file) do
       {:ok, {_ast, file_metadata}} ->
         file_metadata
