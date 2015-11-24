@@ -28,40 +28,7 @@ class ElixirAutocompleteProvider
 
     # This is a hack until descriptionHTML is suported. See:
     # https://github.com/atom/autocomplete-plus/issues/423
-
-    SuggestionList = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list"
-    SuggestionListElement = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list-element"
-    autocompleteManager = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager
-    viewProvider = (p for p in atom.views.providers when p.modelConstructor.name is 'SuggestionList')[0]
-
-    viewProvider.createView = (model) ->
-      element = new SuggestionListElement().initialize(model)
-      element.updateDescription = (item) ->
-        suggestionList = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager.suggestionList
-        suggestionListView = atom.views.getView(suggestionList)
-        descriptionContent = suggestionListView.querySelector('.suggestion-description-content')
-        descriptionContainer = suggestionListView.querySelector('.suggestion-description')
-        descriptionMoreLink = suggestionListView.querySelector('.suggestion-description-more-link')
-
-        #TODO: remove this
-        descriptionMoreLink.style.display = 'none'
-
-        item = item ? @model?.items?[@selectedIndex]
-        return unless item?
-        if item.descriptionHTML?
-          descriptionContainer.style.display = 'block'
-          descriptionContent.innerHTML = item.descriptionHTML
-          # if item.descriptionMoreURL? and item.descriptionMoreURL.length?
-          #   descriptionMoreLink.style.display = 'inline'
-          #   descriptionMoreLink.setAttribute('href', item.descriptionMoreURL)
-          # else
-          #   descriptionMoreLink.style.display = 'none'
-        else if item.description? and item.description.length > 0
-          descriptionContainer.style.display = 'block'
-          descriptionContent.textContent = item.descriptionHTML
-        else
-          @descriptionContainer.style.display = 'none'
-      element
+    replaceUpdateDescription()
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     prefix = getPrefix(editor, bufferPosition)
@@ -234,3 +201,31 @@ class ElixirAutocompleteProvider
       smartypants: false
     });
     marked(mdText)
+
+  replaceUpdateDescription = ->
+    SuggestionList = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list"
+    SuggestionListElement = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list-element"
+    autocompleteManager = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager
+    viewProvider = (p for p in atom.views.providers when p.modelConstructor.name is 'SuggestionList')[0]
+
+    viewProvider.createView = (model) ->
+      element = new SuggestionListElement().initialize(model)
+      element.updateDescription = (item) ->
+        suggestionList = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager.suggestionList
+        suggestionListView = atom.views.getView(suggestionList)
+        descriptionContent = suggestionListView.querySelector('.suggestion-description-content')
+        descriptionContainer = suggestionListView.querySelector('.suggestion-description')
+        descriptionMoreLink = suggestionListView.querySelector('.suggestion-description-more-link')
+
+        descriptionMoreLink.style.display = 'none'
+        item = item ? @model?.items?[@selectedIndex]
+        return unless item?
+        if item.descriptionHTML?
+          descriptionContainer.style.display = 'block'
+          descriptionContent.innerHTML = item.descriptionHTML
+        else if item.description? and item.description.length > 0
+          descriptionContainer.style.display = 'block'
+          descriptionContent.textContent = item.descriptionHTML
+        else
+          @descriptionContainer.style.display = 'none'
+      element
