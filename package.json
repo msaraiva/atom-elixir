@@ -1,0 +1,23 @@
+{
+  "name": "atom-elixir",
+  "main": "./lib/atom-elixir",
+  "version": "0.0.0",
+  "description": "A short description of your package",
+  "keywords": [
+  ],
+  "repository": "https://github.com/atom/atom-elixir",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+  },
+  "providedServices": {
+    "autocomplete.provider": {
+      "description": "Code completion for the Elixir language",
+      "versions": {
+        "2.0.0": "provideAutocomplete"
+      }
+    }
+  }
+}

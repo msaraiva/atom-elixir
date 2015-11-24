@@ -1,0 +1,20 @@
+# Keybindings require three things to be fully defined: A selector that is
+# matched against the focused element, the keystroke and the command to
+# execute.
+#
+# Below is a basic keybinding which registers on all platforms by applying to
+# the root workspace element.
+
+# For more detailed documentation see
+# https://atom.io/docs/latest/behind-atom-keymaps-in-depth
+
+# TODO: this should apply only during tab-stops (snippets)
+'atom-text-editor:not(mini).autocomplete-active':
+  'tab': 'atom-elixir:autocomplete-tab'
+  'enter': 'autocomplete-plus:confirm'
+
+'atom-text-editor:not(mini)[data-grammar^="source elixir"]':
+  'f3': 'atom-elixir:goto-declaration'
+  'ctrl-shift-t': 'atom-elixir:quote-selected-text'
+  'ctrl-shift-x': 'atom-elixir:expand-selected-text'
+  'ctrl-shift-o': 'atom-elixir:expand-once-selected-text'
