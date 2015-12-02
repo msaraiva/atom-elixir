@@ -1,4 +1,5 @@
 Code.require_file "module_info.exs", __DIR__
+Code.require_file "../helpers/introspection.exs", __DIR__
 
 defmodule Alchemist.Helpers.Complete do
 
@@ -330,7 +331,7 @@ defmodule Alchemist.Helpers.Complete do
     arities_docs = Enum.zip(arities, docs)
 
     for {a, doc} <- arities_docs do
-      {fun_args, desc} = find_fun_args_and_desc(doc)
+      {fun_args, desc} = Introspection.extract_fun_args_and_desc(doc)
       kind = case func_kind do
         :defmacro -> "macro"
         _         -> "function"
@@ -363,30 +364,6 @@ defmodule Alchemist.Helpers.Complete do
   defp format_hint(name, hint) do
     hint_size = byte_size(hint)
     :binary.part(name, hint_size, byte_size(name) - hint_size)
-  end
-
-  #############################################
-
-  defp find_fun_args_and_desc({ { _fun, _ }, _line, _kind, args, doc }) do
-    args = Enum.map_join(args, ",", &print_doc_arg(&1))
-    desc =
-      (doc || "")
-      |> String.split("\n\n")
-      |> Enum.at(0)
-      |> String.replace(~r/\n/, "_#LB#_")
-    {args, desc}
-  end
-
-  defp find_fun_args_and_desc(nil) do
-    {"", ""}
-  end
-
-  defp print_doc_arg({ :\\, _, [left, right] }) do
-    print_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
-  end
-
-  defp print_doc_arg({ var, _, _ }) do
-    Atom.to_string(var)
   end
 
 end

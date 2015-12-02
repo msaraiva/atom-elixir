@@ -1,4 +1,5 @@
 Code.require_file "../helpers/module_info.exs", __DIR__
+Code.require_file "../helpers/introspection.exs", __DIR__
 
 defmodule Alchemist.API.Docl do
 
@@ -25,9 +26,11 @@ defmodule Alchemist.API.Docl do
   def search(nil), do: true
   def search(expr) do
     try do
-      Code.eval_string("h(#{expr})", [], __ENV__)
+      [module, function] = expr |> String.split(".")
+      Introspection.get_docs_md(module, function)
+      |> IO.puts
     rescue
-      _e ->
+      e -> IO.inspect :stderr, e, []
     end
   end
 

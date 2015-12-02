@@ -1,3 +1,21 @@
+
+#############################
+
+url = require 'url'
+ElixirDocsView = null # Defer until used
+
+createElixirDocsView = (state) ->
+  ElixirDocsView ?= require './elixir-docs-view'
+  new ElixirDocsView(state)
+
+atom.deserializers.add
+  name: 'ElixirDocsView'
+  deserialize: (state) ->
+    if state.viewId
+      createElixirDocsView(state)
+
+#############################
+
 {CompositeDisposable} = require 'atom'
 ElixirProvider = require('./elixir-provider')
 ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
@@ -10,11 +28,33 @@ module.exports = AtomElixir =
   autocompleteProvider: null
 
   provideAutocomplete: ->
-    # console.log("provideAutocomplete")
     [@autocompleteProvider]
 
   activate: (state) ->
-    # console.log("ACTIVATE")
+
+    ##########################
+
+    atom.commands.add 'atom-workspace', 'atom-elixir:show-elixir-docs': =>
+      @showElixirDocs()
+
+    atom.workspace.addOpener (uriToOpen) ->
+      try
+        {protocol, host, pathname} = url.parse(uriToOpen)
+      catch error
+        return
+
+      return unless protocol is 'atom-elixir:'
+
+      try
+        pathname = decodeURI(pathname) if pathname
+      catch error
+        return
+
+      if host is 'elixir-docs-views'
+        createElixirDocsView(viewId: pathname.substring(1))
+
+    ##########################
+
     @initEnv()
 
     @subscriptions = new CompositeDisposable
@@ -25,12 +65,7 @@ module.exports = AtomElixir =
     unless @autocompleteProvider?
       @autocompleteProvider = new ElixirAutocompleteProvider
 
-    # atom.workspace.observeTextEditors (editor) ->
-    #   editor.onDidSave (e) ->
-    #     console.log "Saving: #{e.path}"
-
   deactivate: ->
-    # console.log("DEACTIVATE")
     @provider.dispose()
     @autocompleteProvider.dispose()
     @subscriptions.dispose()
@@ -50,7 +85,39 @@ module.exports = AtomElixir =
           process.env[match[1]] = match[2] if match
         @server = new ServerProcess(atom.project.getPaths()[0])
         @server.start()
-        # console.log("Server Ready")
         @provider.setServer(@server)
         @autocompleteProvider.setServer(@server)
       pid.stdin.end()
+
+  ##################################################
+
+  showElixirDocs: ->
+    editor = atom.workspace.getActiveTextEditor()
+    word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
+    @addViewForElement(word)
+
+  uriForElement: (word) ->
+    "atom-elixir://elixir-docs-views/#{word}"
+
+  addViewForElement: (word) ->
+    @server.getDocs word, (result) =>
+      console.log result
+      return if result == ""
+      uri = @uriForElement(word)
+
+      options = {searchAllPanes: true, split: 'right'}
+      # TODO: Create this configuration
+      # options = {searchAllPanes: true}
+      # if atom.config.get('atom-elixir.elixirDocs.openViewInSplitPane')
+        # options.split = 'right'
+
+      # previousActivePane = atom.workspace.getActivePane()
+      atom.workspace.open(uri, options).then (elixirDocsView) =>
+        # TODO: We could use a configuration to tell if the focus should remain on the editor
+        # if atom.config.get('atom-elixir.elixirDocs.keepFocusOnEditorAfterOpenDocs')
+        #   previousActivePane.activate()
+
+        # elixirDocsView.html(@markdownToHTML(result))
+        elixirDocsView.setSource(result)
+
+  ##################################################

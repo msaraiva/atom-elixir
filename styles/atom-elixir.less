@@ -20,3 +20,29 @@
 .suggestion-description-content > p {
   margin-bottom: 0px;
 }
+
+@margin: 16px;
+
+.elixir-docs-view {
+  padding: 20px;
+  font-size: 14px;
+  overflow: scroll;
+
+  p,
+  blockquote,
+  ul, ol, dl,
+  table,
+  pre {
+    margin-top: 0;
+    margin-bottom: @margin;
+  }
+
+  blockquote, pre {
+    color: #d7dae0;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  }
+
+  hr {
+    border-top: 1px solid #31363f;
+  }
+}

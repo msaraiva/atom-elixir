@@ -82,6 +82,9 @@ class ServerProcess
   expand: (file, onResult) ->
     @sendRequest('EVAL', ":expand, \"#{file}\"", onResult)
 
+  getDocs: (text, onResult) ->
+    @sendRequest('DOCL', "\"#{text}\", [ context: Elixir, imports: [], aliases: [] ]", onResult)
+
   sendRequest: (type, args, onResult) ->
     if !@busy
       @onResult = onResult

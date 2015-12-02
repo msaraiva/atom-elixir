@@ -1,6 +1,5 @@
 defmodule Ast do
 
-  # require Logger
   def parse_file(file) do
     if file && !String.ends_with?(file, ".erl") do
       case File.read(file) do

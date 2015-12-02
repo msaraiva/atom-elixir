@@ -15,6 +15,7 @@
 
 'atom-text-editor:not(mini)[data-grammar^="source elixir"]':
   'f3': 'atom-elixir:goto-declaration'
+  'f2': 'atom-elixir:show-elixir-docs'
   'ctrl-shift-t': 'atom-elixir:quote-selected-text'
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
   'ctrl-shift-o': 'atom-elixir:expand-once-selected-text'
