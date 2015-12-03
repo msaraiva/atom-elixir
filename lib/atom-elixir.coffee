@@ -5,6 +5,7 @@ ServerProcess = require './server-process'
 ElixirProvider = require('./elixir-provider')
 ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
 ElixirDocsProvider = require('./elixir-docs-provider')
+ElixirQuotedProvider = require('./elixir-quoted-provider')
 
 module.exports = AtomElixir =
   provider: null
@@ -22,9 +23,14 @@ module.exports = AtomElixir =
     unless @docsProvider?
       @docsProvider = new ElixirDocsProvider
 
+    unless @quotedProvider?
+      @quotedProvider = new ElixirQuotedProvider
+
   deactivate: ->
     @provider.dispose()
     @autocompleteProvider.dispose()
+    @docsProvider.dispose()
+    @quotedProvider.dispose()
     @server.stop()
 
   provideAutocomplete: ->
@@ -47,4 +53,5 @@ module.exports = AtomElixir =
         @provider.setServer(@server)
         @autocompleteProvider.setServer(@server)
         @docsProvider.setServer(@server)
+        @quotedProvider.setServer(@server)
       pid.stdin.end()

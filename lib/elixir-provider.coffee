@@ -8,18 +8,12 @@ class ElixirProvider
 
   constructor: ->
     @subscriptions = new CompositeDisposable
-
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
-
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:quote-selected-text', =>
-      @showQuotedCode()
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-selected-text', =>
       @expand()
-
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-once-selected-text', =>
       @expandOnce()
-
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-declaration', =>
       editor = atom.workspace.getActiveTextEditor()
       word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
@@ -30,15 +24,6 @@ class ElixirProvider
 
   setServer: (server) ->
     @server = server
-
-  showQuotedCode: ->
-    editor  = atom.workspace.getActiveTextEditor()
-    text    = editor.getSelectedText()
-    tmpFile = @createTempFile(text)
-
-    @server.getQuotedCode tmpFile, (result) ->
-      fs.unlink(tmpFile)
-      console.log result
 
   expand: ->
     editor  = atom.workspace.getActiveTextEditor()
