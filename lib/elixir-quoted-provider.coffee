@@ -51,19 +51,20 @@ class ElixirQuotedProvider
     editor  = atom.workspace.getActiveTextEditor()
     text    = editor.getSelectedText()
     if text == ""
-      @addView("")
+      @addView("", "")
       return
 
     tmpFile = @createTempFile(text)
     @server.getQuotedCode tmpFile, (result) =>
       fs.unlink(tmpFile)
-      @addView(result)
+      @addView(text, result)
       console.log result
 
-  addView: (quotedCode) ->
+  addView: (code, quotedCode) ->
     options = {searchAllPanes: true, split: 'right'}
     uri = "atom-elixir://elixir-quoted-views/view"
     atom.workspace.open(uri, options).then (elixirQuotedView) =>
+      elixirQuotedView.setCode(code)
       elixirQuotedView.setQuotedCode(quotedCode)
 
   #TODO: Duplicated
