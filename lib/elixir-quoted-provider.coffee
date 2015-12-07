@@ -26,7 +26,9 @@ class ElixirQuotedProvider
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:quote-selected-text', =>
-      @showQuotedCode()
+      editor  = atom.workspace.getActiveTextEditor()
+      text    = editor.getSelectedText()
+      @showQuotedCodeView(text)
 
     atom.workspace.addOpener (uriToOpen) ->
       try
@@ -47,25 +49,25 @@ class ElixirQuotedProvider
   setServer: (server) ->
     @server = server
 
-  showQuotedCode: ->
-    editor  = atom.workspace.getActiveTextEditor()
-    text    = editor.getSelectedText()
-    if text == ""
-      @addView("", "")
-      return
-
-    tmpFile = @createTempFile(text)
+  getQuotedCode: (code, onResult) =>
+    tmpFile = @createTempFile(code)
     @server.getQuotedCode tmpFile, (result) =>
       fs.unlink(tmpFile)
-      @addView(text, result)
       console.log result
+      onResult(result)
 
-  addView: (code, quotedCode) ->
+  showQuotedCodeView: (code) ->
+    if code == ""
+      @addView("", "")
+      return
+    @addView(code, "")
+
+  addView: (code) ->
     options = {searchAllPanes: true, split: 'right'}
     uri = "atom-elixir://elixir-quoted-views/view"
     atom.workspace.open(uri, options).then (elixirQuotedView) =>
+      elixirQuotedView.setQuotedCodeGetter(@getQuotedCode)
       elixirQuotedView.setCode(code)
-      elixirQuotedView.setQuotedCode(quotedCode)
 
   #TODO: Duplicated
   createTempFile: (content) ->

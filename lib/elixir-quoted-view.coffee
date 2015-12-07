@@ -24,6 +24,11 @@ class ElixirQuotedView extends ScrollView
     @codeEditorElement = @createEditor()
     @codeEditorElement.setAttribute('mini', true)
     @codeEditor = @codeEditorElement.getModel()
+    @codeEditor.onDidChange (e) =>
+      @code = @codeEditor.getText()
+      @quotedCodeGetter @code, (result) =>
+        @setQuotedCode(result)
+        console.log "Changed"
     @element.appendChild(@codeEditorElement)
 
     quotedCodeTitle = document.createElement('div')
@@ -31,11 +36,33 @@ class ElixirQuotedView extends ScrollView
     quotedCodeTitle.classList.add('panel-heading')
     @element.appendChild(quotedCodeTitle)
 
-    # quotedCodeTitle.classList.add('panel-heading')
     @quotedCodeEditorElement = @createEditor()
     @quotedCodeEditorElement.setAttribute('mini', true)
     @quotedCodeEditor = @quotedCodeEditorElement.getModel()
     @element.appendChild(@quotedCodeEditorElement)
+
+    patternTitle = document.createElement('div')
+    patternTitle.textContent = 'Pattern'
+    patternTitle.classList.add('panel-heading')
+    @element.appendChild(patternTitle)
+
+    @patternEditorElement = @createEditor()
+    @patternEditorElement.setAttribute('mini', true)
+    @patternEditor = @patternEditorElement.getModel()
+    @patternEditor.setSoftWrapped(true)
+    @patternEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
+    @patternEditor.setLineNumberGutterVisible(false)
+    @element.appendChild(@patternEditorElement)
+
+    matchTitle = document.createElement('div')
+    matchTitle.textContent = 'Match'
+    matchTitle.classList.add('panel-heading')
+    @element.appendChild(matchTitle)
+
+    # Pattern  {var1, var2}
+    # Match
+    #   var1   [lksajdlf]
+    #   var2   {:fedd}
 
   attached: ->
     return if @isAttached
@@ -56,6 +83,9 @@ class ElixirQuotedView extends ScrollView
   destroy: ->
     @disposables.dispose()
 
+  setQuotedCodeGetter: (quotedCodeGetter) ->
+    @quotedCodeGetter = quotedCodeGetter
+
   setQuotedCode:(quotedCode) ->
     @quotedCode = quotedCode
     @quotedCodeEditor.setText(@quotedCode)
@@ -69,8 +99,6 @@ class ElixirQuotedView extends ScrollView
   refreshView: ->
     return unless @quotedCode?
     @quotedCodeEditor.setText(@quotedCode)
-    # @quotedCodeEditor.setText(@quotedCode)
-    # @element.appendChild(@textEditorElement)
 
   getTitle: ->
     "Quoted Code"
@@ -89,8 +117,12 @@ class ElixirQuotedView extends ScrollView
 
   createEditor: ->
     element = document.createElement('atom-text-editor')
+    element.setAttribute('tabIndex', 0)
+    # element.removeAttribute('tabindex')
     editor = element.getModel()
     editor.setLineNumberGutterVisible(true)
+    # editor.setSoftWrapped(true)
+    # editor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
     editor.setGrammar(atom.grammars.grammarForScopeName('source.elixir'))
     atom.commands.add element,
       'core:move-up': =>
