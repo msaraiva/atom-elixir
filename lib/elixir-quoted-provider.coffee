@@ -56,6 +56,14 @@ class ElixirQuotedProvider
       console.log result
       onResult(result)
 
+  getMatches: (pattern, quotedCode, onResult) =>
+    fileContent = "(#{pattern}) = (#{quotedCode})"
+    tmpFile = @createTempFile(fileContent)
+    @server.match tmpFile, (result) =>
+      fs.unlink(tmpFile)
+      console.log result
+      onResult(result)
+
   showQuotedCodeView: (code) ->
     if code == ""
       @addView("", "")
@@ -66,6 +74,7 @@ class ElixirQuotedProvider
     options = {searchAllPanes: true, split: 'right'}
     uri = "atom-elixir://elixir-quoted-views/view"
     atom.workspace.open(uri, options).then (elixirQuotedView) =>
+      elixirQuotedView.setMatchesGetter(@getMatches)
       elixirQuotedView.setQuotedCodeGetter(@getQuotedCode)
       elixirQuotedView.setCode(code)
 

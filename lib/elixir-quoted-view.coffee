@@ -28,7 +28,6 @@ class ElixirQuotedView extends ScrollView
       @code = @codeEditor.getText()
       @quotedCodeGetter @code, (result) =>
         @setQuotedCode(result)
-        console.log "Changed"
     @element.appendChild(@codeEditorElement)
 
     quotedCodeTitle = document.createElement('div')
@@ -39,6 +38,9 @@ class ElixirQuotedView extends ScrollView
     @quotedCodeEditorElement = @createEditor()
     @quotedCodeEditorElement.setAttribute('mini', true)
     @quotedCodeEditor = @quotedCodeEditorElement.getModel()
+    @quotedCodeEditor.onDidChange (e) =>
+      @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
+        @matchesEditor.setText(result)
     @element.appendChild(@quotedCodeEditorElement)
 
     patternTitle = document.createElement('div')
@@ -52,12 +54,25 @@ class ElixirQuotedView extends ScrollView
     @patternEditor.setSoftWrapped(true)
     @patternEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
     @patternEditor.setLineNumberGutterVisible(false)
+    @patternEditor.onDidChange (e) =>
+      return unless @matchesGetter
+      @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
+        @matchesEditor.setText(result)
     @element.appendChild(@patternEditorElement)
 
     matchTitle = document.createElement('div')
     matchTitle.textContent = 'Match'
     matchTitle.classList.add('panel-heading')
     @element.appendChild(matchTitle)
+
+    @matchesEditorElement = @createEditor()
+    @matchesEditorElement.setAttribute('mini', true)
+    @matchesEditorElement.removeAttribute('tabindex')
+    @matchesEditor = @matchesEditorElement.getModel()
+    @matchesEditor.setSoftWrapped(true)
+    @matchesEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
+    @matchesEditor.setLineNumberGutterVisible(false)
+    @element.appendChild(@matchesEditorElement)
 
     # Pattern  {var1, var2}
     # Match
@@ -85,6 +100,9 @@ class ElixirQuotedView extends ScrollView
 
   setQuotedCodeGetter: (quotedCodeGetter) ->
     @quotedCodeGetter = quotedCodeGetter
+
+  setMatchesGetter: (matchesGetter) ->
+    @matchesGetter = matchesGetter
 
   setQuotedCode:(quotedCode) ->
     @quotedCode = quotedCode

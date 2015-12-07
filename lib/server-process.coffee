@@ -21,8 +21,8 @@ class ServerProcess
     @proc.stdout.on 'data', (chunk) =>
       if ~chunk.indexOf("END-OF-#{@last_request_type}")
         [before, after] = chunk.toString().split("END-OF-#{@last_request_type}")
-        @onResult((buffer + before).trim())
         @busy = false
+        @onResult((buffer + before).trim())
         if after
           buffer = after
         else
@@ -82,18 +82,19 @@ class ServerProcess
   expand: (file, onResult) ->
     @sendRequest('EVAL', ":expand, \"#{file}\"", onResult)
 
+  match: (file, onResult) ->
+    @sendRequest('EVAL', ":match, \"#{file}\"", onResult)
+
   getDocs: (text, onResult) ->
     @sendRequest('DOCL', "\"#{text}\", [ context: Elixir, imports: [], aliases: [] ]", onResult)
 
   sendRequest: (type, args, onResult) ->
+    request = "#{type} { #{args} }\n"
+    console.log('[Server] ' + request)
     if !@busy
       @onResult = onResult
       @busy = true
       @last_request_type = type
-      request = "#{type} { #{args} }\n"
-
-      console.log('[Server] ' + request)
-
       @proc.stdin.write(request);
     else
       console.log('Server busy!')
