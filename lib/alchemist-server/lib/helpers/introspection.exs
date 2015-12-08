@@ -10,7 +10,7 @@ defmodule Introspection do
     docs = Code.get_docs(mod, :docs)
     texts = for {{f, arity}, _, _, args, text} <- docs, f == fun do
       fun_args_text = Enum.map_join(args, ", ", &print_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
-      "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n### Specs\n\n`#{get_spec(mod, fun, arity)}`\n\n#{text}"
+      "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
     end
     texts |> Enum.join("\n\n____\n\n")
   end
@@ -39,6 +39,14 @@ defmodule Introspection do
     end
   end
 
+  def get_spec_text(mod, fun, arity) do
+    case get_spec(mod, fun, arity) do
+      ""  -> ""
+      spec ->
+        "### Specs\n\n`#{spec}`\n\n"
+    end
+  end
+
   defp print_doc_arg({ :\\, _, [left, right] }) do
     print_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
   end
@@ -50,7 +58,7 @@ defmodule Introspection do
   defp spec_to_string({kind, {{name, _arity}, specs}}) do
     Enum.map specs, fn(spec) ->
       binary = Macro.to_string Typespec.spec_to_ast(name, spec)
-      "@#{kind} #{binary}"
+      "@#{kind} #{binary}" |> String.replace("()", "")
     end
   end
 
