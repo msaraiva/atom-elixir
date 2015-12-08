@@ -284,17 +284,17 @@ defmodule Alchemist.Helpers.Complete do
       {:module, _} ->
         falist = get_module_funs(mod)
 
-      list = Enum.reduce falist, [], fn {f, a, func_kind, doc}, acc ->
+      list = Enum.reduce falist, [], fn {f, a, func_kind, doc, spec}, acc ->
         case :lists.keyfind(f, 1, acc) do
-          {f, aa, func_kind, docs} -> :lists.keyreplace(f, 1, acc, {f, [a|aa], func_kind, [doc|docs]})
-          false -> [{f, [a], func_kind, [doc]}|acc]
+          {f, aa, func_kind, docs, specs} -> :lists.keyreplace(f, 1, acc, {f, [a|aa], func_kind, [doc|docs], [spec|specs]})
+          false -> [{f, [a], func_kind, [doc], [spec]}|acc]
         end
       end
 
-      for {fun, arities, func_kind, docs} <- list,
+      for {fun, arities, func_kind, docs, specs} <- list,
       name = Atom.to_string(fun),
       starts_with?(name, hint) do
-        %{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs}
+        %{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs, specs: specs}
       end |> :lists.sort()
 
       _otherwise -> []
@@ -304,7 +304,11 @@ defmodule Alchemist.Helpers.Complete do
   defp get_module_funs(mod) do
     if function_exported?(mod, :__info__, 1) do
       if docs = Code.get_docs(mod, :docs) do
-        for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false, do: {f, a, func_kind, func_doc}
+        specs = Introspection.get_module_specs(mod)
+        for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false do
+          spec = Map.get(specs, {f,a}, "")
+          {f, a, func_kind, func_doc, spec}
+        end
       else
         #TODO: Map {f, a} to {f, a, func_kind, nil}
         {f, a} = mod.__info__(:macros) ++ (mod.__info__(:functions) -- [__info__: 1])
@@ -327,16 +331,17 @@ defmodule Alchemist.Helpers.Complete do
     ["#{name};module"]
   end
 
-  defp to_entries(%{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs}) do
-    arities_docs = Enum.zip(arities, docs)
+  defp to_entries(%{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs, specs: specs}) do
+    docs_specs = docs |> Enum.zip(specs)
+    arities_docs_specs = arities |> Enum.zip(docs_specs)
 
-    for {a, doc} <- arities_docs do
+    for {a, {doc, spec}} <- arities_docs_specs do
       {fun_args, desc} = Introspection.extract_fun_args_and_desc(doc)
       kind = case func_kind do
         :defmacro -> "macro"
         _         -> "function"
       end
-      "#{name}/#{a};#{kind};#{fun_args};#{desc}"
+      "#{name}/#{a};#{kind};#{fun_args};#{desc};#{spec}"
     end
   end
 

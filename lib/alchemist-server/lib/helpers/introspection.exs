@@ -29,14 +29,20 @@ defmodule Introspection do
     {"", ""}
   end
 
-  def get_spec(module, function, arity) when is_atom(module) and is_atom(function) and is_integer(arity) do
+  def get_module_specs(module) do
     case beam_specs(module) do
-      nil   -> ""
+      nil   -> %{}
       specs ->
-        for {_kind, {{f, a}, _spec}} = spec <- specs, f == function and a == arity do
-          spec |> spec_to_string
-        end |> Enum.join("\n")
+        for {_kind, {{f, a}, _spec}} = spec <- specs, into: %{} do
+          {{f,a}, spec_to_string(spec)}
+        end
     end
+  end
+
+  def get_spec(module, function, arity) when is_atom(module) and is_atom(function) and is_integer(arity) do
+    module
+    |> get_module_specs
+    |> Map.get({function, arity}, "")
   end
 
   def get_spec_text(mod, fun, arity) do

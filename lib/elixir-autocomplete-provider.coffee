@@ -77,13 +77,13 @@ class ElixirAutocompleteProvider
     line.match(regex)?[0] or ''
 
   createSuggestion = (serverSuggestion, prefix) ->
-    [name, kind, signature, desc] = serverSuggestion.split(';')
+    [name, kind, signature, desc, spec] = serverSuggestion.split(';')
 
     switch kind
       when 'function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
       when 'macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
       when 'module'
         createSuggestionForModule(serverSuggestion, name, prefix)
       else
@@ -95,7 +95,7 @@ class ElixirAutocompleteProvider
           rightLabel: kind || 'hint'
         }
 
-  createSuggestionForFunction = (serverSuggestion, name, kind, signature, desc, prefix) ->
+  createSuggestionForFunction = (serverSuggestion, name, kind, signature, desc, spec, prefix) ->
     args = signature.split(',')
     [func, arity] = name.split('/')
     [moduleParts..., postfix] = prefix.split('.')
@@ -133,13 +133,16 @@ class ElixirAutocompleteProvider
         func_name = func
       description = "Erlang function #{module}.#{func_name}/#{arity}"
 
+    description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
+    description = markdownToHTML(description)
+
     {
       snippet: snippet
       displayText: displayText
       type: type
       rightLabel: kind
       # description: description
-      descriptionHTML: markdownToHTML(description)
+      descriptionHTML: description
       descriptionMoreURL: getDocURL(prefix, func, arity)
       iconHTML: iconHTML
       # replacementPrefix: prefix
