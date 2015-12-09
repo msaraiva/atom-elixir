@@ -310,12 +310,12 @@ defmodule Alchemist.Helpers.Complete do
           {f, a, func_kind, func_doc, spec}
         end
       else
-        #TODO: Map {f, a} to {f, a, func_kind, nil}
-        {f, a} = mod.__info__(:macros) ++ (mod.__info__(:functions) -- [__info__: 1])
-        {f, a, :todo1, nil}
+        macros = mod.__info__(:macros) |> Enum.map(fn {f, a} -> {f, a, :macro, nil, nil} end)
+        functions = (mod.__info__(:functions) -- [__info__: 1]) |> Enum.map(fn {f, a} -> {f, a, :function, nil, nil} end)
+        macros ++ functions
       end
     else
-      for {f, a} <- mod.module_info(:exports), do: {f, a, :function, nil}
+      for {f, a} <- mod.module_info(:exports), do: {f, a, :function, nil, nil}
     end
   end
 

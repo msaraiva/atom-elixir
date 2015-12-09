@@ -223,7 +223,7 @@ class ElixirAutocompleteProvider
         descriptionMoreLink.style.display = 'none'
         item = item ? @model?.items?[@selectedIndex]
         return unless item?
-        if item.descriptionHTML?
+        if item.descriptionHTML? and item.descriptionHTML.length > 0
           descriptionContainer.style.display = 'block'
           descriptionContent.innerHTML = item.descriptionHTML
         else if item.description? and item.description.length > 0
