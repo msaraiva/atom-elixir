@@ -31,7 +31,12 @@ defmodule Alchemist.Server do
     paths = load_paths(env)
     apps  = load_apps(env)
 
-    read_input(line)
+    try do
+      read_input(line)
+    rescue
+      e ->
+        IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
+    end
 
     purge_modules(loaded)
     purge_paths(paths)

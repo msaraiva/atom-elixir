@@ -40,15 +40,11 @@ class ElixirAutocompleteProvider
         suggestions = result.split('\n')
 
         hint = suggestions[0]
-        console.log "Hint: #{hint}"
         suggestions = suggestions[1...]
         module_prefix = ''
         modules_to_add = []
 
         is_prefix_a_function_call = !!(prefix.match(/\.[^A-Z][^\.]*$/) || prefix.match(/^[^A-Z:][^\.]*$/))
-
-        console.log "prefix_modules: #{prefix.split('.')[...-1]}"
-        console.log "hint_modules:   #{hint.split('.')[...-1]}"
 
         if prefix != '' && !is_prefix_a_function_call
           prefix_modules = prefix.split('.')[...-1]
@@ -62,7 +58,6 @@ class ElixirAutocompleteProvider
         suggestions = suggestions.map (serverSuggestion) ->
           createSuggestion(module_prefix + serverSuggestion, prefix)
 
-        console.log "modules_to_add: #{modules_to_add}"
         if modules_to_add.length > 0
           new_suggestion = modules_to_add.join('.')
           suggestions   = [createSuggestionForModule(new_suggestion, new_suggestion, '')].concat(suggestions)

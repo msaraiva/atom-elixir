@@ -31,16 +31,21 @@ class ServerProcess
         buffer += chunk.toString()
       return
 
-    @proc.stderr.on 'data', (chunk) ->
-      console.log(chunk.toString())
+    @proc.stderr.on 'data', (chunk) =>
+      @busy = false
+      message = "[atom-elixir] " + chunk.toString()
+      if ~chunk.indexOf("Server Error")
+        console.error(message)
+      else
+        console.log(message)
 
-    @proc.on 'close', (exitCode) ->
-      console.log "Child process exited with code " + exitCode
+    @proc.on 'close', (exitCode) =>
+      console.error  "[atom-elixir] Child process exited with code " + exitCode
       @busy = false
       @proc = null
 
-    @proc.on 'error', (error) ->
-      console.log "Error " + error.toString()
+    @proc.on 'error', (error) =>
+      console.error "[atom-elixir] " + error.toString()
       @busy = false
       @proc = null
 
