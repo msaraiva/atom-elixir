@@ -19,8 +19,8 @@ defmodule Ast do
   def get_function_line(nil, _, _), do: nil
 
   def get_function_line(file_metadata, module, function) do
-    IO.puts :stderr, "get_function_line:"
-    IO.inspect(:stderr, file_metadata.mods_funs_to_lines,[])
+    # IO.puts :stderr, "get_function_line:"
+    # IO.inspect(:stderr, file_metadata.mods_funs_to_lines,[])
 
     line = Map.get(file_metadata.mods_funs_to_lines, {module, function, nil})
     if line == nil do

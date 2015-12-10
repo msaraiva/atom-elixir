@@ -113,7 +113,11 @@ defmodule Alchemist.API.Defl do
   defp normalize(request) do
     {{expr, file_path, buffer_file, line, context_info}, _} = Code.eval_string(request)
     [module, function]        = String.split(expr, ",", parts: 2)
-    module                    = Module.concat([module])
+    # {module, _}               = Code.eval_string(module)
+    module = case module do
+      "nil" -> nil
+      name -> Module.concat([name])
+    end
     function                  = String.to_atom function
     [module, function, file_path, buffer_file, line, context_info]
   end

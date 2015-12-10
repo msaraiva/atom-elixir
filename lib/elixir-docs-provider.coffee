@@ -56,7 +56,6 @@ class ElixirDocsProvider
 
   addViewForElement: (word) ->
     @server.getDocs word, (result) =>
-      console.log result
       return if result == ""
       uri = @uriForElement(word)
 

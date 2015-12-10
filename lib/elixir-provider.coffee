@@ -50,14 +50,15 @@ class ElixirProvider
     tmpFile  = @createTempFile(editor.buffer.getText())
 
     @server.getFileDeclaration word, filePath, tmpFile, line, (file) ->
-      console.log "File: #{file}"
 
       switch file
         when 'non_existing'
-          atom.notifications.addInfo("Can't find <b>#{word}</b>");
+          # atom.notifications.addInfo("Can't find <b>#{word}</b>");
+          console.log "Can't find \"#{word}\""
           return
         when 'preloaded'
-          atom.notifications.addInfo("Module <b>#{word}</b> is preloaded");
+          # atom.notifications.addInfo("Module <b>#{word}</b> is preloaded");
+          console.log "Module \"#{word}\" is preloaded"
           return
         when ''
           return

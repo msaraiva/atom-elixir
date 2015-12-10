@@ -26,7 +26,7 @@ defmodule Alchemist.API.Docl do
   def search(nil), do: true
   def search(expr) do
     try do
-      [module, function] = expr |> String.split(".")
+      [module, function] = expr |> String.split(".", parts: 2)
       Introspection.get_docs_md(module, function)
       |> IO.puts
     rescue
