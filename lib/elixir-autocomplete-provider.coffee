@@ -9,8 +9,8 @@ class ElixirAutocompleteProvider
   selector: ".source.elixir"
   disableForSelector: '.source.elixir .comment'
   server: null
-  # inclusionPriority: 2
-  # excludeLowerPriority: false
+  inclusionPriority: 1
+  excludeLowerPriority: true
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -33,7 +33,8 @@ class ElixirAutocompleteProvider
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     prefix = getPrefix(editor, bufferPosition)
 
-    return unless prefix?.length >= @minimumWordLength
+    #TODO: maybe we should have our own configuration for that
+    # return unless prefix?.length >= @minimumWordLength
 
     new Promise (resolve) =>
       @server.getCodeCompleteSuggestions prefix, (result) ->
