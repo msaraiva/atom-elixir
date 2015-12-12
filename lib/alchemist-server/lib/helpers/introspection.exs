@@ -21,7 +21,8 @@ defmodule Introspection do
       (doc || "")
       |> String.split("\n\n")
       |> Enum.at(0)
-      |> String.replace(~r/\n/, "_#LB#_")
+      |> String.replace(~r/\n/, "\\\\n")
+      |> String.replace(";", "\\;") 
     {args, desc}
   end
 

@@ -72,7 +72,7 @@ class ElixirAutocompleteProvider
     line.match(regex)?[0] or ''
 
   createSuggestion = (serverSuggestion, prefix) ->
-    [name, kind, signature, desc, spec] = serverSuggestion.split(';')
+    [name, kind, signature, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
 
     switch kind
       when 'function'
@@ -98,7 +98,7 @@ class ElixirAutocompleteProvider
     params = []
     displayText = ''
     snippet = func
-    description = desc.replace(/_#LB#_/g, "\n")
+    description = desc.replace(/\\n/g, "\n")
 
     if signature
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
