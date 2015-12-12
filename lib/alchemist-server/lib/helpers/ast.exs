@@ -140,7 +140,7 @@ defmodule Ast do
   end
 
   # alias without options
-  defp pre(ast = {:alias, [line: line], [{:__aliases__, _, module_atoms = [mod, :InnerMod]}]}, acc) when is_atom(mod) do
+  defp pre(ast = {:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]}, acc) when is_atom(mod) do
     alias_tuple = {Module.concat([List.last(module_atoms)]), Module.concat(module_atoms)}
     do_alias(ast, line, alias_tuple, acc)
   end
