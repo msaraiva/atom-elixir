@@ -1,14 +1,10 @@
 defmodule Ast do
 
-  def parse_file(file) do
+  def parse_file(file, try_to_fix_parse_errors \\ false) do
     if file && !String.ends_with?(file, ".erl") do
       case File.read(file) do
         {:ok, source} ->
-          case Code.string_to_quoted(source) do
-            {:ok, quoted} ->
-              {:ok, parse(quoted)}
-            error -> error
-          end
+          parse_string(source, try_to_fix_parse_errors)
         error -> error
       end
     else
@@ -16,12 +12,42 @@ defmodule Ast do
     end
   end
 
+  def parse_string(source, try_to_fix_parse_errors) do
+    case Code.string_to_quoted(source) do
+      {:ok, quoted} ->
+        {:ok, parse(quoted)}
+      error ->
+        IO.puts :stderr, "PARSE ERROR"
+        IO.inspect :stderr, error, []
+        if try_to_fix_parse_errors do
+          fix_parse_error(source, error)
+        else
+          error
+        end
+    end
+  end
+
+  defp fix_parse_error(source, {:error, {_line, {_error_type, text}, _token}}) do
+    [_, line] = Regex.run(~r/line\s(\d\d)/, text)
+    line = line |> String.to_integer
+    source
+    |> replace_line_with_marker(line)
+    |> parse_string(false)
+  end
+
+  defp fix_parse_error(source, {:error, {line, _error, _token}}) when is_integer(line) do
+    source
+    |> replace_line_with_marker(line)
+    |> parse_string(false)
+  end
+
+  defp fix_parse_error(_, error) do
+    error
+  end
+
   def get_function_line(nil, _, _), do: nil
 
   def get_function_line(file_metadata, module, function) do
-    # IO.puts :stderr, "get_function_line:"
-    # IO.inspect(:stderr, file_metadata.mods_funs_to_lines,[])
-
     line = Map.get(file_metadata.mods_funs_to_lines, {module, function, nil})
     if line == nil do
       line = get_function_line_using_docs(module, function)
@@ -29,11 +55,34 @@ defmodule Ast do
     line
   end
 
+  def get_context_from_line_not_found(source, line) do
+    result = source
+      |> replace_line_with_marker(line)
+      |> parse_string(false)
+
+    case result do
+      {:ok, {_ast, metadata}} ->
+        IO.puts :stderr, "Modified source (line_not_found):"
+        IO.inspect :stderr, metadata, []
+        Map.get(metadata.lines_to_context, line)
+      {:error, reason} ->
+        IO.inspect :stderr, reason, []
+        %{imports: [], aliases: [], module: nil}
+    end
+  end
+
+  defp replace_line_with_marker(source, line) do
+    source
+    |> String.split(["\n", "\r\n"])
+    |> List.replace_at(line-1, "(__atom_elixir_marker_#{line}__())")
+    |> Enum.join("\n")
+  end
+
   def get_context_by_line(nil, _), do: %{imports: [], aliases: [], module: nil}
 
   def get_context_by_line(file_metadata, line) do
     context = case Map.get(file_metadata.lines_to_context, line) do
-      nil -> %{imports: [], aliases: [], module: nil}
+      nil -> :line_not_found
       ctx -> ctx
     end
     IO.puts :stderr, "get_context_by_line: #{line}"

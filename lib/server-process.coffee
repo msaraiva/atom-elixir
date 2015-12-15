@@ -54,8 +54,8 @@ class ServerProcess
     @busy = false
     @proc = null
 
-  getCodeCompleteSuggestions: (text, onResult) ->
-    @sendRequest('COMP', "\"#{text}\", [ context: Elixir, imports: [], aliases: [] ]", onResult)
+  getCodeCompleteSuggestions: (text, bufferFile, line, onResult) ->
+    @sendRequest('COMP', "\"#{text}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
 
   # TODO: Take this to a separate file
   isFunction = (word) ->

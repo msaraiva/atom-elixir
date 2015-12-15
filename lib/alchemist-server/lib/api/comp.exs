@@ -25,10 +25,27 @@ defmodule Alchemist.API.Comp do
   end
 
   defp normalize(request) do
-    {{hint, [ context: context,
-              imports: imports,
-              aliases: aliases ]}, _} =  Code.eval_string(request)
-    [hint, context, imports, aliases]
+    {{hint, buffer_file, line, [ context: context,
+              imports: _imports,
+              aliases: _aliases ]}, _} =  Code.eval_string(request)
+
+    buffer_string = File.read!(buffer_file)
+    buffer_file_metadata = case Ast.parse_string(buffer_string, true) do
+      {:ok, {_ast, buffer_file_metadata}} ->
+        buffer_file_metadata
+      {:error, reason} ->
+        IO.inspect :stderr, reason, []
+        nil
+    end
+
+    %{imports: imports, aliases: aliases, module: module} =
+      case Ast.get_context_by_line(buffer_file_metadata, line) do
+        :line_not_found ->
+          Ast.get_context_from_line_not_found(buffer_string, line)
+        ctx -> ctx
+      end
+
+    [hint, context, [module|imports], aliases]
   end
 
   defp print(result) do

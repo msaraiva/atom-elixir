@@ -1,5 +1,6 @@
 {CompositeDisposable} = require 'atom'
 marked = require('marked');
+fs = require('fs')
 
 #TODO: Retrieve from the environment or from the server process
 ELIXIR_VERSION = '1.1'
@@ -37,7 +38,12 @@ class ElixirAutocompleteProvider
     # return unless prefix?.length >= @minimumWordLength
 
     new Promise (resolve) =>
-      @server.getCodeCompleteSuggestions prefix, (result) ->
+      editor   = atom.workspace.getActiveTextEditor()
+      line     = editor.getCursorBufferPosition().row + 1
+      tmpFile  = @createTempFile(editor.buffer.getText())
+
+      @server.getCodeCompleteSuggestions prefix, tmpFile, line, (result) ->
+        fs.unlink(tmpFile)
         suggestions = result.split('\n')
 
         hint = suggestions[0]
@@ -228,3 +234,10 @@ class ElixirAutocompleteProvider
         else
           @descriptionContainer.style.display = 'none'
       element
+
+  #TODO: Duplicated
+  createTempFile: (content) ->
+    os = require('os')
+    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
+    fs.writeFileSync(tmpFile, content)
+    tmpFile
