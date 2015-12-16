@@ -32,9 +32,24 @@ defmodule Alchemist.API.Defl do
   end
 
   defp post_process({mod, file}, _f, _, fun) do
-    file_metadata = FileMetadata.parse_file(file, false, false, nil)
-    line = FileMetadata.get_function_line(file_metadata, mod, fun)
+    line = if String.ends_with?(file, ".erl") do
+      find_fun_line_in_erl_file(file, fun)
+    else
+      file_metadata = FileMetadata.parse_file(file, false, false, nil)
+      FileMetadata.get_function_line(file_metadata, mod, fun)
+    end
     do_post_process(file, line)
+  end
+
+  defp find_fun_line_in_erl_file(file, fun) do
+    fun_name = Atom.to_string(fun)
+    index =
+      file
+      |> File.read!
+      |> String.split(["\n", "\r\n"])
+      |> Enum.find_index(&String.starts_with?(&1, fun_name))
+
+    (index || 0) + 1
   end
 
   defp do_post_process(file, nil), do: file
@@ -103,13 +118,9 @@ defmodule Alchemist.API.Defl do
 
   defp normalize(request) do
     {{expr, file_path, buffer_file, line, context_info}, _} = Code.eval_string(request)
-    [module, function]        = String.split(expr, ",", parts: 2)
-    # {module, _}               = Code.eval_string(module)
-    module = case module do
-      "nil" -> nil
-      name -> Module.concat([name])
-    end
-    function                  = String.to_atom function
+    [module, function] = String.split(expr, ",", parts: 2)
+    {module, _}        = Code.eval_string(module)
+    function           = String.to_atom function
     [module, function, file_path, buffer_file, line, context_info]
   end
 

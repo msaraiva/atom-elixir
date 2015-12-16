@@ -4,14 +4,10 @@ defmodule Ast do
     defstruct [:source, :cursor_line, :ast, :mods_funs_to_lines, :lines_to_context, :parsed, :source_changed, :error, :changes]
 
     def parse_file(file, try_to_fix_parse_error, try_to_fix_line_not_found, cursor_line_number) do
-      if file && !String.ends_with?(file, ".erl") do
-        case File.read(file) do
-          {:ok, source} ->
-            parse_string(source, try_to_fix_parse_error, try_to_fix_line_not_found, cursor_line_number)
-          error -> error
-        end
-      else
-        {:error, "File \"#{file}\" is not a valid elixir file"}
+      case File.read(file) do
+        {:ok, source} ->
+          parse_string(source, try_to_fix_parse_error, try_to_fix_line_not_found, cursor_line_number)
+        error -> error
       end
     end
 
