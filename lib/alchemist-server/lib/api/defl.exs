@@ -6,20 +6,17 @@ defmodule Alchemist.API.Defl do
   @moduledoc false
 
   alias Alchemist.Helpers.ModuleInfo
+  alias Ast.FileMetadata
 
   def request(args) do
     [mod, fun, file_path, buffer_file, line, _context_info] = args |> normalize
 
-    buffer_file_metadata = case Ast.parse_file(buffer_file) do
-      {:ok, {_ast, buffer_file_metadata}} ->
-        buffer_file_metadata
-      {:error, reason} ->
-        IO.inspect :stderr, reason, []
-        nil
-    end
+    buffer_file_metadata = FileMetadata.parse_file(buffer_file, true, true, line)
+    %{imports: imports,
+      aliases: aliases,
+      module: module} = FileMetadata.get_line_context(buffer_file_metadata, line)
 
-    %{imports: imports, aliases: aliases, module: module} = Ast.get_context_by_line(buffer_file_metadata, line)
-    context_info = [context: nil, imports: [module|imports], aliases: aliases ]
+    context_info = [context: nil, imports: [module|imports], aliases: aliases]
 
     [mod, fun, context_info]
     |> process
@@ -30,19 +27,13 @@ defmodule Alchemist.API.Defl do
   end
 
   defp post_process({mod, file}, file, buffer_file_metadata, fun) do
-    line = Ast.get_function_line(buffer_file_metadata, mod, fun)
+    line = FileMetadata.get_function_line(buffer_file_metadata, mod, fun)
     do_post_process(file, line)
   end
 
   defp post_process({mod, file}, _f, _, fun) do
-    file_metadata = case Ast.parse_file(file) do
-      {:ok, {_ast, file_metadata}} ->
-        file_metadata
-      {:error, reason} ->
-        IO.inspect :stderr, reason, []
-        nil
-    end
-    line = Ast.get_function_line(file_metadata, mod, fun)
+    file_metadata = FileMetadata.parse_file(file, false, false, nil)
+    line = FileMetadata.get_function_line(file_metadata, mod, fun)
     do_post_process(file, line)
   end
 

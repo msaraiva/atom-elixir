@@ -1,10 +1,12 @@
 Code.require_file "../helpers/complete.exs", __DIR__
+Code.require_file "../helpers/ast.exs", __DIR__
 
 defmodule Alchemist.API.Comp do
 
   @moduledoc false
 
   alias Alchemist.Helpers.Complete
+  alias Ast.FileMetadata
 
   def request(args) do
     args
@@ -29,21 +31,10 @@ defmodule Alchemist.API.Comp do
               imports: _imports,
               aliases: _aliases ]}, _} =  Code.eval_string(request)
 
-    buffer_string = File.read!(buffer_file)
-    buffer_file_metadata = case Ast.parse_string(buffer_string, true) do
-      {:ok, {_ast, buffer_file_metadata}} ->
-        buffer_file_metadata
-      {:error, reason} ->
-        IO.inspect :stderr, reason, []
-        nil
-    end
-
-    %{imports: imports, aliases: aliases, module: module} =
-      case Ast.get_context_by_line(buffer_file_metadata, line) do
-        :line_not_found ->
-          Ast.get_context_from_line_not_found(buffer_string, line)
-        ctx -> ctx
-      end
+    metadata = FileMetadata.parse_file(buffer_file, true, true, line)
+    %{imports: imports,
+      aliases: aliases,
+      module: module} = FileMetadata.get_line_context(metadata, line)
 
     [hint, context, [module|imports], aliases]
   end
