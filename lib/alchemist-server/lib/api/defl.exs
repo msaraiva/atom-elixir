@@ -47,7 +47,7 @@ defmodule Alchemist.API.Defl do
       file
       |> File.read!
       |> String.split(["\n", "\r\n"])
-      |> Enum.find_index(&String.starts_with?(&1, fun_name))
+      |> Enum.find_index(&String.match?(&1, ~r/^#{fun_name}\b/))
 
     (index || 0) + 1
   end
