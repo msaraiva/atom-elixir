@@ -14,10 +14,21 @@ class ElixirProvider
       @expand()
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-once-selected-text', =>
       @expandOnce()
+
+    @gotoStack = []
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-declaration', =>
       editor = atom.workspace.getActiveTextEditor()
       word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
       @gotoDeclaration(word)
+      @gotoStack.push([editor.getPath(), editor.getCursorBufferPosition()])
+    @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-declaration', =>
+      previousPosition = @gotoStack.pop()
+      return unless previousPosition?
+      [file, position] = previousPosition
+      atom.workspace.open(file, {searchAllPanes: true}).then (editor) ->
+        return unless position?
+        editor.setCursorBufferPosition(position)
+        editor.scrollToScreenPosition(position, {center: true})
 
   dispose: ->
     @subscriptions.dispose()

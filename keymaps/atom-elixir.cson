@@ -19,3 +19,6 @@
   'ctrl-shift-t': 'atom-elixir:quote-selected-text'
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
   'ctrl-shift-o': 'atom-elixir:expand-once-selected-text'
+
+'atom-text-editor:not(mini)':
+  'alt-up': 'atom-elixir:return-from-declaration'
