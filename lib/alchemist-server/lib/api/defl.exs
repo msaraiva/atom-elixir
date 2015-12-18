@@ -26,6 +26,14 @@ defmodule Alchemist.API.Defl do
     IO.puts "END-OF-DEFL"
   end
 
+  defp post_process({_, file = "preloaded"}, _, _, _) do
+    do_post_process(file, nil)
+  end
+
+  defp post_process({_, file}, _, _, _) when file in ["non_existing", nil, ""] do
+    do_post_process("non_existing", nil)
+  end
+
   defp post_process({mod, file}, file, buffer_file_metadata, fun) do
     line = FileMetadata.get_function_line(buffer_file_metadata, mod, fun)
     do_post_process(file, line)
@@ -108,10 +116,13 @@ defmodule Alchemist.API.Defl do
         source -> List.to_string(source)
       end
     end
-    file = if File.exists?(file || "") do
+    file = if file && File.exists?(file) do
       file
     else
-      module |> :code.which |> to_string |> String.replace(~r/(.+)\/ebin\/([^\s]+)\.beam$/, "\\1/src/\\2.erl")
+      erl_file = module |> :code.which |> to_string |> String.replace(~r/(.+)\/ebin\/([^\s]+)\.beam$/, "\\1/src/\\2.erl")
+      if File.exists?(erl_file) do
+        erl_file
+      end
     end
     {module, file}
   end
