@@ -68,17 +68,18 @@ defmodule Alchemist.Helpers.ModuleInfo do
 
   defp all_functions(list) do
     for {fun, arities} <- list do
-      {fun, List.first(arities)}
-    end
+      for arity <- arities do
+        {fun, arity}
+      end
+    end |> List.flatten
   end
 
   defp all_functions(list, hint) do
-    for {fun, arities} <- list,
-    name = Atom.to_string(fun),
-    String.starts_with?(name, hint) do
-      # "#{name}/#{List.first(arities)}"
-      {fun, List.first(arities)}
-    end
+    for {fun, arities} <- list, name = Atom.to_string(fun), String.starts_with?(name, hint) do
+      for arity <- arities do
+        {fun, arity}
+      end
+    end |> List.flatten
   end
 
   def all_applications_modules do

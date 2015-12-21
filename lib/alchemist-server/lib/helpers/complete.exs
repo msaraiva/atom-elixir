@@ -386,6 +386,7 @@ defmodule Alchemist.Helpers.Complete do
     :binary.part(name, hint_size, byte_size(name) - hint_size)
   end
 
+  #TODO: Move it to Introspection
   defp module_functions_info(module) do
     docs = Code.get_docs(module, :docs)
     specs = Introspection.get_module_specs(module)
