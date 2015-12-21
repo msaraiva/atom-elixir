@@ -1,3 +1,5 @@
+Code.require_file "../helpers/introspection.exs", __DIR__
+
 defmodule Alchemist.Helpers.ModuleInfo do
 
   @moduledoc false
@@ -65,8 +67,8 @@ defmodule Alchemist.Helpers.ModuleInfo do
   end
 
   defp all_functions(list) do
-    for {fun, arities} <- list, name = Atom.to_string(fun) do
-      "#{name}/#{List.first(arities)}"
+    for {fun, arities} <- list do
+      {fun, List.first(arities)}
     end
   end
 
@@ -74,7 +76,8 @@ defmodule Alchemist.Helpers.ModuleInfo do
     for {fun, arities} <- list,
     name = Atom.to_string(fun),
     String.starts_with?(name, hint) do
-      "#{name}/#{List.first(arities)}"
+      # "#{name}/#{List.first(arities)}"
+      {fun, List.first(arities)}
     end
   end
 

@@ -33,7 +33,22 @@ defmodule Alchemist.Helpers.Complete do
 
   def run(hint, modules) do
     for module <- modules do
-      ModuleInfo.get_functions(module, hint)
+      funs = ModuleInfo.get_functions(module, hint)
+      funs_info = module_functions_info(module)
+      for {f, a} <- funs do
+        {func_kind, fun_args, desc, spec} =
+          case Map.get(funs_info, {f, a}) do
+            nil  -> {:defp, "", "", ""}
+            info -> info
+          end
+        kind = case func_kind do
+          :defmacro -> "macro"
+          :def      -> "public_function"
+          :defp     -> "private_function"
+        end
+        func_name = Atom.to_string(f)
+        "#{func_name}/#{a};#{kind};#{fun_args};#{desc};#{spec}"
+      end
     end |> List.flatten
   end
 
@@ -359,11 +374,11 @@ defmodule Alchemist.Helpers.Complete do
   end
 
   defp to_hint(%{kind: :module, name: name}, hint) do
-    format_hint(name, hint) <> "."# <> ";hint_module_unique"
+    format_hint(name, hint) <> "."
   end
 
   defp to_hint(%{kind: :function, name: name}, hint) do
-    format_hint(name, hint)# <> ";hint_function_unique"
+    format_hint(name, hint)
   end
 
   defp format_hint(name, hint) do
@@ -371,4 +386,13 @@ defmodule Alchemist.Helpers.Complete do
     :binary.part(name, hint_size, byte_size(name) - hint_size)
   end
 
+  defp module_functions_info(module) do
+    docs = Code.get_docs(module, :docs)
+    specs = Introspection.get_module_specs(module)
+    for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false, into: %{} do
+      spec = Map.get(specs, {f,a}, "")
+      {fun_args, desc} = Introspection.extract_fun_args_and_desc(func_doc)
+      {{f, a}, {func_kind, fun_args, desc, spec}}
+    end
+  end
 end

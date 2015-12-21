@@ -82,6 +82,10 @@ class ElixirAutocompleteProvider
     [name, kind, signature, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
 
     switch kind
+      when 'private_function'
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
+      when 'public_function'
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
       when 'function'
         createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
       when 'macro'
@@ -121,6 +125,10 @@ class ElixirAutocompleteProvider
 
     [type, iconHTML] = if kind == 'function'
       ['function', 'f']
+    else if kind == 'private_function'
+      ['tag', 'f']
+    else if kind == 'public_function'
+      ['keyword', 'f']
     else
       ['package', 'm']
 
@@ -180,9 +188,11 @@ class ElixirAutocompleteProvider
     sort_kind = (a, b) ->
       priority =
         exception: 0 # unknown
-        class:     1 # module
-        package:   2 # macro
-        function:  2 # function
+        tag:       1 # private function
+        keyword:   2 # public function from the same module
+        class:     3 # module
+        package:   4 # macro
+        function:  4 # function
 
       priority[a.type] - priority[b.type]
 

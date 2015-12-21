@@ -22,8 +22,18 @@ defmodule Alchemist.API.Comp do
   def process([hint, _context, imports, aliases]) do
     Application.put_env(:"alchemist.el", :aliases, aliases)
 
-    Complete.run(hint, imports) ++ Complete.run(hint)
-    |> print
+    list1 = Complete.run(hint, imports)
+    list2 = Complete.run(hint)
+    first_item = Enum.at(list2, 0)
+
+    if first_item in [nil, ""] do
+      first_item = hint
+    else
+      list2 = List.delete_at(list2, 0)
+    end
+
+    full_list = [first_item] ++ list1 ++ list2
+    full_list |> print
   end
 
   defp normalize(request) do
