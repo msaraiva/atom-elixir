@@ -408,7 +408,7 @@ defmodule Alchemist.Helpers.Complete do
 
   #TODO: Move it to Introspection
   defp module_functions_info(module) do
-    docs = Code.get_docs(module, :docs)
+    docs = Code.get_docs(module, :docs) || []
     specs = Introspection.get_module_specs(module)
     for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false, into: %{} do
       spec = Map.get(specs, {f,a}, "")
