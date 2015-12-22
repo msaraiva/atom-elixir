@@ -344,7 +344,12 @@ defmodule Alchemist.Helpers.Complete do
         macros ++ functions
       end
     else
-      for {f, a} <- mod.module_info(:exports), do: {f, a, :function, nil, nil}
+      for {f, a} <- mod.module_info(:exports) do
+        case f |> Atom.to_string do
+          "MACRO-" <> name -> {String.to_atom(name), a, :macro, nil, nil}
+          _name            -> {f, a, :function, nil, nil}
+        end
+      end
     end
   end
 
