@@ -3,7 +3,7 @@ Code.require_file "../helpers/introspection.exs", __DIR__
 
 defmodule Alchemist.Helpers.Complete do
 
-  @hidden_functions [{:__info__, 1}, {:module_info, 0}, {:module_info, 1}]
+  @added_functions [{:__info__, 1}, {:module_info, 0}, {:module_info, 1}]
 
   alias Alchemist.Helpers.ModuleInfo
 
@@ -37,9 +37,8 @@ defmodule Alchemist.Helpers.Complete do
     context_module = modules |> Enum.at(0)
 
     accept_function = fn
-      (_, _, f, a) when {f, a} in @hidden_functions -> false
       (mod, mod, _, _) -> true
-      (_, mod, f, a) -> function_exported?(mod, f, a)
+      (_, mod, f, a)   -> function_exported?(mod, f, a) and !({f, a} in @added_functions)
     end
 
     for module <- modules do
@@ -55,7 +54,7 @@ defmodule Alchemist.Helpers.Complete do
           {m, m, :defmacro}  -> "public_macro"
           {_, _, :defmacro}  -> "macro"
           {m, m, :def}       -> "public_function"
-          {m, m, :undefined} -> "private_function"
+          {m, m, :undefined} -> if {f, a} in @added_functions, do: "public_function", else: "private_function"
           _                  -> "function"
         end
 
@@ -332,7 +331,7 @@ defmodule Alchemist.Helpers.Complete do
 
   defp get_module_funs(mod) do
     if function_exported?(mod, :__info__, 1) do
-      if docs = Code.get_docs(mod, :docs) do
+      funs = if docs = Code.get_docs(mod, :docs) do
         specs = Introspection.get_module_specs(mod)
         for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false do
           spec = Map.get(specs, {f,a}, "")
@@ -340,9 +339,10 @@ defmodule Alchemist.Helpers.Complete do
         end
       else
         macros = mod.__info__(:macros) |> Enum.map(fn {f, a} -> {f, a, :macro, nil, nil} end)
-        functions = (mod.__info__(:functions) -- [__info__: 1]) |> Enum.map(fn {f, a} -> {f, a, :function, nil, nil} end)
+        functions = mod.__info__(:functions) |> Enum.map(fn {f, a} -> {f, a, :function, nil, nil} end)
         macros ++ functions
       end
+      funs ++ (@added_functions |> Enum.map(fn {f,a} -> {f, a, :function, nil, nil } end))
     else
       for {f, a} <- mod.module_info(:exports) do
         case f |> Atom.to_string do
