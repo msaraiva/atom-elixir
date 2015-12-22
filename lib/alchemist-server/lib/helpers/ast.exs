@@ -51,11 +51,10 @@ defmodule Ast do
     end
 
     def get_function_line(metadata = %FileMetadata{}, module, function) do
-      line = Map.get(metadata.mods_funs_to_lines, {module, function, nil})
-      if line == nil do
-        line = get_function_line_using_docs(module, function)
+      case Map.get(metadata.mods_funs_to_lines, {module, function, nil}) do
+        nil -> get_function_line_using_docs(module, function)
+        line -> line
       end
-      line
     end
 
     defp get_function_line_using_docs(module, function) do

@@ -79,17 +79,19 @@ class ElixirAutocompleteProvider
     line.match(regex)?[0] or ''
 
   createSuggestion = (serverSuggestion, prefix) ->
-    [name, kind, signature, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+    [name, kind, signature, mod, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
 
     switch kind
       when 'private_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
       when 'public_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
       when 'function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
+      when 'public_macro'
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
       when 'macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
       when 'module'
         createSuggestionForModule(serverSuggestion, name, prefix)
       else
@@ -101,7 +103,7 @@ class ElixirAutocompleteProvider
           rightLabel: kind || 'hint'
         }
 
-  createSuggestionForFunction = (serverSuggestion, name, kind, signature, desc, spec, prefix) ->
+  createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix) ->
     args = signature.split(',')
     [func, arity] = name.split('/')
     [moduleParts..., postfix] = prefix.split('.')
@@ -123,14 +125,14 @@ class ElixirAutocompleteProvider
 
     snippet = snippet.replace(/^:/, '') + " $0"
 
-    [type, iconHTML] = if kind == 'function'
-      ['function', 'f']
-    else if kind == 'private_function'
-      ['tag', 'f']
-    else if kind == 'public_function'
-      ['keyword', 'f']
-    else
-      ['package', 'm']
+    [type, iconHTML] =
+      switch kind
+        when 'private_function' then ['tag',      'f']
+        when 'public_function'  then ['function', 'f']
+        when 'function'         then ['function', 'f']
+        when 'public_macro'     then ['package',  'm']
+        when 'macro'            then ['package',  'm']
+        else                         ['unknown',  '?']
 
     # TODO: duplicated
     if prefix.match(/^:/)
@@ -150,7 +152,7 @@ class ElixirAutocompleteProvider
       snippet: snippet
       displayText: displayText
       type: type
-      rightLabel: kind
+      rightLabel: mod
       # description: description
       descriptionHTML: description
       descriptionMoreURL: getDocURL(prefix, func, arity)

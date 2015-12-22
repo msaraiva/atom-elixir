@@ -3,6 +3,8 @@ Code.require_file "../helpers/introspection.exs", __DIR__
 
 defmodule Alchemist.Helpers.Complete do
 
+  @hidden_functions [{:__info__, 1}, {:module_info, 0}, {:module_info, 1}]
+
   alias Alchemist.Helpers.ModuleInfo
 
   @moduledoc """
@@ -32,22 +34,34 @@ defmodule Alchemist.Helpers.Complete do
   end
 
   def run(hint, modules) do
+    context_module = modules |> Enum.at(0)
+
+    accept_function = fn
+      (_, _, f, a) when {f, a} in @hidden_functions -> false
+      (mod, mod, _, _) -> true
+      (_, mod, f, a) -> function_exported?(mod, f, a)
+    end
+
     for module <- modules do
       funs = ModuleInfo.get_functions(module, hint)
       funs_info = module_functions_info(module)
-      for {f, a} <- funs do
+      for {f, a} <- funs, accept_function.(context_module, module, f, a) do
         {func_kind, fun_args, desc, spec} =
           case Map.get(funs_info, {f, a}) do
-            nil  -> {:defp, "", "", ""}
+            nil  -> {:undefined, "", "", ""}
             info -> info
           end
-        kind = case func_kind do
-          :defmacro -> "macro"
-          :def      -> "public_function"
-          :defp     -> "private_function"
+        kind = case {context_module, module, func_kind} do
+          {m, m, :defmacro}  -> "public_macro"
+          {_, _, :defmacro}  -> "macro"
+          {m, m, :def}       -> "public_function"
+          {m, m, :undefined} -> "private_function"
+          _                  -> "function"
         end
+
         func_name = Atom.to_string(f)
-        "#{func_name}/#{a};#{kind};#{fun_args};#{desc};#{spec}"
+        mod_name = module |> format_module_name
+        "#{func_name}/#{a};#{kind};#{fun_args};#{mod_name};#{desc};#{spec}"
       end
     end |> List.flatten
   end
@@ -168,7 +182,7 @@ defmodule Alchemist.Helpers.Complete do
   end
 
   defp expand_import(hint) do
-    funs = match_module_funs(IEx.Helpers, hint) ++
+    funs =
       match_module_funs(Kernel, hint) ++
       match_module_funs(Kernel.SpecialForms, hint)
     format_expansion funs, hint
@@ -309,7 +323,7 @@ defmodule Alchemist.Helpers.Complete do
       for {fun, arities, func_kind, docs, specs} <- list,
       name = Atom.to_string(fun),
       starts_with?(name, hint) do
-        %{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs, specs: specs}
+        %{kind: :function, name: name, arities: arities, module: mod, func_kind: func_kind, docs: docs, specs: specs}
       end |> :lists.sort()
 
       _otherwise -> []
@@ -346,7 +360,7 @@ defmodule Alchemist.Helpers.Complete do
     ["#{name};module"]
   end
 
-  defp to_entries(%{kind: :function, name: name, arities: arities, func_kind: func_kind, docs: docs, specs: specs}) do
+  defp to_entries(%{kind: :function, name: name, arities: arities, module: mod, func_kind: func_kind, docs: docs, specs: specs}) do
     docs_specs = docs |> Enum.zip(specs)
     arities_docs_specs = arities |> Enum.zip(docs_specs)
 
@@ -356,7 +370,8 @@ defmodule Alchemist.Helpers.Complete do
         :defmacro -> "macro"
         _         -> "function"
       end
-      "#{name}/#{a};#{kind};#{fun_args};#{desc};#{spec}"
+      mod_name = mod |> format_module_name
+      "#{name}/#{a};#{kind};#{fun_args};#{mod_name};#{desc};#{spec}"
     end
   end
 
@@ -396,4 +411,12 @@ defmodule Alchemist.Helpers.Complete do
       {{f, a}, {func_kind, fun_args, desc, spec}}
     end
   end
+
+  defp format_module_name(module) do
+    case module |> Atom.to_string do
+      "Elixir." <> name -> name
+      name -> ":#{name}"
+    end
+  end
+
 end
