@@ -81,6 +81,8 @@ class ElixirAutocompleteProvider
   createSuggestion = (serverSuggestion, prefix) ->
     [name, kind, signature, mod, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
 
+    return "" if serverSuggestion.match(/^[\s\d]/)
+
     switch kind
       when 'private_function'
         createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
@@ -161,6 +163,8 @@ class ElixirAutocompleteProvider
     }
 
   createSuggestionForModule = (serverSuggestion, name, prefix) ->
+    return "" if serverSuggestion.match(/^[\s\d]/)
+    
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
     {
