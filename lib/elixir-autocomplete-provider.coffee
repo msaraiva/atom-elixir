@@ -8,7 +8,7 @@ ELIXIR_VERSION = '1.1'
 module.exports =
 class ElixirAutocompleteProvider
   selector: ".source.elixir"
-  disableForSelector: '.source.elixir .comment'
+  # disableForSelector: '.source.elixir .comment'
   server: null
   inclusionPriority: 1
   excludeLowerPriority: true
@@ -32,6 +32,12 @@ class ElixirAutocompleteProvider
     replaceUpdateDescription()
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix, activatedManually}) ->
+    scopeChain = scopeDescriptor.getScopeChain()
+    editorElement = atom.views.getView(editor)
+    if scopeChain.match(/\.string\.quoted\./) || scopeChain.match(/\.comment/)
+      unless (activatedManually || 'autocomplete-active' in editorElement.classList)
+        return
+
     prefix = getPrefix(editor, bufferPosition)
 
     return if !activatedManually && prefix == ""
