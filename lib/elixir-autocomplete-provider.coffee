@@ -31,8 +31,10 @@ class ElixirAutocompleteProvider
     # https://github.com/atom/autocomplete-plus/issues/423
     replaceUpdateDescription()
 
-  getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
+  getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix, activatedManually}) ->
     prefix = getPrefix(editor, bufferPosition)
+
+    return if !activatedManually && prefix == ""
 
     #TODO: maybe we should have our own configuration for that
     # return unless prefix?.length >= @minimumWordLength
@@ -164,7 +166,7 @@ class ElixirAutocompleteProvider
 
   createSuggestionForModule = (serverSuggestion, name, prefix) ->
     return "" if serverSuggestion.match(/^[\s\d]/)
-    
+
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
     {
