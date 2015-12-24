@@ -90,8 +90,8 @@ class ServerProcess
   match: (file, onResult) ->
     @sendRequest('EVAL', ":match, \"#{file}\"", onResult)
 
-  getDocs: (text, onResult) ->
-    @sendRequest('DOCL', "\"#{text}\", [ context: Elixir, imports: [], aliases: [] ]", onResult)
+  getDocs: (text, bufferFile, line, onResult) ->
+    @sendRequest('DOCL', "\"#{text}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
 
   sendRequest: (type, args, onResult) ->
     request = "#{type} { #{args} }\n"

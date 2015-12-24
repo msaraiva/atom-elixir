@@ -4,12 +4,12 @@ defmodule Introspection do
 
   alias Kernel.Typespec
 
-  def get_docs_md(mod_str, fun_str) do
-    mod = Module.concat([mod_str])
-    fun = String.to_atom(fun_str)
+  def get_docs_md(mod, fun) do
     docs = Code.get_docs(mod, :docs)
     texts = for {{f, arity}, _, _, args, text} <- docs, f == fun do
       fun_args_text = Enum.map_join(args, ", ", &print_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
+      mod_str = module_to_string(mod)
+      fun_str = Atom.to_string(fun)
       "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
     end
     texts |> Enum.join("\n\n____\n\n")
@@ -22,7 +22,7 @@ defmodule Introspection do
       |> String.split("\n\n")
       |> Enum.at(0)
       |> String.replace(~r/\n/, "\\\\n")
-      |> String.replace(";", "\\;") 
+      |> String.replace(";", "\\;")
     {args, desc}
   end
 
@@ -54,6 +54,13 @@ defmodule Introspection do
     end
   end
 
+  def module_to_string(module) do
+    case module |> Atom.to_string do
+      "Elixir." <> name -> name
+      name -> ":#{name}"
+    end
+  end
+
   defp print_doc_arg({ :\\, _, [left, right] }) do
     print_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
   end
@@ -76,6 +83,15 @@ defmodule Introspection do
   defp beam_specs_tag(nil, _), do: nil
   defp beam_specs_tag(specs, tag) do
     Enum.map(specs, &{tag, &1})
+  end
+
+  def split_mod_func_call(call) do
+    {:ok, quoted} = call |> Code.string_to_quoted
+    case Macro.decompose_call(quoted) do
+      {{:__aliases__, _, mod_parts}, fun, _args} ->
+        {Module.concat(mod_parts), fun}
+      _ -> {:error, "Could not split call: #{call}"}
+    end
   end
 
 end

@@ -1,5 +1,6 @@
 Code.require_file "../helpers/module_info.exs", __DIR__
 Code.require_file "../helpers/introspection.exs", __DIR__
+Code.require_file "../helpers/ast.exs", __DIR__
 
 defmodule Alchemist.API.Docl do
 
@@ -8,6 +9,7 @@ defmodule Alchemist.API.Docl do
   import IEx.Helpers, warn: false
 
   alias Alchemist.Helpers.ModuleInfo
+  alias Ast.FileMetadata
 
   def request(args) do
     Application.put_env(:iex, :colors, [enabled: true])
@@ -26,7 +28,7 @@ defmodule Alchemist.API.Docl do
   def search(nil), do: true
   def search(expr) do
     try do
-      [module, function] = expr |> String.split(".", parts: 2)
+      {module, function} = Introspection.split_mod_func_call(expr)
       Introspection.get_docs_md(module, function)
       |> IO.puts
     rescue
@@ -73,9 +75,16 @@ defmodule Alchemist.API.Docl do
   end
 
   defp normalize(request) do
-    {{expr, [ context: _,
-              imports: imports,
-              aliases: aliases]}, _} = Code.eval_string(request)
+    {{expr, buffer_file, line, [ context: _,
+              imports: _imports,
+              aliases: _aliases]}, _} = Code.eval_string(request)
+
+    metadata = FileMetadata.parse_file(buffer_file, true, true, line)
+    %{imports: imports,
+      aliases: aliases,
+      module: _module} = FileMetadata.get_line_context(metadata, line)
+
     [expr, imports, aliases]
   end
+
 end

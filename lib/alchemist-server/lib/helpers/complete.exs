@@ -59,7 +59,7 @@ defmodule Alchemist.Helpers.Complete do
         end
 
         func_name = Atom.to_string(f)
-        mod_name = module |> format_module_name
+        mod_name = module |> Introspection.module_to_string
         "#{func_name}/#{a};#{kind};#{fun_args};#{mod_name};#{desc};#{spec}"
       end
     end |> List.flatten
@@ -375,7 +375,7 @@ defmodule Alchemist.Helpers.Complete do
         :defmacro -> "macro"
         _         -> "function"
       end
-      mod_name = mod |> format_module_name
+      mod_name = mod |> Introspection.module_to_string
       "#{name}/#{a};#{kind};#{fun_args};#{mod_name};#{desc};#{spec}"
     end
   end
@@ -414,13 +414,6 @@ defmodule Alchemist.Helpers.Complete do
       spec = Map.get(specs, {f,a}, "")
       {fun_args, desc} = Introspection.extract_fun_args_and_desc(func_doc)
       {{f, a}, {func_kind, fun_args, desc, spec}}
-    end
-  end
-
-  defp format_module_name(module) do
-    case module |> Atom.to_string do
-      "Elixir." <> name -> name
-      name -> ":#{name}"
     end
   end
 

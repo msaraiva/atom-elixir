@@ -55,7 +55,12 @@ class ElixirDocsProvider
     "atom-elixir://elixir-docs-views/#{word}"
 
   addViewForElement: (word) ->
-    @server.getDocs word, (result) =>
+    editor   = atom.workspace.getActiveTextEditor()
+    line     = editor.getCursorBufferPosition().row + 1
+    tmpFile  = @createTempFile(editor.buffer.getText())
+
+    @server.getDocs word, tmpFile, line, (result) =>
+      fs.unlink(tmpFile)
       return if result == ""
       uri = @uriForElement(word)
 
@@ -73,3 +78,9 @@ class ElixirDocsProvider
 
         # elixirDocsView.html(@markdownToHTML(result))
         elixirDocsView.setSource(result)
+
+  #TODO: Duplicated
+  createTempFile: (content) ->
+    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
+    fs.writeFileSync(tmpFile, content)
+    tmpFile
