@@ -4,6 +4,18 @@ defmodule Introspection do
 
   alias Kernel.Typespec
 
+  def get_docs_md(mod, nil) do
+    mod_str = module_to_string(mod)
+    title = "> #{mod_str}\n\n"
+    body = case Code.get_docs(mod, :moduledoc) do
+      {_line, false} ->
+        "No documentation found"
+      {_line, doc} ->
+        doc
+    end
+    title <> body
+  end
+
   def get_docs_md(mod, fun) do
     docs = Code.get_docs(mod, :docs)
     texts = for {{f, arity}, _, _, args, text} <- docs, f == fun do
@@ -61,6 +73,17 @@ defmodule Introspection do
     end
   end
 
+  def split_mod_func_call(call) do
+    {:ok, quoted} = call |> Code.string_to_quoted
+    case Macro.decompose_call(quoted) do
+      {{:__aliases__, _, mod_parts}, fun, _args} ->
+        {Module.concat(mod_parts), fun}
+      {:__aliases__, mod_parts} ->
+        {Module.concat(mod_parts), nil}
+      _ -> {:error, "Could not split call: #{call}"}
+    end
+  end
+
   defp print_doc_arg({ :\\, _, [left, right] }) do
     print_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
   end
@@ -83,15 +106,6 @@ defmodule Introspection do
   defp beam_specs_tag(nil, _), do: nil
   defp beam_specs_tag(specs, tag) do
     Enum.map(specs, &{tag, &1})
-  end
-
-  def split_mod_func_call(call) do
-    {:ok, quoted} = call |> Code.string_to_quoted
-    case Macro.decompose_call(quoted) do
-      {{:__aliases__, _, mod_parts}, fun, _args} ->
-        {Module.concat(mod_parts), fun}
-      _ -> {:error, "Could not split call: #{call}"}
-    end
   end
 
 end
