@@ -27,14 +27,16 @@ defmodule Introspection do
     texts |> Enum.join("\n\n____\n\n")
   end
 
+  def get_module_docs_summary(module) do
+    case Code.get_docs module, :moduledoc do
+      {_, doc} -> extract_summary_from_docs(doc)
+      _ -> ""
+    end
+  end
+
   def extract_fun_args_and_desc({ { _fun, _ }, _line, _kind, args, doc }) do
     args = Enum.map_join(args, ",", &print_doc_arg(&1))
-    desc =
-      (doc || "")
-      |> String.split("\n\n")
-      |> Enum.at(0)
-      |> String.replace(~r/\n/, "\\\\n")
-      |> String.replace(";", "\\;")
+    desc = extract_summary_from_docs(doc)
     {args, desc}
   end
 
@@ -82,6 +84,15 @@ defmodule Introspection do
         {Module.concat(mod_parts), nil}
       _ -> {:error, "Could not split call: #{call}"}
     end
+  end
+
+  defp extract_summary_from_docs(doc) when doc in [nil, "", false], do: ""
+  defp extract_summary_from_docs(doc) do
+    doc
+    |> String.split("\n\n")
+    |> Enum.at(0)
+    |> String.replace(~r/\n/, "\\\\n")
+    |> String.replace(";", "\\;")
   end
 
   defp print_doc_arg({ :\\, _, [left, right] }) do

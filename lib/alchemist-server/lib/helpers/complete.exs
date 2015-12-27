@@ -195,7 +195,7 @@ defmodule Alchemist.Helpers.Complete do
 
   defp match_erlang_modules(hint) do
     for mod <- match_modules(hint, true) do
-      %{kind: :module, name: mod, type: :erlang}
+      %{kind: :module, name: mod, type: :erlang, desc: ""}
     end
   end
 
@@ -244,7 +244,7 @@ defmodule Alchemist.Helpers.Complete do
     for {alias, _mod} <- env_aliases(),
     [name] = Module.split(alias),
     starts_with?(name, hint) do
-      %{kind: :module, type: :alias, name: name}
+      %{kind: :module, type: :alias, name: name, desc: ""}
     end
   end
 
@@ -256,9 +256,10 @@ defmodule Alchemist.Helpers.Complete do
     for mod <- match_modules(base, module === Elixir),
     parts = String.split(mod, "."),
     depth <= length(parts) do
-      %{kind: :module, type: :elixir, name: Enum.at(parts, depth-1)}
+      desc = Introspection.get_module_docs_summary(mod |> String.to_atom)
+      %{kind: :module, type: :elixir, name: Enum.at(parts, depth-1), desc: desc}
     end
-    |> Enum.uniq
+    |> Enum.uniq(fn %{name: name} -> name end)
   end
 
   ## Helpers
@@ -361,8 +362,8 @@ defmodule Alchemist.Helpers.Complete do
 
   ## Ad-hoc conversions
 
-  defp to_entries(%{kind: :module, name: name}) do
-    ["#{name};module"]
+  defp to_entries(%{kind: :module, name: name, desc: desc}) do
+    ["#{name};module;#{desc}"]
   end
 
   defp to_entries(%{kind: :function, name: name, arities: arities, module: mod, func_kind: func_kind, docs: docs, specs: specs}) do

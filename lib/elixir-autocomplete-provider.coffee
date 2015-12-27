@@ -75,7 +75,7 @@ class ElixirAutocompleteProvider
 
         if modules_to_add.length > 0
           new_suggestion = modules_to_add.join('.')
-          suggestions   = [createSuggestionForModule(new_suggestion, new_suggestion, '')].concat(suggestions)
+          suggestions   = [createSuggestionForModule(new_suggestion, new_suggestion, '', '')].concat(suggestions)
 
         suggestions = sortSuggestions(suggestions)
 
@@ -87,7 +87,11 @@ class ElixirAutocompleteProvider
     line.match(regex)?[0] or ''
 
   createSuggestion = (serverSuggestion, prefix) ->
-    [name, kind, signature, mod, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+    fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+    if fields[1] == 'module'
+      [name, kind, desc] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+    else
+      [name, kind, signature, mod, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
 
     return "" if serverSuggestion.match(/^[\s\d]/)
 
@@ -103,7 +107,7 @@ class ElixirAutocompleteProvider
       when 'macro'
         createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
       when 'module'
-        createSuggestionForModule(serverSuggestion, name, prefix)
+        createSuggestionForModule(serverSuggestion, name, desc, prefix)
       else
         console.log("Unknown kind: #{serverSuggestion}")
         {
@@ -170,16 +174,20 @@ class ElixirAutocompleteProvider
       # replacementPrefix: prefix
     }
 
-  createSuggestionForModule = (serverSuggestion, name, prefix) ->
+  createSuggestionForModule = (serverSuggestion, name, desc, prefix) ->
     return "" if serverSuggestion.match(/^[\s\d]/)
 
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
+    description = desc || ""
+    description = markdownToHTML(description.replace(/\\n/g, "\n"))
+
     {
       snippet: snippet
       displayText: name
       type: 'class'
       iconHTML: 'M'
+      descriptionHTML: description
       rightLabel: 'module'
     }
 
