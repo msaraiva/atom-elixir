@@ -22,3 +22,8 @@
 
 'atom-text-editor:not(mini)':
   'alt-up': 'atom-elixir:return-from-declaration'
+
+'.elixir-quoted-view atom-text-editor[mini]':
+  'tab': 'elixir-quoted-view:focus-next'
+  'shift-tab': 'elixir-quoted-view:focus-previous'
+  'enter': 'editor:newline'

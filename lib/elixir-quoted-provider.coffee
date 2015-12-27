@@ -27,7 +27,7 @@ class ElixirQuotedProvider
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:quote-selected-text', =>
       editor  = atom.workspace.getActiveTextEditor()
-      text    = editor.getSelectedText()
+      text    = editor.getSelectedText().replace(/\s+$/, '')
       @showQuotedCodeView(text)
 
     atom.workspace.addOpener (uriToOpen) ->
@@ -57,6 +57,10 @@ class ElixirQuotedProvider
       onResult(result)
 
   getMatches: (pattern, quotedCode, onResult) =>
+    if pattern.trim() == "" || quotedCode.trim() == ""
+      onResult("")
+      return
+
     fileContent = "(#{pattern}) = (#{quotedCode})"
     tmpFile = @createTempFile(fileContent)
     @server.match tmpFile, (result) =>

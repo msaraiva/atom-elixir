@@ -13,6 +13,7 @@ class ElixirQuotedView extends ScrollView
   constructor: ({@code, @quotedCode}) ->
     super
     @disposables = new CompositeDisposable
+    @handleEvents()
 
   initialize: ->
     super
@@ -39,6 +40,7 @@ class ElixirQuotedView extends ScrollView
     @quotedCodeEditorElement.setAttribute('mini', true)
     @quotedCodeEditor = @quotedCodeEditorElement.getModel()
     @quotedCodeEditor.onDidChange (e) =>
+      @quotedCode = @quotedCodeEditor.getText()
       @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
         @matchesEditor.setText(result)
     @element.appendChild(@quotedCodeEditorElement)
@@ -54,6 +56,7 @@ class ElixirQuotedView extends ScrollView
     @patternEditor.setSoftWrapped(true)
     @patternEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
     @patternEditor.setLineNumberGutterVisible(false)
+    @patternEditor.placeholderText = 'Pattern matching the quoted form. e.g. {fun, [line: _], args}'
     @patternEditor.onDidChange (e) =>
       return unless @matchesGetter
       @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
@@ -147,4 +150,21 @@ class ElixirQuotedView extends ScrollView
         editor.moveUp()
       'core:move-down': =>
         editor.moveDown()
+      'editor:newline': =>
+        editor.insertText('\n')
     element
+
+  handleEvents: ->
+    @disposables.add atom.commands.add @element,
+      'elixir-quoted-view:focus-next': => @focusNextElement(1)
+      'elixir-quoted-view:focus-previous': => @focusNextElement(-1)
+
+  focusNextElement: (direction) ->
+    elements = [@codeEditorElement, @quotedCodeEditorElement, @patternEditorElement]
+    focusedElement = (el for el in elements when 'is-focused' in el.classList)[0]
+    focusedIndex = elements.indexOf focusedElement
+    focusedIndex = focusedIndex + direction
+    focusedIndex = 0 if focusedIndex >= elements.length
+    focusedIndex = elements.length - 1 if focusedIndex < 0
+    elements[focusedIndex].focus()
+    # elements[focusedIndex].getModel?().selectAll()
