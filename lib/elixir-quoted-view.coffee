@@ -58,14 +58,14 @@ class ElixirQuotedView extends ScrollView
 
   initialize: ->
     @codeEditor = @codeEditorElement.getModel()
-    @codeEditor.placeholderText = 'Elixir code. e.g. func(1, false)'
+    @codeEditor.placeholderText = 'Elixir code. e.g. func(42, true)'
     @codeEditor.onDidChange (e) =>
       @code = @codeEditor.getText()
       @quotedCodeGetter @code, (result) =>
         @setQuotedCode(result)
 
     @quotedCodeEditor = @quotedCodeEditorElement.getModel()
-    @quotedCodeEditor.placeholderText = 'Elixir code in quoted form e.g. {:func, [line: 1], [1, false]}'
+    @quotedCodeEditor.placeholderText = 'Elixir code in quoted form. e.g. {:func, [line: 1], [42, true]}'
     @quotedCodeEditor.onDidChange (e) =>
       @quotedCode = @quotedCodeEditor.getText()
       @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
@@ -75,7 +75,7 @@ class ElixirQuotedView extends ScrollView
     @patternEditor.setSoftWrapped(true)
     @patternEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
     @patternEditor.setLineNumberGutterVisible(false)
-    @patternEditor.placeholderText = 'Pattern matching against quoted form. e.g. {name, [line: _], args}'
+    @patternEditor.placeholderText = 'Pattern matching against quoted form. e.g. {name, [line: line], args}'
     @patternEditor.onDidChange (e) =>
       return unless @matchesGetter
       @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>

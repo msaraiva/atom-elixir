@@ -34,7 +34,8 @@ defmodule Alchemist.API.Eval do
       |> List.last
 
       Enum.each vars, fn (var) ->
-        IO.puts "### #{var} ###"
+        IO.puts "# #{var}"
+        IO.write "#{var} = "
         IO.inspect Keyword.get(bindings, var)
       end
     rescue
