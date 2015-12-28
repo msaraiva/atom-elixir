@@ -35,21 +35,22 @@ class ElixirQuotedView extends ScrollView
     matchesEditorElement.setAttribute('mini', true)
     matchesEditorElement.removeAttribute('tabindex')
 
-    @div class: 'elixir-quoted-view padded', =>
-      @header 'Code', class: 'header'
-      @section class: 'input-block', =>
-        @subview 'codeEditorElement', codeEditorElement
+    @div class: "elixir-quoted-view", style: "overflow: scroll;", =>
+      @div class: 'padded', =>
+        @header 'Code', class: 'header'
+        @section class: 'input-block', =>
+          @subview 'codeEditorElement', codeEditorElement
 
-      @header 'Quoted form', class: 'header'
-      @section class: 'input-block', =>
-        @subview 'quotedCodeEditorElement', quotedCodeEditorElement
+        @header 'Quoted form', class: 'header'
+        @section class: 'input-block', =>
+          @subview 'quotedCodeEditorElement', quotedCodeEditorElement
 
-      @header 'Pattern Matching', class: 'header'
-      @section class: 'input-block', =>
-        @subview 'patternEditorElement', patternEditorElement
+        @header 'Pattern Matching', class: 'header'
+        @section class: 'input-block', =>
+          @subview 'patternEditorElement', patternEditorElement
 
-      @section class: 'input-block matchesEditorSection', =>
-        @subview 'matchesEditorElement', matchesEditorElement
+        @section class: 'input-block matchesEditorSection', =>
+          @subview 'matchesEditorElement', matchesEditorElement
 
   constructor: ({@code, @quotedCode}) ->
     super
