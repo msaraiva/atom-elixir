@@ -63,6 +63,28 @@
   }
 }
 
-.elixir-quoted-view atom-text-editor[mini] {
-  font-size: 13px;
+.elixir-quoted-view {
+  background-color: @panel-heading-background-color;
+  font-size: 12px;
+
+  .header {
+    padding-top: 4px;
+    padding-bottom: 2px;
+  }
+
+  .input-block {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  atom-text-editor[mini] {
+    font-size: 13px;
+  }
+
+  .matchesEditorSection atom-text-editor[mini] {
+    background-color: @panel-heading-background-color;
+    border: 0px;
+    line-height: 1.5;
+  }
+
 }
