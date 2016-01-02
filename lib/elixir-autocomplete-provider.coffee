@@ -240,12 +240,11 @@ class ElixirAutocompleteProvider
     marked(mdText)
 
   replaceUpdateDescription = ->
-    SuggestionList = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list"
-    SuggestionListElement = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list-element"
-    autocompleteManager = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager
-    viewProvider = (p for p in atom.views.providers when p.modelConstructor.name is 'SuggestionList')[0]
+    replaceCreateView(p) for p in atom.views.providers when p.modelConstructor.name is 'SuggestionList'
 
+  replaceCreateView = (viewProvider) ->
     viewProvider.createView = (model) ->
+      SuggestionListElement = require "#{atom.packages.getActivePackage('autocomplete-plus').path}/lib/suggestion-list-element"
       element = new SuggestionListElement().initialize(model)
       element.updateDescription = (item) ->
         suggestionList = atom.packages.getActivePackage('autocomplete-plus').mainModule.autocompleteManager.suggestionList
