@@ -19,8 +19,9 @@ class ElixirProvider
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-declaration', =>
       editor = atom.workspace.getActiveTextEditor()
       word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
-      @gotoDeclaration(word)
-      @gotoStack.push([editor.getPath(), editor.getCursorBufferPosition()])
+      position = editor.getCursorBufferPosition()
+      @gotoDeclaration(word, editor, position)
+
     @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-declaration', =>
       previousPosition = @gotoStack.pop()
       return unless previousPosition?
@@ -54,12 +55,12 @@ class ElixirProvider
       fs.unlink(tmpFile)
       console.log result
 
-  gotoDeclaration: (word) ->
-    editor   = atom.workspace.getActiveTextEditor()
+  gotoDeclaration: (word, editor, position) ->
     filePath = editor.getPath()
-    line     = editor.getCursorBufferPosition().row + 1
+    line     = position.row + 1
     tmpFile  = @createTempFile(editor.buffer.getText())
 
+    @gotoStack.push([editor.getPath(), position])
     @server.getFileDeclaration word, filePath, tmpFile, line, (file) ->
 
       switch file

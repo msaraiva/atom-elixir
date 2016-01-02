@@ -4,12 +4,14 @@ ServerProcess = require './server-process'
 
 ElixirProvider = require('./elixir-provider')
 ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
+ElixirHyperclickProvider = require('./elixir-hyperclick-provider')
 ElixirDocsProvider = require('./elixir-docs-provider')
 ElixirQuotedProvider = require('./elixir-quoted-provider')
 
 module.exports = AtomElixir =
   provider: null
   autocompleteProvider: null
+  hyperclickProvider: null
   docsProvider: null
 
   activate: (state) ->
@@ -20,6 +22,10 @@ module.exports = AtomElixir =
     unless @autocompleteProvider?
       @autocompleteProvider = new ElixirAutocompleteProvider
 
+    unless @hyperclickProvider?
+      @hyperclickProvider = new ElixirHyperclickProvider
+      @hyperclickProvider.setElixirProvider(@provider)
+
     unless @docsProvider?
       @docsProvider = new ElixirDocsProvider
 
@@ -29,12 +35,16 @@ module.exports = AtomElixir =
   deactivate: ->
     @provider.dispose()
     @autocompleteProvider.dispose()
+    @hyperclickProvider.dispose()
     @docsProvider.dispose()
     @quotedProvider.dispose()
     @server.stop()
 
   provideAutocomplete: ->
     [@autocompleteProvider]
+
+  provideHyperclick: ->
+    @hyperclickProvider
 
   # https://github.com/lsegal/atom-runner/blob/master/lib/atom-runner.coffee
   initEnv: ->
