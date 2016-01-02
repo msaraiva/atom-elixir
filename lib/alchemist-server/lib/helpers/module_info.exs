@@ -60,14 +60,14 @@ defmodule Alchemist.Helpers.ModuleInfo do
   defp get_module_funs(module) do
     case Code.ensure_loaded(module) do
       {:module, _} ->
-        (module.module_info(:functions) |> remove_funcs_with_MACRO) ++ module.__info__(:macros)
+        (module.module_info(:functions) |> filter_module_funs) ++ module.__info__(:macros)
       _otherwise ->
         []
     end
   end
 
-  defp remove_funcs_with_MACRO(list) do
-    for fun = {f, _a} <- list, !(f |> Atom.to_string |> String.starts_with?("MACRO-")) do
+  defp filter_module_funs(list) do
+    for fun = {f, _a} <- list, !(f |> Atom.to_string |> String.starts_with?(["MACRO-", "-"])) do
       fun
     end
   end
