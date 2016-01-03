@@ -1,3 +1,5 @@
+Code.require_file "../helpers/introspection.exs", __DIR__
+
 defmodule Alchemist.API.Eval do
 
   @moduledoc false
@@ -33,13 +35,19 @@ defmodule Alchemist.API.Eval do
       |> Tuple.to_list
       |> List.last
 
-      Enum.each vars, fn (var) ->
-        IO.puts "# #{var}"
+      if Enum.empty?(vars) do
+        IO.puts "# No bindings"
+      else
+        IO.puts "# Bindings"
+      end
+
+      Enum.each(vars, fn var ->
+        IO.puts ""
         IO.write "#{var} = "
         IO.inspect Keyword.get(bindings, var)
-      end
+      end)
     rescue
-      e -> IO.inspect e
+      e -> print_match_error(e)
     end
   end
 
@@ -93,6 +101,18 @@ defmodule Alchemist.API.Eval do
 
   defp extract_var(ast, acc) do
     {ast, acc}
+  end
+
+  defp print_match_error(%{__struct__: type, description: description, line: line}) do
+    IO.puts "# #{Introspection.module_to_string(type)} on line #{line}: \n#  ↳ #{description}"
+  end
+
+  defp print_match_error(%MatchError{}) do
+    IO.puts "# No match"
+  end
+
+  defp print_match_error(e) do
+    IO.inspect(e)
   end
 
 end
