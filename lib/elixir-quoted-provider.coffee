@@ -50,10 +50,13 @@ class ElixirQuotedProvider
     @server = server
 
   getQuotedCode: (code, onResult) =>
+    if code.trim() == ""
+      onResult("")
+      return
+
     tmpFile = @createTempFile(code)
     @server.getQuotedCode tmpFile, (result) =>
       fs.unlink(tmpFile)
-      console.log result
       onResult(result)
 
   getMatches: (pattern, quotedCode, onResult) =>
@@ -65,7 +68,6 @@ class ElixirQuotedProvider
     tmpFile = @createTempFile(fileContent)
     @server.match tmpFile, (result) =>
       fs.unlink(tmpFile)
-      console.log result
       onResult(result)
 
   showQuotedCodeView: (code) ->

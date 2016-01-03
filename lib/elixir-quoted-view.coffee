@@ -59,14 +59,14 @@ class ElixirQuotedView extends ScrollView
 
   initialize: ->
     @codeEditor = @codeEditorElement.getModel()
-    @codeEditor.placeholderText = 'Elixir code. e.g. func(42, true)'
+    @codeEditor.placeholderText = 'Elixir code. e.g. func(42, "meaning of life")'
     @codeEditor.onDidChange (e) =>
       @code = @codeEditor.getText()
       @quotedCodeGetter @code, (result) =>
         @setQuotedCode(result)
 
     @quotedCodeEditor = @quotedCodeEditorElement.getModel()
-    @quotedCodeEditor.placeholderText = 'Elixir code in quoted form. e.g. {:func, [line: 1], [42, true]}'
+    @quotedCodeEditor.placeholderText = 'Elixir code in quoted form. e.g. {:func, [line: 1], [42, "meaning of life"]}'
     @quotedCodeEditor.onDidChange (e) =>
       @quotedCode = @quotedCodeEditor.getText()
       @matchesGetter @patternEditor.getText(), @quotedCode, (result) =>
