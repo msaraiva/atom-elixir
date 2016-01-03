@@ -11,7 +11,8 @@ class ServerProcess
     @args        = [path.join(__dirname, "alchemist-server/run.exs"), "dev"]
     @proc        = null
     @busy        = false
-    @last_request_type = null
+    @lastRequestType = null
+    @lastRequestWhenBusy = null
 
   start: ->
     @proc = @spawnChildProcess()
@@ -19,14 +20,19 @@ class ServerProcess
     buffer = ''
 
     @proc.stdout.on 'data', (chunk) =>
-      if ~chunk.indexOf("END-OF-#{@last_request_type}")
-        [before, after] = chunk.toString().split("END-OF-#{@last_request_type}")
+      if ~chunk.indexOf("END-OF-#{@lastRequestType}")
+        [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")
         @busy = false
         @onResult((buffer + before).trim())
         if after
           buffer = after
         else
           buffer = ''
+        if @lastRequestWhenBusy?
+          [type, args, onResult] = @lastRequestWhenBusy
+          @lastRequestWhenBusy = null
+          console.log("Retrying last request when busy")
+          @sendRequest(type, args, onResult)
       else
         buffer += chunk.toString()
       return
@@ -99,10 +105,11 @@ class ServerProcess
     if !@busy
       @onResult = onResult
       @busy = true
-      @last_request_type = type
+      @lastRequestType = type
       @proc.stdin.write(request);
     else
       console.log('Server busy!')
+      @lastRequestWhenBusy = [type, args, onResult]
 
   spawnChildProcess: ->
     options =
