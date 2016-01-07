@@ -3,6 +3,7 @@
 // See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
 // for a full listing of what's available.
 @import "ui-variables";
+@import "syntax-variables";
 
 .atom-elixir {
 }
@@ -88,4 +89,16 @@
     line-height: 1.5;
   }
 
+}
+
+atom-text-editor::shadow .editor-contents--private .highlight.keyclick > .region {
+  border-bottom: 1px solid @syntax-text-color;
+}
+
+atom-text-editor:not([mini]).keyclick::shadow .editor-contents--private {
+  /**
+   * Unfortunately, this cannot be a property of `.keyclick .region`:
+   * https://discuss.atom.io/t/some-css-styles-not-honored-by-decorations/11662
+   */
+  cursor: pointer;
 }

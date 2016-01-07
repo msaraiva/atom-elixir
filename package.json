@@ -20,11 +20,6 @@
       "versions": {
         "2.0.0": "provideAutocomplete"
       }
-    },
-    "hyperclick.provider": {
-      "versions": {
-        "0.0.0": "provideHyperclick"
-      }
     }
   }
 }
