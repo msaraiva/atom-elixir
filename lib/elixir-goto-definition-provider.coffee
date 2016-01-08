@@ -1,3 +1,4 @@
+{getWordAndRange, createTempFile} = require './utils'
 {Disposable, CompositeDisposable, Range} = require 'atom'
 KeyClickEventHandler = require './keyclick-event-handler'
 os = require('os')
@@ -73,11 +74,12 @@ class ElixirGotoDefinitionProvider
   gotoDefinition: (editor, subject, position) ->
     filePath = editor.getPath()
     line     = position.row + 1
-    tmpFile  = @createTempFile(editor.buffer.getText())
+    tmpFile  = createTempFile(editor.buffer.getText())
 
     @gotoStack.push([editor.getPath(), position])
     @server.getFileDefinition subject, filePath, tmpFile, line, (file) ->
-
+      fs.unlink(tmpFile)
+      
       switch file
         when 'non_existing'
           # atom.notifications.addInfo("Can't find <b>#{subject}</b>");
@@ -95,25 +97,3 @@ class ElixirGotoDefinitionProvider
       atom.workspace.open(file_path, {initialLine: parseInt(line-1 || 0), searchAllPanes: true}).then (editor) ->
         pane.activateItem(editor)
         editor.scrollToScreenPosition(editor.getCursorBufferPosition(), {center: true})
-
-  #TODO: duplicated
-  createTempFile: (content) ->
-    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
-    fs.writeFileSync(tmpFile, content)
-    tmpFile
-
-getWordAndRange = (editor, position, wordRegExp) ->
-  wordAndRange = { word: '', range: new Range(position, position) }
-
-  buffer = editor.getBuffer()
-  buffer.scanInRange wordRegExp, buffer.rangeForRow(position.row), (data) ->
-    if data.range.containsPoint(position)
-      wordAndRange = {
-        word: data.matchText,
-        range: data.range
-      }
-      data.stop()
-    else if data.range.end.column > position.column
-      # Stop the scan if the scanner has passed our position.
-      data.stop()
-  return wordAndRange
