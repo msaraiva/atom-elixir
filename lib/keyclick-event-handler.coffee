@@ -9,18 +9,19 @@ class KeyClickEventHandler
     @clickCallback = clickCallback
     @editorView = atom.views.getView(editor)
     @marker = null
+    @lastScreenPosition = null
     @lastBufferPosition = null
-    @subjectAndRange = null
-    @disposables = new CompositeDisposable
+    @subjectAndMarkerRange = null
+    @subscriptions = new CompositeDisposable
     @handleEvents()
 
   dispose: ->
-    @disposables.dispose()
+    @subscriptions.dispose()
 
   handleEvents: ->
-    @disposables.add @addEventHandler(@editorView, 'mousedown', @mousedownHandler)
-    @disposables.add @addEventHandler(@editorView, 'keyup',     @keyupHandler)
-    @disposables.add @addEventHandler(@editorView, 'mousemove', @mousemoveHandler)
+    @subscriptions.add @addEventHandler(@editorView, 'mousedown', @mousedownHandler)
+    @subscriptions.add @addEventHandler(@editorView, 'keyup',     @keyupHandler)
+    @subscriptions.add @addEventHandler(@editorView, 'mousemove', @mousemoveHandler)
 
   addEventHandler: (editorView, eventName, handler) ->
     editorView.addEventListener eventName, handler
@@ -29,8 +30,8 @@ class KeyClickEventHandler
 
   mousedownHandler: (event) =>
     # event.stopPropagation()
-    if @subjectAndRange != null
-      @clickCallback(@editor, @subjectAndRange.subject, @lastBufferPosition)
+    if @subjectAndMarkerRange != null
+      @clickCallback(@editor, @subjectAndMarkerRange.subject, @lastBufferPosition)
     @clearMarker()
 
   keyupHandler: (event) =>
@@ -40,33 +41,37 @@ class KeyClickEventHandler
     if event.altKey
       component = @editorView.component
       screenPosition = component.screenPositionForMouseEvent({clientX: event.clientX, clientY: event.clientY})
+      if @lastScreenPosition != null && screenPosition.compare(@lastScreenPosition) == 0
+        return
+
+      @lastScreenPosition = screenPosition
       bufferPosition = @editor.bufferPositionForScreenPosition(screenPosition)
 
       if @lastBufferPosition != null && bufferPosition.compare(@lastBufferPosition) == 0
         return
       @lastBufferPosition = bufferPosition
 
-      subjectAndRange = @getSubjectAndMarkerRange(@editor, bufferPosition)
+      subjectAndMarkerRange = @getSubjectAndMarkerRange(@editor, bufferPosition)
 
-      if subjectAndRange == null
+      if subjectAndMarkerRange == null
         @clearMarker()
         return
 
-      if @marker != null && @marker.getBufferRange().compare(subjectAndRange.range) == 0
+      if @marker != null && @marker.getBufferRange().compare(subjectAndMarkerRange.range) == 0
         return
 
       @clearMarker()
-      @createMarker(subjectAndRange)
+      @createMarker(subjectAndMarkerRange)
 
-  createMarker: (subjectAndRange) ->
+  createMarker: (subjectAndMarkerRange) ->
     @editorView.classList.add('keyclick');
-    @marker = @editor.markBufferRange(subjectAndRange.range, { invalidate: 'never' });
-    @subjectAndRange = subjectAndRange
+    @marker = @editor.markBufferRange(subjectAndMarkerRange.range, { invalidate: 'never' });
+    @subjectAndMarkerRange = subjectAndMarkerRange
     @editor.decorateMarker(@marker, { type: 'highlight', 'class': 'keyclick' });
 
   clearMarker: ->
     @marker?.destroy()
     @marker = null
-    @subjectAndRange = null
+    @subjectAndMarkerRange = null
     @lastBufferPosition = null
     @editorView.classList.remove('keyclick')
