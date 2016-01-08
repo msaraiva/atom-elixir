@@ -3,17 +3,15 @@
 module.exports =
 class KeyClickEventHandler
 
-  constructor: (editor, getFullWordAndMarkRangeHandler, clickCallback) ->
+  constructor: (editor, getSubjectAndMarkerRange, clickCallback) ->
     @editor = editor
-    @getFullWordAndMarkRangeHandler = getFullWordAndMarkRangeHandler
+    @getSubjectAndMarkerRange = getSubjectAndMarkerRange
     @clickCallback = clickCallback
     @editorView = atom.views.getView(editor)
     @marker = null
     @lastBufferPosition = null
-    @textAndRange = null
+    @subjectAndRange = null
     @disposables = new CompositeDisposable
-    # wordRegExp is based on atom.workspace.getActiveTextEditor().getLastCursor().wordRegExp()
-    @wordRegExp = /^[	 ]*$|[^\s\/\\\(\)"',\.;<>~#\$%\^&\*\|\+=\[\]\{\}`\-…]+|[\/\\\(\)"',\.;<>~!#\$%\^&\*\|\+=\[\]\{\}`\?\-…]+/g
     @handleEvents()
 
   dispose: ->
@@ -33,8 +31,8 @@ class KeyClickEventHandler
   mousedownHandler: (event) =>
     console.log("mousedown: #{@editor.id}")
     # event.stopPropagation()
-    if @textAndRange != null
-      @clickCallback(@editor, @textAndRange.text, @textAndRange.range)
+    if @subjectAndRange != null
+      @clickCallback(@editor, @subjectAndRange.subject, @lastBufferPosition)
     @clearMarker()
 
   keyupHandler: (event) =>
@@ -51,27 +49,27 @@ class KeyClickEventHandler
         return
       @lastBufferPosition = bufferPosition
 
-      textAndRange = @getFullWordAndMarkRangeHandler(@editor, bufferPosition, @wordRegExp)
+      subjectAndRange = @getSubjectAndMarkerRange(@editor, bufferPosition)
 
-      if textAndRange == null
+      if subjectAndRange == null
         @clearMarker()
         return
 
-      if @marker != null && @marker.getBufferRange().compare(textAndRange.range) == 0
+      if @marker != null && @marker.getBufferRange().compare(subjectAndRange.range) == 0
         return
 
       @clearMarker()
-      @createMarker(textAndRange)
+      @createMarker(subjectAndRange)
 
-  createMarker: (textAndRange) ->
+  createMarker: (subjectAndRange) ->
     @editorView.classList.add('keyclick');
-    @marker = @editor.markBufferRange(textAndRange.range, { invalidate: 'never' });
-    @textAndRange = textAndRange
+    @marker = @editor.markBufferRange(subjectAndRange.range, { invalidate: 'never' });
+    @subjectAndRange = subjectAndRange
     @editor.decorateMarker(@marker, { type: 'highlight', 'class': 'keyclick' });
 
   clearMarker: ->
     @marker?.destroy()
     @marker = null
-    @textAndRange = null
+    @subjectAndRange = null
     @lastBufferPosition = null
     @editorView.classList.remove('keyclick')

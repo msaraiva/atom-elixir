@@ -5,6 +5,8 @@ fs = require('fs')
 
 module.exports =
 class ElixirGotoDefinitionProvider
+  # wordRegExp is based on atom.workspace.getActiveTextEditor().getLastCursor().wordRegExp()
+  wordRegExp: /^[	 ]*$|[^\s\/\\\(\)"',\.;<>~#\$%\^&\*\|\+=\[\]\{\}`\-…]+|[\/\\\(\)"',\.;<>~!#\$%\^&\*\|\+=\[\]\{\}`\?\-…]+/g
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -13,12 +15,10 @@ class ElixirGotoDefinitionProvider
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-declaration', =>
       editor = atom.workspace.getActiveTextEditor()
-      word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
       position = editor.getCursorBufferPosition()
-      # TODO
-      # wordTextAndRange = getWordTextAndRange(editor, position, wordRegExp)
-      # @gotoDeclaration(wordTextAndRange.text, editor, wordTextAndRange.range.start)
-      @gotoDeclaration(word, editor, position)
+      subjectAndMarkerRange = @getSubjectAndMarkerRange(editor, position)
+      if subjectAndMarkerRange != null
+        @gotoDeclaration(editor, subjectAndMarkerRange.subject, position)
 
     @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-declaration', =>
       previousPosition = @gotoStack.pop()
@@ -32,7 +32,7 @@ class ElixirGotoDefinitionProvider
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       if (editor.getGrammar().scopeName != 'source.elixir')
         return
-      keyClickEventHandler = new KeyClickEventHandler(editor, @keyClickGetFullWordAndMarkRangeHandler, @keyClickHandler)
+      keyClickEventHandler = new KeyClickEventHandler(editor, @getSubjectAndMarkerRange, @keyClickHandler)
 
       editorDestroyedSubscription = editor.onDidDestroy =>
         console.log("editorDestroyedSubscription: #{editor.id}")
@@ -47,46 +47,46 @@ class ElixirGotoDefinitionProvider
   setServer: (server) ->
     @server = server
 
-  keyClickGetFullWordAndMarkRangeHandler: (editor, bufferPosition, wordRegExp) =>
-    textAndRange = getWordTextAndRange(editor, bufferPosition, wordRegExp)
-    text = textAndRange.text
-    range = textAndRange.range
+  getSubjectAndMarkerRange: (editor, bufferPosition) =>
+    wordAndRange = getWordAndRange(editor, bufferPosition, @wordRegExp)
+    word = wordAndRange.word
+    range = wordAndRange.range
 
     if (editor.getGrammar().scopeName != 'source.elixir')
       return null
 
-    if (!text.match(/[a-zA-Z_]/) || text.match(/\:$/))
+    if (!word.match(/[a-zA-Z_]/) || word.match(/\:$/))
       return null
 
     line = editor.getTextInRange([[range.start.row, 0], range.end])
     regex = /[\w0-9\._!\?\:\@]+$/
     matches = line.match(regex)
-    fullWord = (matches && matches[0]) || ''
+    subject = (matches && matches[0]) || ''
 
-    if (['do', 'fn', 'end', 'false', 'true', 'nil'].indexOf(text) > -1)
+    if (['do', 'fn', 'end', 'false', 'true', 'nil'].indexOf(word) > -1)
       return null
 
-    return {text: fullWord, range: range}
+    return {subject: subject, range: range}
 
-  keyClickHandler: (editor, fullWord, range) =>
-    @gotoDeclaration(fullWord, editor, range.start)
+  keyClickHandler: (editor, subject, position) =>
+    @gotoDeclaration(editor, subject, position)
 
-  gotoDeclaration: (word, editor, position) ->
+  gotoDeclaration: (editor, subject, position) ->
     filePath = editor.getPath()
     line     = position.row + 1
     tmpFile  = @createTempFile(editor.buffer.getText())
 
     @gotoStack.push([editor.getPath(), position])
-    @server.getFileDeclaration word, filePath, tmpFile, line, (file) ->
+    @server.getFileDeclaration subject, filePath, tmpFile, line, (file) ->
 
       switch file
         when 'non_existing'
-          # atom.notifications.addInfo("Can't find <b>#{word}</b>");
-          console.log "Can't find \"#{word}\""
+          # atom.notifications.addInfo("Can't find <b>#{subject}</b>");
+          console.log "Can't find \"#{subject}\""
           return
         when 'preloaded'
-          # atom.notifications.addInfo("Module <b>#{word}</b> is preloaded");
-          console.log "Module \"#{word}\" is preloaded"
+          # atom.notifications.addInfo("Module <b>#{subject}</b> is preloaded");
+          console.log "Module \"#{subject}\" is preloaded"
           return
         when ''
           return
@@ -103,18 +103,18 @@ class ElixirGotoDefinitionProvider
     fs.writeFileSync(tmpFile, content)
     tmpFile
 
-getWordTextAndRange = (textEditor, position, wordRegExp) ->
-  textAndRange = { text: '', range: new Range(position, position) }
+getWordAndRange = (editor, position, wordRegExp) ->
+  wordAndRange = { word: '', range: new Range(position, position) }
 
-  buffer = textEditor.getBuffer()
+  buffer = editor.getBuffer()
   buffer.scanInRange wordRegExp, buffer.rangeForRow(position.row), (data) ->
     if data.range.containsPoint(position)
-      textAndRange = {
-        text: data.matchText,
+      wordAndRange = {
+        word: data.matchText,
         range: data.range
       }
       data.stop()
     else if data.range.end.column > position.column
       # Stop the scan if the scanner has passed our position.
       data.stop()
-  return textAndRange
+  return wordAndRange
