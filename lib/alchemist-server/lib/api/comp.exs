@@ -37,10 +37,9 @@ defmodule Alchemist.API.Comp do
   end
 
   defp normalize(request) do
-    {{hint, buffer_file, line, [ context: context,
-              imports: _imports,
-              aliases: _aliases ]}, _} =  Code.eval_string(request)
+    {{hint, buffer_file, line}, _} =  Code.eval_string(request)
 
+    context = Elixir
     metadata = FileMetadata.parse_file(buffer_file, true, true, line)
     %{imports: imports,
       aliases: aliases,

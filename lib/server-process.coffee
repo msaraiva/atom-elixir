@@ -1,5 +1,7 @@
 spawn = require('child_process').spawn
 path  = require 'path'
+{createTempFile} = require './utils'
+fs = require('fs')
 
 module.exports =
 
@@ -60,8 +62,11 @@ class ServerProcess
     @busy = false
     @proc = null
 
-  getCodeCompleteSuggestions: (text, bufferFile, line, onResult) ->
-    @sendRequest('COMP', "\"#{text}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
+  requestSuggestionsForCodeComplete: (hint, bufferText, line, onResult) ->
+    tmpBufferFile  = createTempFile(bufferText)
+    @sendRequest 'COMP', "\"#{hint}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+      fs.unlink(tmpBufferFile)
+      onResult(result)
 
   # TODO: Take this to a separate file
   isFunction = (word) ->
