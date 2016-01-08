@@ -2,22 +2,23 @@
 spawn = require('child_process').spawn
 ServerProcess = require './server-process'
 
-ElixirProvider = require('./elixir-provider')
+ElixirExpandProvider = require('./elixir-expand-provider')
 ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
 ElixirDocsProvider = require('./elixir-docs-provider')
 ElixirQuotedProvider = require('./elixir-quoted-provider')
 ElixirGotoDefinitionProvider = require('./elixir-goto-definition-provider')
 
 module.exports = AtomElixir =
-  provider: null
+  expandProvider: null
   autocompleteProvider: null
   gotoDefinitionProvider: null
   docsProvider: null
+  quotedProvider: null
 
   activate: (state) ->
     @initEnv()
-    unless @provider?
-      @provider = new ElixirProvider
+    unless @expandProvider?
+      @expandProvider = new ElixirExpandProvider
 
     unless @autocompleteProvider?
       @autocompleteProvider = new ElixirAutocompleteProvider
@@ -32,7 +33,7 @@ module.exports = AtomElixir =
       @quotedProvider = new ElixirQuotedProvider
 
   deactivate: ->
-    @provider.dispose()
+    @expandProvider.dispose()
     @autocompleteProvider.dispose()
     @gotoDefinitionProvider.dispose()
     @docsProvider.dispose()
@@ -56,7 +57,7 @@ module.exports = AtomElixir =
           process.env[match[1]] = match[2] if match
         @server = new ServerProcess(atom.project.getPaths()[0])
         @server.start()
-        @provider.setServer(@server)
+        @expandProvider.setServer(@server)
         @autocompleteProvider.setServer(@server)
         @gotoDefinitionProvider.setServer(@server)
         @docsProvider.setServer(@server)

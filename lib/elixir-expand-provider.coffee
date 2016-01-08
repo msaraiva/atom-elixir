@@ -3,7 +3,7 @@ os = require('os')
 fs = require('fs')
 
 module.exports =
-class ElixirProvider
+class ElixirExpandProvider
   server: null
 
   constructor: ->
