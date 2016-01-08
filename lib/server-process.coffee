@@ -62,14 +62,14 @@ class ServerProcess
     @busy = false
     @proc = null
 
-  getSuggestionsForCodeComplete: (hint, bufferText, line, onResult) ->
-    tmpBufferFile = createTempFile(bufferText)
+  getSuggestionsForCodeComplete: (hint, buffer, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
     @sendRequest 'COMP', "\"#{hint}\", \"#{tmpBufferFile}\", #{line}", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
-  getDefinitionFile: (expr, filePath, bufferText, line, onResult) ->
-    tmpBufferFile = createTempFile(bufferText)
+  getDefinitionFile: (expr, filePath, buffer, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
     @sendRequest 'DEFL', "\"#{expr}\", \"#{filePath}\", \"#{tmpBufferFile}\", #{line}", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
@@ -86,8 +86,11 @@ class ServerProcess
   match: (file, onResult) ->
     @sendRequest('EVAL', ":match, \"#{file}\"", onResult)
 
-  getDocs: (text, bufferFile, line, onResult) ->
-    @sendRequest('DOCL', "\"#{text}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
+  getDocumentation: (subject, buffer, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
+    @sendRequest 'DOCL', "\"#{subject}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+      fs.unlink(tmpBufferFile)
+      onResult(result)
 
   sendRequest: (type, args, onResult) ->
     request = "#{type} { #{args} }\n"

@@ -1,11 +1,11 @@
 {Disposable, CompositeDisposable, Range}  = require 'atom'
+{getSubjectAndMarkerRange} = require './editor-utils'
 
 module.exports =
 class KeyClickEventHandler
 
-  constructor: (editor, getSubjectAndMarkerRange, clickCallback) ->
+  constructor: (editor, clickCallback) ->
     @editor = editor
-    @getSubjectAndMarkerRange = getSubjectAndMarkerRange
     @clickCallback = clickCallback
     @editorView = atom.views.getView(editor)
     @marker = null
@@ -29,13 +29,13 @@ class KeyClickEventHandler
       editorView.removeEventListener eventName, handler
 
   mousedownHandler: (event) =>
-    # event.stopPropagation()
     if @subjectAndMarkerRange != null
       @clickCallback(@editor, @subjectAndMarkerRange.subject, @lastBufferPosition)
     @clearMarker()
 
   keyupHandler: (event) =>
     @clearMarker()
+    @lastBufferPosition = null
 
   mousemoveHandler: (event) =>
     if event.altKey
@@ -51,7 +51,7 @@ class KeyClickEventHandler
         return
       @lastBufferPosition = bufferPosition
 
-      subjectAndMarkerRange = @getSubjectAndMarkerRange(@editor, bufferPosition)
+      subjectAndMarkerRange = getSubjectAndMarkerRange(@editor, bufferPosition)
 
       if subjectAndMarkerRange == null
         @clearMarker()
@@ -73,5 +73,4 @@ class KeyClickEventHandler
     @marker?.destroy()
     @marker = null
     @subjectAndMarkerRange = null
-    @lastBufferPosition = null
     @editorView.classList.remove('keyclick')

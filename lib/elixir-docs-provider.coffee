@@ -1,6 +1,5 @@
 {CompositeDisposable} = require 'atom'
-os = require('os')
-fs = require('fs')
+{getSubjectAndMarkerRange} = require './editor-utils'
 url = require 'url'
 
 ElixirDocsView = null # Defer until used
@@ -21,9 +20,7 @@ class ElixirDocsProvider
 
   constructor: ->
     @subscriptions = new CompositeDisposable
-
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
-
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-elixir-docs', =>
       @showElixirDocs()
 
@@ -48,19 +45,22 @@ class ElixirDocsProvider
 
   showElixirDocs: ->
     editor = atom.workspace.getActiveTextEditor()
-    word = editor.getWordUnderCursor({wordRegex: /[\w0-9\._!\?\:]+/})
-    @addViewForElement(word)
+    position = editor.getCursorBufferPosition()
+    subjectAndMarkerRange = getSubjectAndMarkerRange(editor, position)
+    subject = ''
+    if subjectAndMarkerRange != null
+      subject = subjectAndMarkerRange.subject
+    @addViewForElement(subject)
 
   uriForElement: (word) ->
     "atom-elixir://elixir-docs-views/#{word}"
 
   addViewForElement: (word) ->
     editor   = atom.workspace.getActiveTextEditor()
-    line     = editor.getCursorBufferPosition().row + 1
-    tmpFile  = @createTempFile(editor.buffer.getText())
+    line       = editor.getCursorBufferPosition().row + 1
+    bufferText = editor.buffer.getText()
 
-    @server.getDocs word, tmpFile, line, (result) =>
-      fs.unlink(tmpFile)
+    @server.getDocumentation word, bufferText, line, (result) =>
       return if result == ""
       uri = @uriForElement(word)
 
@@ -78,9 +78,3 @@ class ElixirDocsProvider
 
         # elixirDocsView.html(@markdownToHTML(result))
         elixirDocsView.setSource(result)
-
-  #TODO: Duplicated
-  createTempFile: (content) ->
-    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
-    fs.writeFileSync(tmpFile, content)
-    tmpFile

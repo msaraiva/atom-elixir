@@ -75,9 +75,7 @@ defmodule Alchemist.API.Docl do
   end
 
   defp normalize(request) do
-    {{expr, buffer_file, line, [ context: _,
-              imports: _imports,
-              aliases: _aliases]}, _} = Code.eval_string(request)
+    {{expr, buffer_file, line}, _} = Code.eval_string(request)
 
     metadata = FileMetadata.parse_file(buffer_file, true, true, line)
     %{imports: imports,
