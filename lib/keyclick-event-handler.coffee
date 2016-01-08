@@ -3,8 +3,9 @@
 module.exports =
 class KeyClickEventHandler
 
-  constructor: (editor, clickCallback) ->
+  constructor: (editor, getFullWordAndMarkRangeHandler, clickCallback) ->
     @editor = editor
+    @getFullWordAndMarkRangeHandler = getFullWordAndMarkRangeHandler
     @clickCallback = clickCallback
     @editorView = atom.views.getView(editor)
     @marker = null
@@ -42,7 +43,6 @@ class KeyClickEventHandler
 
   mousemoveHandler: (event) =>
     if event.altKey
-      #getMousePositionAsBufferPosition
       component = @editorView.component
       screenPosition = component.screenPositionForMouseEvent({clientX: event.clientX, clientY: event.clientY})
       bufferPosition = @editor.bufferPositionForScreenPosition(screenPosition)
@@ -51,7 +51,11 @@ class KeyClickEventHandler
         return
       @lastBufferPosition = bufferPosition
 
-      textAndRange = getWordTextAndRange(@editor, bufferPosition, @wordRegExp)
+      textAndRange = @getFullWordAndMarkRangeHandler(@editor, bufferPosition, @wordRegExp)
+
+      if textAndRange == null
+        @clearMarker()
+        return
 
       if @marker != null && @marker.getBufferRange().compare(textAndRange.range) == 0
         return
@@ -71,19 +75,3 @@ class KeyClickEventHandler
     @textAndRange = null
     @lastBufferPosition = null
     @editorView.classList.remove('keyclick')
-
-getWordTextAndRange = (textEditor, position, wordRegExp) ->
-  textAndRange = { text: '', range: new Range(position, position) }
-
-  buffer = textEditor.getBuffer()
-  buffer.scanInRange wordRegExp, buffer.rangeForRow(position.row), (data) ->
-    if data.range.containsPoint(position)
-      textAndRange = {
-        text: data.matchText,
-        range: data.range
-      }
-      data.stop()
-    else if data.range.end.column > position.column
-      # Stop the scan if the scanner has passed our position.
-      data.stop()
-  return textAndRange

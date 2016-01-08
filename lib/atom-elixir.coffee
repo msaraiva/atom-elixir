@@ -58,6 +58,7 @@ module.exports = AtomElixir =
         @server.start()
         @provider.setServer(@server)
         @autocompleteProvider.setServer(@server)
+        @gotoDefinitionProvider.setServer(@server)
         @docsProvider.setServer(@server)
         @quotedProvider.setServer(@server)
       pid.stdin.end()
