@@ -14,14 +14,14 @@
   'enter': 'autocomplete-plus:confirm'
 
 'atom-text-editor:not(mini)[data-grammar^="source elixir"]':
-  'alt-down': 'atom-elixir:goto-declaration'
+  'alt-down': 'atom-elixir:goto-definition'
   'f2': 'atom-elixir:show-elixir-docs'
   'ctrl-shift-t': 'atom-elixir:quote-selected-text'
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
   'ctrl-shift-o': 'atom-elixir:expand-once-selected-text'
 
 'atom-text-editor:not(mini)':
-  'alt-up': 'atom-elixir:return-from-declaration'
+  'alt-up': 'atom-elixir:return-from-definition'
 
 '.elixir-quoted-view atom-text-editor[mini]':
   'tab': 'elixir-quoted-view:focus-next'

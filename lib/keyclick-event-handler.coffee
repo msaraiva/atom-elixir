@@ -25,18 +25,15 @@ class KeyClickEventHandler
   addEventHandler: (editorView, eventName, handler) ->
     editorView.addEventListener eventName, handler
     new Disposable ->
-      console.log("removeEventListener(#{eventName}): #{editorView}")
       editorView.removeEventListener eventName, handler
 
   mousedownHandler: (event) =>
-    console.log("mousedown: #{@editor.id}")
     # event.stopPropagation()
     if @subjectAndRange != null
       @clickCallback(@editor, @subjectAndRange.subject, @lastBufferPosition)
     @clearMarker()
 
   keyupHandler: (event) =>
-    console.log("keyup: #{@editor.id}")
     @clearMarker()
 
   mousemoveHandler: (event) =>

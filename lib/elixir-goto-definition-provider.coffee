@@ -13,14 +13,14 @@ class ElixirGotoDefinitionProvider
     @gotoStack = []
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
 
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-declaration', =>
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:goto-definition', =>
       editor = atom.workspace.getActiveTextEditor()
       position = editor.getCursorBufferPosition()
       subjectAndMarkerRange = @getSubjectAndMarkerRange(editor, position)
       if subjectAndMarkerRange != null
-        @gotoDeclaration(editor, subjectAndMarkerRange.subject, position)
+        @gotoDefinition(editor, subjectAndMarkerRange.subject, position)
 
-    @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-declaration', =>
+    @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-definition', =>
       previousPosition = @gotoStack.pop()
       return unless previousPosition?
       [file, position] = previousPosition
@@ -35,7 +35,6 @@ class ElixirGotoDefinitionProvider
       keyClickEventHandler = new KeyClickEventHandler(editor, @getSubjectAndMarkerRange, @keyClickHandler)
 
       editorDestroyedSubscription = editor.onDidDestroy =>
-        console.log("editorDestroyedSubscription: #{editor.id}")
         editorDestroyedSubscription.dispose()
         keyClickEventHandler.dispose()
 
@@ -69,15 +68,15 @@ class ElixirGotoDefinitionProvider
     return {subject: subject, range: range}
 
   keyClickHandler: (editor, subject, position) =>
-    @gotoDeclaration(editor, subject, position)
+    @gotoDefinition(editor, subject, position)
 
-  gotoDeclaration: (editor, subject, position) ->
+  gotoDefinition: (editor, subject, position) ->
     filePath = editor.getPath()
     line     = position.row + 1
     tmpFile  = @createTempFile(editor.buffer.getText())
 
     @gotoStack.push([editor.getPath(), position])
-    @server.getFileDeclaration subject, filePath, tmpFile, line, (file) ->
+    @server.getFileDefinition subject, filePath, tmpFile, line, (file) ->
 
       switch file
         when 'non_existing'

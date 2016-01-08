@@ -79,7 +79,7 @@ class ServerProcess
 
   #####################################
 
-  getFileDeclaration: (word, filePath, bufferFile, line, onResult) ->
+  getFileDefinition: (word, filePath, bufferFile, line, onResult) ->
     [mod, fun] = splitModuleAndFunc(word)
     text = "#{mod || 'nil'},#{fun || 'nil'}"
     @sendRequest('DEFL', "\"#{text}\", \"#{filePath}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
