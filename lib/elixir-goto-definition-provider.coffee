@@ -1,8 +1,6 @@
-{getWordAndRange, createTempFile} = require './utils'
+{getWordAndRange, splitModuleAndFunc} = require './utils'
 {Disposable, CompositeDisposable, Range} = require 'atom'
 KeyClickEventHandler = require './keyclick-event-handler'
-os = require('os')
-fs = require('fs')
 
 module.exports =
 class ElixirGotoDefinitionProvider
@@ -72,14 +70,16 @@ class ElixirGotoDefinitionProvider
     @gotoDefinition(editor, subject, position)
 
   gotoDefinition: (editor, subject, position) ->
-    filePath = editor.getPath()
-    line     = position.row + 1
-    tmpFile  = createTempFile(editor.buffer.getText())
-
+    filePath   = editor.getPath()
+    line       = position.row + 1
+    bufferText = editor.buffer.getText()
     @gotoStack.push([editor.getPath(), position])
-    @server.getFileDefinition subject, filePath, tmpFile, line, (file) ->
-      fs.unlink(tmpFile)
-      
+
+    [mod, fun] = splitModuleAndFunc(subject)
+    expr = "#{mod || 'nil'},#{fun || 'nil'}"
+
+    @server.getDefinitionFile expr, filePath, bufferText, line, (file) ->
+
       switch file
         when 'non_existing'
           # atom.notifications.addInfo("Can't find <b>#{subject}</b>");

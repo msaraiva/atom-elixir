@@ -9,7 +9,7 @@ defmodule Alchemist.API.Defl do
   alias Ast.FileMetadata
 
   def request(args) do
-    [mod, fun, file_path, buffer_file, line, _context_info] = args |> normalize
+    [mod, fun, file_path, buffer_file, line] = args |> normalize
 
     buffer_file_metadata = FileMetadata.parse_file(buffer_file, true, true, line)
     %{imports: imports,
@@ -128,11 +128,11 @@ defmodule Alchemist.API.Defl do
   end
 
   defp normalize(request) do
-    {{expr, file_path, buffer_file, line, context_info}, _} = Code.eval_string(request)
+    {{expr, file_path, buffer_file, line}, _} = Code.eval_string(request)
     [module, function] = String.split(expr, ",", parts: 2)
     {module, _}        = Code.eval_string(module)
     function           = String.to_atom function
-    [module, function, file_path, buffer_file, line, context_info]
+    [module, function, file_path, buffer_file, line]
   end
 
 end

@@ -49,7 +49,7 @@ class ElixirAutocompleteProvider
       line       = editor.getCursorBufferPosition().row + 1
       bufferText = editor.buffer.getText()
 
-      @server.requestSuggestionsForCodeComplete prefix, bufferText, line, (result) ->
+      @server.getSuggestionsForCodeComplete prefix, bufferText, line, (result) ->
         suggestions = result.split('\n')
 
         hint = suggestions[0]

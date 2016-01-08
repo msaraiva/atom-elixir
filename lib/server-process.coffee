@@ -62,32 +62,17 @@ class ServerProcess
     @busy = false
     @proc = null
 
-  requestSuggestionsForCodeComplete: (hint, bufferText, line, onResult) ->
-    tmpBufferFile  = createTempFile(bufferText)
+  getSuggestionsForCodeComplete: (hint, bufferText, line, onResult) ->
+    tmpBufferFile = createTempFile(bufferText)
     @sendRequest 'COMP', "\"#{hint}\", \"#{tmpBufferFile}\", #{line}", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
-  # TODO: Take this to a separate file
-  isFunction = (word) ->
-    !!word.match(/^[^A-Z:]/)
-
-  splitModuleAndFunc = (word) ->
-    [p1..., p2] = word.split('.')
-    fun = if isFunction(p2) then p2 else null
-
-    if !fun
-      p1 = p1.concat(p2)
-
-    mod = if p1.length > 0 then p1.join('.').replace(/\.$/, '') else null
-    [mod, fun]
-
-  #####################################
-
-  getFileDefinition: (word, filePath, bufferFile, line, onResult) ->
-    [mod, fun] = splitModuleAndFunc(word)
-    text = "#{mod || 'nil'},#{fun || 'nil'}"
-    @sendRequest('DEFL', "\"#{text}\", \"#{filePath}\", \"#{bufferFile}\", #{line}, [ context: Elixir, imports: [], aliases: [] ]", onResult)
+  getDefinitionFile: (expr, filePath, bufferText, line, onResult) ->
+    tmpBufferFile = createTempFile(bufferText)
+    @sendRequest 'DEFL', "\"#{expr}\", \"#{filePath}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+      fs.unlink(tmpBufferFile)
+      onResult(result)
 
   getQuotedCode: (file, onResult) ->
     @sendRequest('EVAL', ":quote, \"#{file}\"", onResult)
