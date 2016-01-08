@@ -1,7 +1,8 @@
-{Disposable, CompositeDisposable, Range}  = require 'atom'
+{Disposable, CompositeDisposable, Range} = require 'atom'
+KeyClickEventHandler = require './keyclick-event-handler'
 
 module.exports =
-class KeyClickProvider
+class ElixirGotoDefinitionProvider
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -9,93 +10,20 @@ class KeyClickProvider
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       if (editor.getGrammar().scopeName != 'source.elixir')
         return
-      @handleEvents(editor)
+      keyClickEventHandler = new KeyClickEventHandler(editor, @keyClickHandler)
+
+      editorDestroyedSubscription = editor.onDidDestroy =>
+        console.log("editorDestroyedSubscription: #{editor.id}")
+        editorDestroyedSubscription.dispose()
+        keyClickEventHandler.dispose()
+
+      @subscriptions.add(editorDestroyedSubscription)
 
   dispose: ->
     @subscriptions.dispose()
 
-  handleEvents: (editor) ->
-    disposables = new CompositeDisposable()
-
-    addEventListener = (editor, eventName, handler) ->
-      editorView = atom.views.getView editor
-      editorView.addEventListener eventName, handler
-      new Disposable ->
-        editorView.removeEventListener eventName, handler
-
-    marker = null
-    lastBufferPosition = null
-
-    disposables.add addEventListener editor, 'mousedown', (event) ->
-      console.log("mousedown: #{editor.id}")
-      # event.stopPropagation()
-      marker?.destroy()
-      marker = null
-      lastBufferPosition = null
-      atom.views.getView(editor).classList.remove('keyclick')
-
-    disposables.add addEventListener editor, 'keyup', (event) ->
-      console.log("keyup: #{editor.id}")
-      marker?.destroy()
-      marker = null
-      lastBufferPosition = null
-      atom.views.getView(editor).classList.remove('keyclick')
-
-    disposables.add addEventListener editor, 'mousemove', (event) ->
-      if event.altKey
-        # console.log("mousemove: #{editor.id}")
-
-        #getMousePositionAsBufferPosition
-        editorView = atom.views.getView editor
-        component = editorView.component
-        screenPosition = component.screenPositionForMouseEvent({clientX: event.clientX, clientY: event.clientY})
-        bufferPosition = editor.bufferPositionForScreenPosition(screenPosition)
-
-        if lastBufferPosition != null && bufferPosition.compare(lastBufferPosition) == 0
-          return
-        lastBufferPosition = bufferPosition
-
-        # Based on atom.workspace.getActiveTextEditor().getLastCursor().wordRegExp()
-        wordRegExp = /^[	 ]*$|[^\s\/\\\(\)"',\.;<>~#\$%\^&\*\|\+=\[\]\{\}`\-…]+|[\/\\\(\)"',\.;<>~!#\$%\^&\*\|\+=\[\]\{\}`\?\-…]+/g
-
-        textAndRange = getWordTextAndRange(editor, bufferPosition, wordRegExp)
-
-        if marker != null && marker.getBufferRange().compare(textAndRange.range) == 0
-          return
-
-        marker?.destroy()
-
-        if textAndRange.range == null
-          editorView.classList.remove('keyclick')
-          return
-
-        editorView.classList.add('keyclick');
-        marker = editor.markBufferRange(textAndRange.range, { invalidate: 'never' });
-        editor.decorateMarker(marker, { type: 'highlight', 'class': 'keyclick' });
-
-        console.log textAndRange.text
-
-    editorDestroyedSubscription = editor.onDidDestroy =>
-      editorDestroyedSubscription.dispose()
-      disposables.dispose()
-
-    @subscriptions.add(editorDestroyedSubscription)
-
-getWordTextAndRange = (textEditor, position, wordRegExp) ->
-  textAndRange = { text: '', range: new Range(position, position) }
-
-  buffer = textEditor.getBuffer()
-  buffer.scanInRange wordRegExp, buffer.rangeForRow(position.row), (data) ->
-    if data.range.containsPoint(position)
-      textAndRange = {
-        text: data.matchText,
-        range: data.range
-      }
-      data.stop()
-    else if data.range.end.column > position.column
-      # Stop the scan if the scanner has passed our position.
-      data.stop()
-  return textAndRange
+  keyClickHandler: (editor, text, range) =>
+    console.log "Text: #{text}"
 
 # getSuggestionForWord: (textEditor, text, range) =>
 #   if (textEditor.getGrammar().scopeName != 'source.elixir')
