@@ -86,6 +86,16 @@ defmodule Introspection do
     end
   end
 
+  def module_functions_info(module) do
+    docs = Code.get_docs(module, :docs) || []
+    specs = get_module_specs(module)
+    for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false, into: %{} do
+      spec = Map.get(specs, {f,a}, "")
+      {fun_args, desc} = extract_fun_args_and_desc(func_doc)
+      {{f, a}, {func_kind, fun_args, desc, spec}}
+    end
+  end
+
   defp extract_summary_from_docs(doc) when doc in [nil, "", false], do: ""
   defp extract_summary_from_docs(doc) do
     doc

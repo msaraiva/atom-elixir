@@ -43,7 +43,7 @@ defmodule Alchemist.Helpers.Complete do
 
     for module <- modules do
       funs = ModuleInfo.get_functions(module, hint)
-      funs_info = module_functions_info(module)
+      funs_info = Introspection.module_functions_info(module)
       for {f, a} <- funs, accept_function.(context_module, module, f, a) do
         {func_kind, fun_args, desc, spec} =
           case Map.get(funs_info, {f, a}) do
@@ -405,17 +405,6 @@ defmodule Alchemist.Helpers.Complete do
   defp format_hint(name, hint) do
     hint_size = byte_size(hint)
     :binary.part(name, hint_size, byte_size(name) - hint_size)
-  end
-
-  #TODO: Move it to Introspection
-  defp module_functions_info(module) do
-    docs = Code.get_docs(module, :docs) || []
-    specs = Introspection.get_module_specs(module)
-    for {{f, a}, _line, func_kind, _sign, doc} = func_doc <- docs, doc != false, into: %{} do
-      spec = Map.get(specs, {f,a}, "")
-      {fun_args, desc} = Introspection.extract_fun_args_and_desc(func_doc)
-      {{f, a}, {func_kind, fun_args, desc, spec}}
-    end
   end
 
 end
