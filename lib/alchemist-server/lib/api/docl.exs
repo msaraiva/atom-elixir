@@ -1,6 +1,7 @@
 Code.require_file "../helpers/module_info.exs", __DIR__
 Code.require_file "../helpers/introspection.exs", __DIR__
-Code.require_file "../helpers/ast.exs", __DIR__
+Code.require_file "../code/metadata.exs", __DIR__
+Code.require_file "../code/parser.exs", __DIR__
 
 defmodule Alchemist.API.Docl do
 
@@ -9,7 +10,8 @@ defmodule Alchemist.API.Docl do
   import IEx.Helpers, warn: false
 
   alias Alchemist.Helpers.ModuleInfo
-  alias Ast.FileMetadata
+  alias Alchemist.Code.Metadata
+  alias Alchemist.Code.Parser
 
   def request(args) do
     Application.put_env(:iex, :colors, [enabled: true])
@@ -77,10 +79,10 @@ defmodule Alchemist.API.Docl do
   defp normalize(request) do
     {{expr, buffer_file, line}, _} = Code.eval_string(request)
 
-    metadata = FileMetadata.parse_file(buffer_file, true, true, line)
+    metadata = Parser.parse_file(buffer_file, true, true, line)
     %{imports: imports,
       aliases: aliases,
-      module: _module} = FileMetadata.get_line_context(metadata, line)
+      module: _module} = Metadata.get_env(metadata, line)
 
     [expr, imports, aliases]
   end

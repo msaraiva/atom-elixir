@@ -1,20 +1,22 @@
 Code.require_file "../helpers/module_info.exs", __DIR__
-Code.require_file "../helpers/ast.exs", __DIR__
+Code.require_file "../code/metadata.exs", __DIR__
+Code.require_file "../code/parser.exs", __DIR__
 
 defmodule Alchemist.API.Defl do
 
   @moduledoc false
 
   alias Alchemist.Helpers.ModuleInfo
-  alias Ast.FileMetadata
+  alias Alchemist.Code.Metadata
+  alias Alchemist.Code.Parser
 
   def request(args) do
     [mod, fun, file_path, buffer_file, line] = args |> normalize
 
-    buffer_file_metadata = FileMetadata.parse_file(buffer_file, true, true, line)
+    buffer_file_metadata = Parser.parse_file(buffer_file, true, true, line)
     %{imports: imports,
       aliases: aliases,
-      module: module} = FileMetadata.get_line_context(buffer_file_metadata, line)
+      module: module} = Metadata.get_env(buffer_file_metadata, line)
 
     context_info = [context: nil, imports: [module|imports], aliases: aliases]
 
@@ -35,7 +37,7 @@ defmodule Alchemist.API.Defl do
   end
 
   defp post_process({mod, file}, file, buffer_file_metadata, fun) do
-    line = FileMetadata.get_function_line(buffer_file_metadata, mod, fun)
+    line = Metadata.get_function_line(buffer_file_metadata, mod, fun)
     do_post_process(file, line)
   end
 
@@ -43,8 +45,8 @@ defmodule Alchemist.API.Defl do
     line = if String.ends_with?(file, ".erl") do
       find_fun_line_in_erl_file(file, fun)
     else
-      file_metadata = FileMetadata.parse_file(file, false, false, nil)
-      FileMetadata.get_function_line(file_metadata, mod, fun)
+      file_metadata = Parser.parse_file(file, false, false, nil)
+      Metadata.get_function_line(file_metadata, mod, fun)
     end
     do_post_process(file, line)
   end
