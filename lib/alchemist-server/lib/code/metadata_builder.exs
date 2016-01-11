@@ -12,7 +12,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     traverse(ast, acc, &pre/2, &post/2)
   end
 
-  defp pre(ast = {:defmodule, [line: line], [{:__aliases__, _, module}, _]}, acc) do
+  defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, acc) do
     modules_reversed = :lists.reverse(module)
     modules = modules_reversed ++ acc.modules
     scopes  = modules_reversed ++ acc.scopes
@@ -45,7 +45,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre({:def, meta, [head, body]}, acc)
   end
 
-  defp pre(ast = {def_fun, [line: line], [{name, _, params}, _body]}, acc) when def_fun in [:def, :defp] do
+  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, acc) when def_fun in [:def, :defp] do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
@@ -77,7 +77,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre({:import, meta, [module_info, []]}, acc)
   end
 
-  defp pre(ast = {:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]}, acc) when is_atom(mod) do
+  defp pre({:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, acc) when is_atom(mod) do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
@@ -91,17 +91,17 @@ defmodule Alchemist.Code.MetadataBuilder do
   end
 
   # alias without options
-  defp pre(ast = {:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]}, acc) when is_atom(mod) do
+  defp pre({:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]} = ast, acc) when is_atom(mod) do
     alias_tuple = {Module.concat([List.last(module_atoms)]), Module.concat(module_atoms)}
     do_alias(ast, line, alias_tuple, acc)
   end
 
-  defp pre(ast = {:alias, [line: line], [{_, _, module_atoms = [mod|_]}, [as: {:__aliases__, _, alias_atoms = [al|_]}]]}, acc) when is_atom(mod) and is_atom(al) do
+  defp pre({:alias, [line: line], [{_, _, module_atoms = [mod|_]}, [as: {:__aliases__, _, alias_atoms = [al|_]}]]} = ast, acc) when is_atom(mod) and is_atom(al) do
     alias_tuple = {Module.concat(alias_atoms), Module.concat(module_atoms)}
     do_alias(ast, line, alias_tuple, acc)
   end
 
-  defp pre(ast = {_, [line: line], _}, acc) do
+  defp pre({_, [line: line], _} = ast, acc) do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
@@ -127,7 +127,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     {ast, %{acc | aliases: aliases, lines_to_context: lines_to_context}}
   end
 
-  defp post(ast = {:defmodule, _, [{:__aliases__, _, module}, _]}, acc) do
+  defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, acc) do
     outer_mods   = Enum.drop(acc.modules, length(module))
     outer_scopes = Enum.drop(acc.scopes, length(module))
     {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases)}}
@@ -137,7 +137,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre({:def, meta, [head, body]}, acc)
   end
 
-  defp post(ast = {def_fun, [line: _line], [{_name, _, _params}, _]}, acc) when def_fun in [:def, :defp] do
+  defp post({def_fun, [line: _line], [{_name, _, _params}, _]} = ast, acc) when def_fun in [:def, :defp] do
     {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases)}}
   end
 
