@@ -21,6 +21,10 @@ test_helpers:
 	$(ELIXIR) test/helpers/module_info_test.exs
 	$(ELIXIR) test/helpers/complete_test.exs
 
+test_code:
+	@ echo "\n$(INFO_COLOR)Run code tests: $(NO_COLOR)\n"
+	$(ELIXIR) test/code/metadata_builder_test.exs
+
 test_api:
 	@ echo "\n$(INFO_COLOR)Run api tests: $(NO_COLOR)\n"
 	$(ELIXIR) test/api/docl_test.exs

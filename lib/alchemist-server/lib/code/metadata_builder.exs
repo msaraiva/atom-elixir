@@ -6,6 +6,7 @@ defmodule Alchemist.Code.MetadataBuilder do
       scopes:  [:Elixir],
       imports: [[]],
       aliases: [[]],
+      vars:    [[]],
       mods_funs_to_lines: %{},
       lines_to_context: %{}
     }
@@ -17,6 +18,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     modules = modules_reversed ++ acc.modules
     scopes  = modules_reversed ++ acc.scopes
     imports = [[]|acc.imports]
+    vars    = [[]|acc.vars]
 
     current_module = modules |> :lists.reverse |> Module.concat
     mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, nil, nil}, line)
@@ -38,7 +40,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     # add new empty list of aliases for the new scope
     aliases = [[]|aliases]
 
-    {ast, %{acc | modules: modules, scopes: scopes, imports: imports, aliases: aliases, mods_funs_to_lines: mods_funs_to_lines}}
+    {ast, %{acc | modules: modules, scopes: scopes, imports: imports, aliases: aliases, vars: vars, mods_funs_to_lines: mods_funs_to_lines}}
   end
 
   defp pre({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
@@ -53,6 +55,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     scopes  = [name|acc.scopes]
     imports = [[]|acc.imports]
     aliases = [[]|acc.aliases]
+    vars    = [[]|acc.vars]
 
     mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, name, length(params || [])}, line)
     if !Map.has_key?(acc.mods_funs_to_lines, {current_module, name, nil}) do
@@ -60,7 +63,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     end
     lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
-    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, mods_funs_to_lines: mods_funs_to_lines, lines_to_context: lines_to_context}}
+    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_context: lines_to_context}}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
@@ -101,11 +104,31 @@ defmodule Alchemist.Code.MetadataBuilder do
     do_alias(ast, line, alias_tuple, acc)
   end
 
+  defp pre({var, [line: _], context} = ast, acc) when is_atom(var) and context in [nil, Elixir] do
+    scope = hd(acc.scopes) |> Atom.to_string
+    [vars_from_scope|other_vars] = acc.vars
+
+    vars_from_scope =
+      if var in vars_from_scope do
+        vars_from_scope
+      else
+        case Atom.to_string(var) do
+          "_" <> _ -> vars_from_scope
+          ^scope   -> vars_from_scope
+          _        -> [var|vars_from_scope]
+        end
+      end
+
+    {ast, %{acc | vars: [vars_from_scope|other_vars]}}
+  end
+
   defp pre({_, [line: line], _} = ast, acc) do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
+    [vars_from_scope|_] = acc.vars
+
+    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: vars_from_scope})
 
     {ast, %{acc | lines_to_context: lines_to_context}}
   end
@@ -130,7 +153,7 @@ defmodule Alchemist.Code.MetadataBuilder do
   defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, acc) do
     outer_mods   = Enum.drop(acc.modules, length(module))
     outer_scopes = Enum.drop(acc.scopes, length(module))
-    {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases)}}
+    {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars)}}
   end
 
   defp post({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
@@ -138,7 +161,7 @@ defmodule Alchemist.Code.MetadataBuilder do
   end
 
   defp post({def_fun, [line: _line], [{_name, _, _params}, _]} = ast, acc) when def_fun in [:def, :defp] do
-    {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases)}}
+    {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars)}}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
