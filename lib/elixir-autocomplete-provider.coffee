@@ -94,6 +94,8 @@ class ElixirAutocompleteProvider
     return "" if serverSuggestion.match(/^[\s\d]/)
 
     switch kind
+      when 'var'
+        createSuggestionForVariable(name)
       when 'private_function'
         createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
       when 'public_function'
@@ -114,6 +116,13 @@ class ElixirAutocompleteProvider
           iconHTML: '?'
           rightLabel: kind || 'hint'
         }
+
+  createSuggestionForVariable = (name) ->
+    {
+      text: name
+      type: 'value'
+      iconHTML: 'v'
+    }
 
   createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix) ->
     args = signature.split(',')
@@ -208,8 +217,8 @@ class ElixirAutocompleteProvider
     sort_kind = (a, b) ->
       priority =
         exception: 0 # unknown
+        value:     0 # variable
         tag:       1 # private function
-        keyword:   2 # public function from the same module
         class:     3 # module
         package:   4 # macro
         function:  4 # function

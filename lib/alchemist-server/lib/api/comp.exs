@@ -16,12 +16,12 @@ defmodule Alchemist.API.Comp do
     |> process
   end
 
-  def process([nil, _, imports, _]) do
+  def process([nil, _, imports, _, _]) do
     Complete.run('', imports) ++ Complete.run('')
     |> print
   end
 
-  def process([hint, _context, imports, aliases]) do
+  def process([hint, _context, imports, aliases, vars]) do
     Application.put_env(:"alchemist.el", :aliases, aliases)
 
     list1 = Complete.run(hint, imports)
@@ -34,7 +34,7 @@ defmodule Alchemist.API.Comp do
       list2 = List.delete_at(list2, 0)
     end
 
-    full_list = [first_item] ++ list1 ++ list2
+    full_list = [first_item] ++ find_vars(vars, hint) ++ list1 ++ list2
     full_list |> print
   end
 
@@ -45,9 +45,10 @@ defmodule Alchemist.API.Comp do
     metadata = Parser.parse_file(buffer_file, true, true, line)
     %{imports: imports,
       aliases: aliases,
+      vars: vars,
       module: module} = Metadata.get_env(metadata, line)
 
-    [hint, context, [module|imports], aliases]
+    [hint, context, [module|imports], aliases, vars]
   end
 
   defp print(result) do
@@ -56,5 +57,11 @@ defmodule Alchemist.API.Comp do
     |> Enum.map(&IO.puts/1)
 
     IO.puts "END-OF-COMP"
+  end
+
+  defp find_vars(vars, hint) do
+    for var <- vars, hint == "" or String.starts_with?("#{var}", hint) do
+      "#{var};var"
+    end
   end
 end

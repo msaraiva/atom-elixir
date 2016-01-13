@@ -7,41 +7,131 @@ defmodule Alchemist.Code.MetadataBuilderTest do
 
   alias Alchemist.Code.MetadataBuilder
 
-  setup_all do
-    {_ast, acc} =
-      File.read!("#{__DIR__}/my_module.ex")
+  test "build metadata from kernel.ex" do
+    assert get_subject_definition_line(Kernel, :defmodule, nil) =~ "defmacro defmodule(alias, do: block) do"
+  end
+
+  test "build metadata from kernel/special_forms.ex" do
+    assert get_subject_definition_line(Kernel.SpecialForms, :alias, nil) =~ "defmacro alias(module, opts)"
+  end
+
+  test "vars defined inside a function without params" do
+    {_ast, acc} = """
+      defmodule MyModule do
+        var_out1 = 1
+        def func do
+          var_in1 = 1
+          var_in2 = 1
+          IO.puts ""
+        end
+        var_out2 = 1
+      end
+      """
       |> Code.string_to_quoted
       |> MetadataBuilder.build
-    {:ok, acc: acc}
+
+    vars = acc |> get_line_vars(6)
+    assert vars == [:var_in1, :var_in2]
+  end
+
+  test "vars defined inside a function with params" do
+
+    {_ast, acc} = """
+      defmodule MyModule do
+        var_out1 = 1
+        def func(%{key1: par1, key2: [par2|[par3, _]]}, par4) do
+          var_in1 = 1
+          var_in2 = 1
+          IO.puts ""
+        end
+        var_out2 = 1
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    vars = acc |> get_line_vars(6)
+    assert vars == [:par1, :par2, :par3, :par4, :var_in1, :var_in2]
+  end
+
+  test "vars defined inside a module" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        def func do
+          var_in = 1
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    vars = acc |> get_line_vars(7)
+    assert vars == [:var_out1, :var_out2]
+  end
+
+  test "vars defined in a `for` comprehension" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        IO.puts ""
+        for var_on <- [1,2], var_on != 2 do
+          var_in = 1
+          IO.puts ""
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 3) == [:var_out1]
+    assert get_line_vars(acc, 6) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(acc, 9) == [:var_out1, :var_out2]
+  end
+
+  test "vars defined in a `if` statement" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        if var_on = true do
+          var_in = 1
+          IO.puts ""
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 5) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(acc, 8) == [:var_in, :var_on, :var_out1, :var_out2]
   end
 
   defp get_line_vars(acc, line) do
     get_in(acc.lines_to_context, [line, :vars]) |> Enum.sort
   end
 
-  test "vars defined inside a function without params", %{acc: acc} do
-    vars = acc |> get_line_vars(10)
-    assert vars == [:var1, :var2, :var3]
-  end
+  defp get_subject_definition_line(module, func, arity) do
+    file = module.module_info(:compile)[:source]
+    {_ast, acc} =
+      File.read!(file)
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
 
-  test "vars defined inside a function with params", %{acc: acc} do
-    vars = acc |> get_line_vars(15)
-    assert vars == [:par1, :par2, :var1]
-  end
+    line_number = Map.get(acc.mods_funs_to_lines, {module, func, arity})
 
-  test "vars defined inside a function with more complex params", %{acc: acc} do
-    vars = acc |> get_line_vars(20)
-    assert vars == [:par1, :par2, :par3, :par4, :par5, :var1]
-  end
-
-  test "vars defined in a function definition", %{acc: acc} do
-    vars = acc |> get_line_vars(13)
-    assert vars == []
-  end
-
-  test "vars defined inside a module", %{acc: acc} do
-    vars = acc |> get_line_vars(25)
-    assert vars == [:var_in_module1, :var_in_module2]
+    File.read!(file) |> String.split("\n") |> Enum.at(line_number-1)
   end
 
 end

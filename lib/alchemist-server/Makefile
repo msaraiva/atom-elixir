@@ -11,6 +11,7 @@ all: test
 test:	test_server
 	${MAKE} test_helpers
 	${MAKE} test_api
+	${MAKE} test_code
 
 test_server:
 	@ echo "\n$(INFO_COLOR)Run server tests: $(NO_COLOR)\n"
@@ -36,4 +37,4 @@ api_completer:
 	$(ELIXIR) test/api_test.exs
 
 
-.PHONY: test test_server test_helpers test_api
+.PHONY: test test_server test_helpers test_api test_code

@@ -7,6 +7,7 @@ defmodule Alchemist.Code.MetadataBuilder do
       imports: [[]],
       aliases: [[]],
       vars:    [[]],
+      scope_vars: [[]],
       mods_funs_to_lines: %{},
       lines_to_context: %{}
     }
@@ -19,6 +20,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     scopes  = modules_reversed ++ acc.scopes
     imports = [[]|acc.imports]
     vars    = [[]|acc.vars]
+    scope_vars = [[]]
 
     current_module = modules |> :lists.reverse |> Module.concat
     mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, nil, nil}, line)
@@ -40,14 +42,14 @@ defmodule Alchemist.Code.MetadataBuilder do
     # add new empty list of aliases for the new scope
     aliases = [[]|aliases]
 
-    {ast, %{acc | modules: modules, scopes: scopes, imports: imports, aliases: aliases, vars: vars, mods_funs_to_lines: mods_funs_to_lines}}
+    {ast, %{acc | modules: modules, scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines}}
   end
 
   defp pre({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
     pre({:def, meta, [head, body]}, acc)
   end
 
-  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, acc) when def_fun in [:def, :defp] do
+  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, acc) when def_fun in [:def, :defp] and is_atom(name) do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
@@ -56,6 +58,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     imports = [[]|acc.imports]
     aliases = [[]|acc.aliases]
     vars    = [[]|acc.vars]
+    scope_vars = [[]]
 
     mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, name, length(params || [])}, line)
     if !Map.has_key?(acc.mods_funs_to_lines, {current_module, name, nil}) do
@@ -63,7 +66,11 @@ defmodule Alchemist.Code.MetadataBuilder do
     end
     lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
-    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_context: lines_to_context}}
+    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_context: lines_to_context}}
+  end
+
+  defp pre({def_fun, _, _} = ast, acc) when def_fun in [:def, :defp] do
+    {ast, acc}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
@@ -84,6 +91,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
+
     lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
     module = Module.concat(module_atoms)
@@ -104,6 +112,22 @@ defmodule Alchemist.Code.MetadataBuilder do
     do_alias(ast, line, alias_tuple, acc)
   end
 
+  defp pre({macro, [line: line], _} = ast, acc) when macro in [:for, :try] do
+    current_module     = acc.modules    |> :lists.reverse |> Module.concat
+    current_imports    = acc.imports    |> :lists.reverse |> List.flatten
+    current_aliases    = acc.aliases    |> :lists.reverse |> List.flatten
+    current_scope_vars = acc.scope_vars |> :lists.reverse |> List.flatten
+
+    imports    = [[]|acc.imports]
+    aliases    = [[]|acc.aliases]
+    vars       = [[]|acc.vars]
+    scope_vars = [[]|acc.scope_vars]
+
+    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
+
+    {ast, %{acc | imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, lines_to_context: lines_to_context}}
+  end
+
   defp pre({var, [line: _], context} = ast, acc) when is_atom(var) and context in [nil, Elixir] do
     scope = hd(acc.scopes) |> Atom.to_string
     [vars_from_scope|other_vars] = acc.vars
@@ -119,22 +143,23 @@ defmodule Alchemist.Code.MetadataBuilder do
         end
       end
 
-    {ast, %{acc | vars: [vars_from_scope|other_vars]}}
+    {ast, %{acc | vars: [vars_from_scope|other_vars], scope_vars: [vars_from_scope|tl(acc.scope_vars)]}}
   end
 
+  # Anything else that defining a line
   defp pre({_, [line: line], _} = ast, acc) do
-    current_module  = acc.modules |> :lists.reverse |> Module.concat
-    current_imports = acc.imports |> :lists.reverse |> List.flatten
-    current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-    [vars_from_scope|_] = acc.vars
+    current_module  = acc.modules       |> :lists.reverse |> Module.concat
+    current_imports = acc.imports       |> :lists.reverse |> List.flatten
+    current_aliases = acc.aliases       |> :lists.reverse |> List.flatten
+    current_scope_vars = acc.scope_vars |> :lists.reverse |> List.flatten
 
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: vars_from_scope})
+    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
 
     {ast, %{acc | lines_to_context: lines_to_context}}
   end
 
+  # No line defined
   defp pre(ast, acc) do
-    # IO.puts "No line"
     {ast, acc}
   end
 
@@ -153,15 +178,19 @@ defmodule Alchemist.Code.MetadataBuilder do
   defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, acc) do
     outer_mods   = Enum.drop(acc.modules, length(module))
     outer_scopes = Enum.drop(acc.scopes, length(module))
-    {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars)}}
+    {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: [[]]}}
   end
 
   defp post({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
     pre({:def, meta, [head, body]}, acc)
   end
 
-  defp post({def_fun, [line: _line], [{_name, _, _params}, _]} = ast, acc) when def_fun in [:def, :defp] do
-    {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars)}}
+  defp post({def_fun, [line: _line], [{name, _, _params}, _]} = ast, acc) when def_fun in [:def, :defp] and is_atom(name) do
+    {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: [[]]}}
+  end
+
+  defp post({def_fun, _, _} = ast, acc) when def_fun in [:def, :defp] do
+    {ast, acc}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
@@ -171,6 +200,10 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   defp post({:defmacro, meta, args}, acc) do
     post({:def, meta, args}, acc)
+  end
+
+  defp post({macro, _, _} = ast, acc) when macro in [:for, :try] do
+    {ast, %{acc | imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: tl(acc.scope_vars)}}
   end
 
   defp post(ast, acc) do

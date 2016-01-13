@@ -10,7 +10,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request with empty hint" do
     assert capture_io(fn ->
-      Comp.process([nil, Elixir, [], [] ])
+      Comp.process([nil, Elixir, [], [], []])
     end) =~ """
     import/2;macro;module,opts;Kernel.SpecialForms;Imports function and macros from other modules.;
     quote/2;macro;opts,block;Kernel.SpecialForms;Gets the representation of any expression.;
@@ -21,7 +21,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request without empty hint" do
     assert capture_io(fn ->
-      Comp.process(['is_b', Elixir, [], []])
+      Comp.process(['is_b', Elixir, [], [], []])
     end) =~ """
     is_b
     is_binary/1;function;term;Kernel;Returns `true` if `term` is a binary\\; otherwise returns `false`.;@spec is_binary(term) :: boolean
@@ -33,7 +33,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request with an alias" do
     assert capture_io(fn ->
-      Comp.process(['MyList.flat', Elixir, [], [{MyList, List}]])
+      Comp.process(['MyList.flat', Elixir, [], [{MyList, List}], []])
     end) =~ """
     MyList.flatten
     flatten/2;function;list,tail;List;Flattens the given `list` of nested lists.\\nThe list `tail` will be added at the end of\\nthe flattened list.;@spec flatten(deep_list, [elem]) :: [elem] when deep_list: [elem | deep_list], elem: var
@@ -44,7 +44,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request with a module hint" do
     assert capture_io(fn ->
-      Comp.process(['Str', Elixir, [], []])
+      Comp.process(['Str', Elixir, [], [], []])
     end) =~ """
     Str
     Stream;module;Module for creating and composing streams.
