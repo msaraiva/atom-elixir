@@ -23,6 +23,9 @@ defmodule Alchemist.Server do
   alias Alchemist.API
 
   def start([env]) do
+    IO.puts(:stderr, "Initializing alchemist-server (Elixir version #{System.version})")
+    # IO.inspect(:stderr, System.get_env, [])
+
     loop(all_loaded(), env)
   end
 

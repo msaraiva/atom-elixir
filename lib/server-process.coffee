@@ -77,6 +77,12 @@ class ServerProcess
   getQuotedCode: (file, onResult) ->
     @sendRequest('EVAL', ":quote, \"#{file}\"", onResult)
 
+  evalCode: (code, onResult) ->
+    tmpBufferFile = createTempFile(code)
+    @sendRequest 'EVAL', ":eval, \"#{tmpBufferFile}\"", (result) ->
+      fs.unlink(tmpBufferFile)
+      onResult(result)
+
   expandOnce: (file, onResult) ->
     @sendRequest('EVAL', ":expand_once, \"#{file}\"", onResult)
 
