@@ -124,7 +124,7 @@ defmodule Alchemist.Code.MetadataBuilderTest do
   end
 
   defp get_line_vars(acc, line) do
-    get_in(acc.lines_to_context, [line, :vars]) |> Enum.sort
+    get_in(acc.lines_to_env, [line, :vars]) |> Enum.sort
   end
 
   defp get_subject_definition_line(module, func, arity) do

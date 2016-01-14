@@ -13,7 +13,7 @@ defmodule Alchemist.Code.MetadataBuilder do
       vars:    [[]],
       scope_vars: [[]],
       mods_funs_to_lines: %{},
-      lines_to_context: %{}
+      lines_to_env: %{}
     }
     mod = if Version.match?(System.version, "<1.2.0-rc.0"), do: Traverse, else: Macro
     mod.traverse(ast, acc, &pre/2, &post/2)
@@ -69,9 +69,9 @@ defmodule Alchemist.Code.MetadataBuilder do
     if !Map.has_key?(acc.mods_funs_to_lines, {current_module, name, nil}) do
       mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, name, nil}, line)
     end
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
+    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
-    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_context: lines_to_context}}
+    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_env: lines_to_env}}
   end
 
   defp pre({def_fun, _, _} = ast, acc) when def_fun in [:def, :defp] do
@@ -97,13 +97,13 @@ defmodule Alchemist.Code.MetadataBuilder do
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
 
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
+    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
     module = Module.concat(module_atoms)
     [imports_from_scope|other_imports] = acc.imports
     imports = [[module|imports_from_scope]|other_imports]
 
-    {ast, %{acc | imports: imports, lines_to_context: lines_to_context}}
+    {ast, %{acc | imports: imports, lines_to_env: lines_to_env}}
   end
 
   # alias without options
@@ -128,9 +128,9 @@ defmodule Alchemist.Code.MetadataBuilder do
     vars       = [[]|acc.vars]
     scope_vars = [[]|acc.scope_vars]
 
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
+    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
 
-    {ast, %{acc | imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, lines_to_context: lines_to_context}}
+    {ast, %{acc | imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, lines_to_env: lines_to_env}}
   end
 
   defp pre({var, [line: _], context} = ast, acc) when is_atom(var) and context in [nil, Elixir] do
@@ -158,9 +158,9 @@ defmodule Alchemist.Code.MetadataBuilder do
     current_aliases = acc.aliases       |> :lists.reverse |> List.flatten
     current_scope_vars = acc.scope_vars |> :lists.reverse |> List.flatten
 
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
+    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
 
-    {ast, %{acc | lines_to_context: lines_to_context}}
+    {ast, %{acc | lines_to_env: lines_to_env}}
   end
 
   # No line defined
@@ -172,12 +172,12 @@ defmodule Alchemist.Code.MetadataBuilder do
     current_module  = acc.modules |> :lists.reverse |> Module.concat
     current_imports = acc.imports |> :lists.reverse |> List.flatten
     current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-    lines_to_context = Map.put(acc.lines_to_context, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
+    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
 
     [aliases_from_scope|other_aliases] = acc.aliases
     aliases = [[alias_tuple|aliases_from_scope]|other_aliases]
 
-    {ast, %{acc | aliases: aliases, lines_to_context: lines_to_context}}
+    {ast, %{acc | aliases: aliases, lines_to_env: lines_to_env}}
   end
 
   defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, acc) do

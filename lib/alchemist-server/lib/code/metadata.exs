@@ -1,14 +1,15 @@
 defmodule Alchemist.Code.Metadata do
 
-  defstruct [:source, :mods_funs_to_lines, :lines_to_context, :error]
+  defstruct source: nil,
+            mods_funs_to_lines: %{},
+            lines_to_env: %{},
+            error: nil
 
-  def get_env(%__MODULE__{lines_to_context: nil}, _line_number) do
-    %{imports: [], aliases: [], module: nil}
-  end
+  @empty_env %{imports: [], aliases: [], module: nil, vars: []}
 
   def get_env(%__MODULE__{} = metadata, line_number) do
-    case Map.get(metadata.lines_to_context, line_number) do
-      nil -> %{imports: [], aliases: [], module: nil}
+    case Map.get(metadata.lines_to_env, line_number) do
+      nil -> @empty_env
       ctx -> ctx
     end
   end

@@ -18,11 +18,11 @@ defmodule Alchemist.Code.Parser do
     case string_to_ast(source, try_to_fix_parse_error, cursor_line_number) do
       {:ok, ast} ->
         {_ast, acc} = MetadataBuilder.build(ast)
-        if Map.has_key?(acc.lines_to_context, cursor_line_number) or !try_to_fix_line_not_found  do
+        if Map.has_key?(acc.lines_to_env, cursor_line_number) or !try_to_fix_line_not_found  do
           %Metadata{
             source: source,
             mods_funs_to_lines: acc.mods_funs_to_lines,
-            lines_to_context: acc.lines_to_context
+            lines_to_env: acc.lines_to_env
           }
         else
           IO.puts :stderr, "LINE NOT FOUND"
