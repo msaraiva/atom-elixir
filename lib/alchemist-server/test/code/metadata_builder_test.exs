@@ -123,8 +123,105 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     # assert get_line_vars(acc, 8) == [:var_in_else, :var_on, :var_out1]
   end
 
+  test "vars defined inside a `fn`" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        fn var_on ->
+          var_in = 1
+          IO.puts ""
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 5) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(acc, 8) == [:var_out1, :var_out2]
+  end
+
+  test "vars defined inside a `case`" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        case var_out1 do
+          _ ->
+            var_in = 1
+            IO.puts ""
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 6) == [:var_in, :var_out1]
+    assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
+  end
+
+  test "vars defined inside a `cond`" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var_out1 = 1
+        cond do
+          1 == 1 ->
+            var_in = 1
+            IO.puts ""
+        end
+        var_out2 = 1
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 6) == [:var_in, :var_out1]
+    assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
+  end
+
+  test "a variable should only be added once to the vars list" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        var = 1
+        var = 2
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 4) == [:var]
+  end
+
+  test "functions of arity 0 should not be in the vars list" do
+
+    {_ast, acc} =
+      """
+      defmodule MyModule do
+        myself = self
+        mynode = node()
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_vars(acc, 3) == [:mynode, :myself]
+  end
+
   defp get_line_vars(acc, line) do
-    get_in(acc.lines_to_env, [line, :vars]) |> Enum.sort
+    (get_in(acc.lines_to_env, [line, :vars]) || []) |> Enum.sort
   end
 
   defp get_subject_definition_line(module, func, arity) do

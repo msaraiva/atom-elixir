@@ -4,6 +4,8 @@ end
 
 defmodule Alchemist.Code.MetadataBuilder do
 
+  @scope_keywords [:for, :try, :fn]
+
   def build(ast) do
     acc = %{
       modules: [:Elixir],
@@ -117,7 +119,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     do_alias(ast, line, alias_tuple, acc)
   end
 
-  defp pre({macro, [line: line], _} = ast, acc) when macro in [:for, :try] do
+  defp pre({atom, [line: line], _} = ast, acc) when atom in @scope_keywords do
     current_module     = acc.modules    |> :lists.reverse |> Module.concat
     current_imports    = acc.imports    |> :lists.reverse |> List.flatten
     current_aliases    = acc.aliases    |> :lists.reverse |> List.flatten
@@ -207,7 +209,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     post({:def, meta, args}, acc)
   end
 
-  defp post({macro, _, _} = ast, acc) when macro in [:for, :try] do
+  defp post({atom, _, _} = ast, acc) when atom in @scope_keywords do
     {ast, %{acc | imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: tl(acc.scope_vars)}}
   end
 
