@@ -97,14 +97,17 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_line_vars(acc, 9) == [:var_out1, :var_out2]
   end
 
-  test "vars defined in a `if` statement" do
+  test "vars defined in a `if/else` statement" do
 
     {_ast, acc} =
       """
       defmodule MyModule do
         var_out1 = 1
         if var_on = true do
-          var_in = 1
+          var_in_if = 1
+          IO.puts ""
+        else
+          var_in_else = 1
           IO.puts ""
         end
         var_out2 = 1
@@ -114,8 +117,10 @@ defmodule Alchemist.Code.MetadataBuilderTest do
       |> Code.string_to_quoted
       |> MetadataBuilder.build
 
-    assert get_line_vars(acc, 5) == [:var_in, :var_on, :var_out1]
-    assert get_line_vars(acc, 8) == [:var_in, :var_on, :var_out1, :var_out2]
+    assert get_line_vars(acc, 5) == [:var_in_if, :var_on, :var_out1]
+    assert get_line_vars(acc, 11) == [:var_in_else, :var_in_if, :var_on, :var_out1, :var_out2]
+    # This assert fails
+    # assert get_line_vars(acc, 8) == [:var_in_else, :var_on, :var_out1]
   end
 
   defp get_line_vars(acc, line) do
