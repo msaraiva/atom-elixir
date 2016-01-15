@@ -296,6 +296,32 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_line_imports(acc, 19)  == [Code, List]
   end
 
+  test "current module" do
+
+    {_ast, acc} =
+      """
+      IO.puts ""
+      defmodule OuterModule do
+        IO.puts ""
+        defmodule InnerModule do
+          def func do
+            if true do
+              IO.puts ""
+            end
+          end
+        end
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_module(acc, 1)  == Elixir
+    assert get_line_module(acc, 3)  == OuterModule
+    assert get_line_module(acc, 7)  == OuterModule.InnerModule
+    assert get_line_module(acc, 11) == OuterModule
+  end
+
   defp get_line_vars(acc, line) do
     (get_in(acc.lines_to_env, [line, :vars]) || []) |> Enum.sort
   end
@@ -306,6 +332,10 @@ defmodule Alchemist.Code.MetadataBuilderTest do
 
   defp get_line_imports(acc, line) do
     (get_in(acc.lines_to_env, [line, :imports]) || [])
+  end
+
+  defp get_line_module(acc, line) do
+    (get_in(acc.lines_to_env, [line, :module]) || [])
   end
 
   defp get_subject_definition_line(module, func, arity) do
