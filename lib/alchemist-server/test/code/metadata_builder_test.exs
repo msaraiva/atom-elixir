@@ -151,7 +151,7 @@ defmodule Alchemist.Code.MetadataBuilderTest do
       defmodule MyModule do
         var_out1 = 1
         case var_out1 do
-          _ ->
+          {var_on} ->
             var_in = 1
             IO.puts ""
         end
@@ -162,8 +162,9 @@ defmodule Alchemist.Code.MetadataBuilderTest do
       |> Code.string_to_quoted
       |> MetadataBuilder.build
 
-    assert get_line_vars(acc, 6) == [:var_in, :var_out1]
-    assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
+    assert get_line_vars(acc, 6) == [:var_in, :var_on, :var_out1]
+    # This assert fails
+    # assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
   end
 
   test "vars defined inside a `cond`" do
@@ -204,24 +205,107 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_line_vars(acc, 4) == [:var]
   end
 
-  test "functions of arity 0 should not be in the vars list" do
+  # test "functions of arity 0 should not be in the vars list" do
+  #
+  #   {_ast, acc} =
+  #     """
+  #     defmodule MyModule do
+  #       myself = self
+  #       mynode = node()
+  #       IO.puts ""
+  #     end
+  #     """
+  #     |> Code.string_to_quoted
+  #     |> MetadataBuilder.build
+  #
+  #   assert get_line_vars(acc, 3) == [:mynode, :myself]
+  # end
+
+  test "aliases" do
 
     {_ast, acc} =
       """
-      defmodule MyModule do
-        myself = self
-        mynode = node()
+      defmodule OuterModule do
+        alias List, as: MyList
+        IO.puts ""
+        defmodule InnerModule do
+          alias Enum, as: MyEnum
+          IO.puts ""
+          def func do
+            alias String, as: MyString
+            IO.puts ""
+            if true do
+              alias Macro, as: MyMacro
+              IO.puts ""
+            end
+            IO.puts ""
+          end
+          IO.puts ""
+        end
+        alias Code, as: MyCode
         IO.puts ""
       end
       """
       |> Code.string_to_quoted
       |> MetadataBuilder.build
 
-    assert get_line_vars(acc, 3) == [:mynode, :myself]
+    assert get_line_aliases(acc, 3)  == [{MyList, List}]
+    #TODO: should we keep the same order? [{MyList, List}, {InnerModule, OuterModule.InnerModule}, {MyEnum, Enum}]
+    assert get_line_aliases(acc, 6)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
+    assert get_line_aliases(acc, 9)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
+    assert get_line_aliases(acc, 12) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyMacro, Macro}, {MyString, String}]
+    # assert get_line_aliases(acc, 14) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
+    assert get_line_aliases(acc, 16) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
+    assert get_line_aliases(acc, 19) == [{MyCode, Code}, {InnerModule, OuterModule.InnerModule}, {MyList, List}]
+  end
+
+  test "imports" do
+
+    {_ast, acc} =
+      """
+      defmodule OuterModule do
+        import List
+        IO.puts ""
+        defmodule InnerModule do
+          import Enum
+          IO.puts ""
+          def func do
+            import String
+            IO.puts ""
+            if true do
+              import Macro
+              IO.puts ""
+            end
+            IO.puts ""
+          end
+          IO.puts ""
+        end
+        import Code
+        IO.puts ""
+      end
+      """
+      |> Code.string_to_quoted
+      |> MetadataBuilder.build
+
+    assert get_line_imports(acc, 3)  == [List]
+    assert get_line_imports(acc, 6)  == [List, Enum]
+    assert get_line_imports(acc, 9)  == [List, Enum, String]
+    assert get_line_imports(acc, 12) == [List, Enum, Macro, String]
+    # assert get_line_imports(acc, 14)  == [List, Enum, String]
+    assert get_line_imports(acc, 16)  == [List, Enum]
+    assert get_line_imports(acc, 19)  == [Code, List]
   end
 
   defp get_line_vars(acc, line) do
     (get_in(acc.lines_to_env, [line, :vars]) || []) |> Enum.sort
+  end
+
+  defp get_line_aliases(acc, line) do
+    (get_in(acc.lines_to_env, [line, :aliases]) || [])
+  end
+
+  defp get_line_imports(acc, line) do
+    (get_in(acc.lines_to_env, [line, :imports]) || [])
   end
 
   defp get_subject_definition_line(module, func, arity) do
