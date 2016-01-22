@@ -16,7 +16,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     mod.traverse(ast, state, &pre/2, &post/2)
   end
 
-  defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, state) do
+  defp pre_module(ast, state, line, module) do
     state
     |> new_namespace(module)
     |> add_current_module_to_index(line)
@@ -27,12 +27,16 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> result(ast)
   end
 
-  #TODO: create do_def
-  defp pre({def_fun, meta, [{:when, _, [head|_]}, body]}, state) when def_fun in [:def, :defp] do
-    pre({:def, meta, [head, body]}, state)
+  defp post_module(ast, state, module) do
+    state
+    |> remove_module_from_namespace(module)
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
   end
 
-  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, state) when def_fun in [:def, :defp] and is_atom(name) do
+  defp pre_func(ast, state, line, name, params) do
     state
     |> new_named_func(name)
     |> add_current_env_to_line(line)
@@ -42,6 +46,87 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> new_func_vars_scope
     |> add_vars(find_vars(params))
     |> result(ast)
+  end
+
+  defp post_func(ast, state) do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_func_vars_scope
+    |> remove_last_scope_from_scopes
+    |> result(ast)
+  end
+
+  defp pre_scope_keyword(ast, state, line) do
+    state
+    |> add_current_env_to_line(line)
+    |> new_vars_scope
+    |> result(ast)
+  end
+
+  defp post_scope_keyword(ast, state) do
+    state
+    |> remove_vars_scope
+    |> result(ast)
+  end
+
+  defp pre_block_keyword(ast, state) do
+    state
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_vars_scope
+    |> result(ast)
+  end
+
+  defp post_block_keyword(ast, state) do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
+  end
+
+  defp pre_clause(ast, state, lhs) do
+    state
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_vars_scope
+    |> add_vars(find_vars(lhs))
+    |> result(ast)
+  end
+
+  defp post_clause(ast, state) do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
+  end
+
+  defp pre_alias(ast, state, line, alias_tuple) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_alias(alias_tuple)
+    |> result(ast)
+  end
+
+  defp pre_import(ast, state, line, module_atoms) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_import(module_atoms |> Module.concat)
+    |> result(ast)
+  end
+
+  defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, state) do
+    pre_module(ast, state, line, module)
+  end
+
+  defp pre({def_name, meta, [{:when, _, [head|_]}, body]}, state) when def_name in [:def, :defp] do
+    pre({:def, meta, [head, body]}, state)
+  end
+
+  defp pre({def_name, [line: line], [{name, _, params}, _body]} = ast, state) when def_name in [:def, :defp] and is_atom(name) do
+    pre_func(ast, state, line, name, params)
   end
 
   defp pre({def_fun, _, _} = ast, state) when def_fun in [:def, :defp] do
@@ -64,46 +149,31 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   # import with options
   defp pre({:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, state) when is_atom(mod) do
-    state
-    |> add_current_env_to_line(line)
-    |> add_import(module_atoms |> Module.concat)
-    |> result(ast)
+    pre_import(ast, state, line, module_atoms)
   end
 
   # alias without options
   defp pre({:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]} = ast, state) when is_atom(mod) do
     alias_tuple = {Module.concat([List.last(module_atoms)]), Module.concat(module_atoms)}
-    do_alias(ast, line, alias_tuple, state)
+    pre_alias(ast, state, line, alias_tuple)
   end
 
   # alias with `as` option
   defp pre({:alias, [line: line], [{_, _, module_atoms = [mod|_]}, [as: {:__aliases__, _, alias_atoms = [al|_]}]]} = ast, state) when is_atom(mod) and is_atom(al) do
     alias_tuple = {Module.concat(alias_atoms), Module.concat(module_atoms)}
-    do_alias(ast, line, alias_tuple, state)
+    pre_alias(ast, state, line, alias_tuple)
   end
 
   defp pre({atom, [line: line], _} = ast, state) when atom in @scope_keywords do
-    state
-    |> add_current_env_to_line(line)
-    |> new_vars_scope
-    |> result(ast)
+    pre_scope_keyword(ast, state, line)
   end
 
   defp pre({atom, _block} = ast, state) when atom in @block_keywords do
-    state
-    |> new_alias_scope
-    |> new_import_scope
-    |> new_vars_scope
-    |> result(ast)
+    pre_block_keyword(ast, state)
   end
 
   defp pre({:->, [line: _line], [lhs, _rhs]} = ast, state) do
-    state
-    |> new_alias_scope
-    |> new_import_scope
-    |> new_vars_scope
-    |> add_vars(find_vars(lhs))
-    |> result(ast)
+    pre_clause(ast, state, lhs)
   end
 
   defp pre({:=, _meta, [lhs, _rhs]} = ast, state) do
@@ -130,35 +200,18 @@ defmodule Alchemist.Code.MetadataBuilder do
     {ast, state}
   end
 
-  defp do_alias(ast, line, alias_tuple, state) do
-    state
-    |> add_current_env_to_line(line)
-    |> add_alias(alias_tuple)
-    |> result(ast)
-  end
-
   defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, state) do
-    state
-    |> remove_module_from_namespace(module)
-    |> remove_alias_scope
-    |> remove_import_scope
-    |> remove_vars_scope
-    |> result(ast)
+    post_module(ast, state, module)
   end
 
   defp post({def_fun, meta, [{:when, _, [head|_]}, body]}, state) when def_fun in [:def, :defp] do
     pre({:def, meta, [head, body]}, state)
   end
 
-  defp post({def_fun, [line: _line], [{name, _, _params}, _]} = ast, state) when def_fun in [:def, :defp] and is_atom(name) do
-    state
-    |> remove_alias_scope
-    |> remove_import_scope
-    |> remove_func_vars_scope
-    |> remove_last_scope_from_scopes
-    |> result(ast)
+  defp post({def_name, [line: _line], [{name, _, _params}, _]} = ast, state) when def_name in [:def, :defp] and is_atom(name) do
+    post_func(ast, state)
   end
-  
+
   defp post({def_fun, _, _} = ast, state) when def_fun in [:def, :defp] do
     {ast, state}
   end
@@ -173,25 +226,15 @@ defmodule Alchemist.Code.MetadataBuilder do
   end
 
   defp post({atom, _, _} = ast, state) when atom in @scope_keywords do
-    state
-    |> remove_vars_scope
-    |> result(ast)
+    post_scope_keyword(ast, state)
   end
 
   defp post({atom, _block} = ast, state) when atom in @block_keywords do
-    state
-    |> remove_alias_scope
-    |> remove_import_scope
-    |> remove_vars_scope
-    |> result(ast)
+    post_block_keyword(ast, state)
   end
 
   defp post({:->, [line: _line], [_lhs, _rhs]} = ast, state) do
-    state
-    |> remove_alias_scope
-    |> remove_import_scope
-    |> remove_vars_scope
-    |> result(ast)
+    post_clause(ast, state)
   end
 
   defp post(ast, state) do
