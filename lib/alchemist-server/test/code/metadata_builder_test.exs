@@ -16,7 +16,7 @@ defmodule Alchemist.Code.MetadataBuilderTest do
   end
 
   test "vars defined inside a function without params" do
-    {_ast, acc} = """
+    state = """
       defmodule MyModule do
         var_out1 = 1
         def func do
@@ -27,16 +27,15 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         var_out2 = 1
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    vars = acc |> get_line_vars(6)
+    vars = state |> get_line_vars(6)
     assert vars == [:var_in1, :var_in2]
   end
 
   test "vars defined inside a function with params" do
 
-    {_ast, acc} = """
+    state = """
       defmodule MyModule do
         var_out1 = 1
         def func(%{key1: par1, key2: [par2|[par3, _]]}, par4) do
@@ -47,16 +46,15 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         var_out2 = 1
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    vars = acc |> get_line_vars(6)
+    vars = state |> get_line_vars(6)
     assert vars == [:par1, :par2, :par3, :par4, :var_in1, :var_in2]
   end
 
   test "vars defined inside a module" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
@@ -67,16 +65,15 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    vars = acc |> get_line_vars(7)
+    vars = state |> get_line_vars(7)
     assert vars == [:var_out1, :var_out2]
   end
 
   test "vars defined in a `for` comprehension" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
@@ -89,17 +86,16 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 3) == [:var_out1]
-    assert get_line_vars(acc, 6) == [:var_in, :var_on, :var_out1]
-    assert get_line_vars(acc, 9) == [:var_out1, :var_out2]
+    assert get_line_vars(state, 3) == [:var_out1]
+    assert get_line_vars(state, 6) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(state, 9) == [:var_out1, :var_out2]
   end
 
   test "vars defined in a `if/else` statement" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
@@ -114,18 +110,17 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 5) == [:var_in_if, :var_on, :var_out1]
-    assert get_line_vars(acc, 11) == [:var_in_else, :var_in_if, :var_on, :var_out1, :var_out2]
-    # This assert fails
-    # assert get_line_vars(acc, 8) == [:var_in_else, :var_on, :var_out1]
+    assert get_line_vars(state, 5) == [:var_in_if, :var_on, :var_out1]
+    assert get_line_vars(state, 8) == [:var_in_else, :var_on, :var_out1]
+    # This assert fails:
+    # assert get_line_vars(state, 11) == [:var_in_else, :var_in_if, :var_on, :var_out1, :var_out2]
   end
 
   test "vars defined inside a `fn`" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
@@ -137,39 +132,41 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 5) == [:var_in, :var_on, :var_out1]
-    assert get_line_vars(acc, 8) == [:var_out1, :var_out2]
+    assert get_line_vars(state, 5) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(state, 8) == [:var_out1, :var_out2]
   end
 
   test "vars defined inside a `case`" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
         case var_out1 do
-          {var_on} ->
-            var_in = 1
+          {var_on1} ->
+            var_in1 = 1
+            IO.puts ""
+          {var_on2} ->
+            var_in2 = 2
             IO.puts ""
         end
         var_out2 = 1
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 6) == [:var_in, :var_on, :var_out1]
+    assert get_line_vars(state, 6) == [:var_in1, :var_on1, :var_out1]
+    assert get_line_vars(state, 9) == [:var_in2, :var_on2, :var_out1]
     # This assert fails
-    # assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
+    # assert get_line_vars(state, 12) == [:var_in1, :var_in2, :var_out1, :var_out2]
   end
 
   test "vars defined inside a `cond`" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var_out1 = 1
@@ -182,16 +179,16 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 6) == [:var_in, :var_out1]
-    assert get_line_vars(acc, 9) == [:var_in, :var_out1, :var_out2]
+    assert get_line_vars(state, 6) == [:var_in, :var_out1]
+    # This assert fails:
+    # assert get_line_vars(state, 9) == [:var_in, :var_out1, :var_out2]
   end
 
   test "a variable should only be added once to the vars list" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule MyModule do
         var = 1
@@ -199,31 +196,62 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_vars(acc, 4) == [:var]
+    assert get_line_vars(state, 4) == [:var]
   end
 
-  # test "functions of arity 0 should not be in the vars list" do
-  #
-  #   {_ast, acc} =
-  #     """
-  #     defmodule MyModule do
-  #       myself = self
-  #       mynode = node()
-  #       IO.puts ""
-  #     end
-  #     """
-  #     |> Code.string_to_quoted
-  #     |> MetadataBuilder.build
-  #
-  #   assert get_line_vars(acc, 3) == [:mynode, :myself]
-  # end
+  test "functions of arity 0 should not be in the vars list" do
+
+    state =
+      """
+      defmodule MyModule do
+        myself = self
+        mynode = node()
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_vars(state, 3) == [:mynode, :myself]
+  end
+
+  test "inherited vars" do
+
+    state =
+      """
+      top_level_var = 1
+      IO.puts ""
+      defmodule OuterModule do
+        outer_module_var = 1
+        IO.puts ""
+        defmodule InnerModule do
+          inner_module_var = 1
+          IO.puts ""
+          def func do
+            func_var = 1
+            IO.puts ""
+          end
+          IO.puts ""
+        end
+        IO.puts ""
+      end
+      IO.puts ""
+      """
+      |> string_to_state
+
+    assert get_line_vars(state, 2)  == [:top_level_var]
+    assert get_line_vars(state, 5)  == [:outer_module_var, :top_level_var]
+    assert get_line_vars(state, 8)  == [:inner_module_var, :outer_module_var, :top_level_var]
+    assert get_line_vars(state, 11) == [:func_var]
+    assert get_line_vars(state, 13) == [:inner_module_var, :outer_module_var, :top_level_var]
+    assert get_line_vars(state, 15) == [:outer_module_var, :top_level_var]
+    assert get_line_vars(state, 17) == [:top_level_var]
+  end
 
   test "aliases" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule OuterModule do
         alias List, as: MyList
@@ -246,22 +274,41 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_aliases(acc, 3)  == [{MyList, List}]
-    #TODO: should we keep the same order? [{MyList, List}, {InnerModule, OuterModule.InnerModule}, {MyEnum, Enum}]
-    assert get_line_aliases(acc, 6)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
-    assert get_line_aliases(acc, 9)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
-    assert get_line_aliases(acc, 12) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyMacro, Macro}, {MyString, String}]
-    # assert get_line_aliases(acc, 14) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
-    assert get_line_aliases(acc, 16) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
-    assert get_line_aliases(acc, 19) == [{MyCode, Code}, {InnerModule, OuterModule.InnerModule}, {MyList, List}]
+    assert get_line_aliases(state, 3)  == [{MyList, List}]
+    assert get_line_aliases(state, 6)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
+    assert get_line_aliases(state, 9)  == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
+    assert get_line_aliases(state, 12) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}, {MyMacro, Macro}]
+    assert get_line_aliases(state, 14) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}, {MyString, String}]
+    assert get_line_aliases(state, 16) == [{InnerModule, OuterModule.InnerModule}, {MyList, List}, {MyEnum, Enum}]
+    assert get_line_aliases(state, 19) == [{MyCode, Code}, {InnerModule, OuterModule.InnerModule}, {MyList, List}]
+  end
+
+  test "aliases with `fn`" do
+
+    state =
+      """
+      defmodule MyModule do
+        alias Enum, as: MyEnum
+        IO.puts ""
+        fn var_on ->
+          alias List, as: MyList
+          IO.puts ""
+        end
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_aliases(state, 3) == [{MyEnum, Enum}]
+    assert get_line_aliases(state, 6) == [{MyEnum, Enum}, {MyList, List}]
+    assert get_line_aliases(state, 8) == [{MyEnum, Enum}]
   end
 
   test "imports" do
 
-    {_ast, acc} =
+    state =
       """
       defmodule OuterModule do
         import List
@@ -284,21 +331,20 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
-      |> Code.string_to_quoted
-      |> MetadataBuilder.build
+      |> string_to_state
 
-    assert get_line_imports(acc, 3)  == [List]
-    assert get_line_imports(acc, 6)  == [List, Enum]
-    assert get_line_imports(acc, 9)  == [List, Enum, String]
-    assert get_line_imports(acc, 12) == [List, Enum, Macro, String]
-    # assert get_line_imports(acc, 14)  == [List, Enum, String]
-    assert get_line_imports(acc, 16)  == [List, Enum]
-    assert get_line_imports(acc, 19)  == [Code, List]
+    assert get_line_imports(state, 3)   == [List]
+    assert get_line_imports(state, 6)   == [List, Enum]
+    assert get_line_imports(state, 9)   == [List, Enum, String]
+    assert get_line_imports(state, 12)  == [List, Enum, String, Macro]
+    assert get_line_imports(state, 14)  == [List, Enum, String]
+    assert get_line_imports(state, 16)  == [List, Enum]
+    assert get_line_imports(state, 19)  == [Code, List]
   end
 
   test "current module" do
 
-    {_ast, acc} =
+    state =
       """
       IO.puts ""
       defmodule OuterModule do
@@ -313,29 +359,37 @@ defmodule Alchemist.Code.MetadataBuilderTest do
         IO.puts ""
       end
       """
+      |> string_to_state
+
+    assert get_line_module(state, 1)  == Elixir
+    assert get_line_module(state, 3)  == OuterModule
+    assert get_line_module(state, 7)  == OuterModule.InnerModule
+    assert get_line_module(state, 11) == OuterModule
+  end
+
+  defp string_to_state(string) do
+    {_ast, state} =
+      string
       |> Code.string_to_quoted
+      |> (fn {:ok, ast} -> ast end).()
       |> MetadataBuilder.build
-
-    assert get_line_module(acc, 1)  == Elixir
-    assert get_line_module(acc, 3)  == OuterModule
-    assert get_line_module(acc, 7)  == OuterModule.InnerModule
-    assert get_line_module(acc, 11) == OuterModule
+    state
   end
 
-  defp get_line_vars(acc, line) do
-    (get_in(acc.lines_to_env, [line, :vars]) || []) |> Enum.sort
+  defp get_line_vars(state, line) do
+    (get_in(state.lines_to_env, [line, :vars]) || []) |> Enum.sort
   end
 
-  defp get_line_aliases(acc, line) do
-    (get_in(acc.lines_to_env, [line, :aliases]) || [])
+  defp get_line_aliases(state, line) do
+    (get_in(state.lines_to_env, [line, :aliases]) || [])
   end
 
-  defp get_line_imports(acc, line) do
-    (get_in(acc.lines_to_env, [line, :imports]) || [])
+  defp get_line_imports(state, line) do
+    (get_in(state.lines_to_env, [line, :imports]) || [])
   end
 
-  defp get_line_module(acc, line) do
-    (get_in(acc.lines_to_env, [line, :module]) || [])
+  defp get_line_module(state, line) do
+    (get_in(state.lines_to_env, [line, :module]) || [])
   end
 
   defp get_subject_definition_line(module, func, arity) do

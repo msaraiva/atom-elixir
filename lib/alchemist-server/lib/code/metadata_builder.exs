@@ -1,220 +1,218 @@
+Code.require_file "./state.exs", __DIR__
+
 if Version.match?(System.version, "<1.2.0-rc.0") do
   Code.require_file "./traverse.exs", __DIR__
 end
 
 defmodule Alchemist.Code.MetadataBuilder do
+  import Alchemist.Code.State
 
   @scope_keywords [:for, :try, :fn]
+  @block_keywords [:do, :else, :rescue, :catch, :after]
 
   def build(ast) do
-    acc = %{
-      modules: [:Elixir],
-      scopes:  [:Elixir],
-      imports: [[]],
-      aliases: [[]],
-      vars:    [[]],
-      scope_vars: [[]],
-      mods_funs_to_lines: %{},
-      lines_to_env: %{}
-    }
+    state = Alchemist.Code.State.new
     mod = if Version.match?(System.version, "<1.2.0-rc.0"), do: Traverse, else: Macro
-    mod.traverse(ast, acc, &pre/2, &post/2)
+    mod.traverse(ast, state, &pre/2, &post/2)
   end
 
-  defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, acc) do
-    modules_reversed = :lists.reverse(module)
-    modules = modules_reversed ++ acc.modules
-    scopes  = modules_reversed ++ acc.scopes
-    imports = [[]|acc.imports]
-    vars    = [[]|acc.vars]
-    scope_vars = [[]]
-
-    current_module = modules |> :lists.reverse |> Module.concat
-    mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, nil, nil}, line)
-
-    aliases = acc.aliases
-
-    # TODO: Context.add_alias_to_current_scope(context)
-    # Context.add_import_to_current_scope(context)
-    # Context.create_new_scope(context)
-    # ...
-
-    # create alias for the module in the current scope
-    if length(modules) > 2 do
-      alias_tuple = {Module.concat([hd(modules)]), current_module}
-      [aliases_from_scope|other_aliases] = acc.aliases
-      aliases = [[alias_tuple|aliases_from_scope]|other_aliases]
-    end
-
-    # add new empty list of aliases for the new scope
-    aliases = [[]|aliases]
-
-    {ast, %{acc | modules: modules, scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines}}
+  defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, state) do
+    state
+    |> new_namespace(module)
+    |> add_current_module_to_index(line)
+    |> create_alias_for_current_module
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_vars_scope
+    |> result(ast)
   end
 
-  defp pre({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
-    pre({:def, meta, [head, body]}, acc)
+  #TODO: create do_def
+  defp pre({def_fun, meta, [{:when, _, [head|_]}, body]}, state) when def_fun in [:def, :defp] do
+    pre({:def, meta, [head, body]}, state)
   end
 
-  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, acc) when def_fun in [:def, :defp] and is_atom(name) do
-    current_module  = acc.modules |> :lists.reverse |> Module.concat
-    current_imports = acc.imports |> :lists.reverse |> List.flatten
-    current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-
-    scopes  = [name|acc.scopes]
-    imports = [[]|acc.imports]
-    aliases = [[]|acc.aliases]
-    vars    = [[]|acc.vars]
-    scope_vars = [[]]
-
-    mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, name, length(params || [])}, line)
-    if !Map.has_key?(acc.mods_funs_to_lines, {current_module, name, nil}) do
-      mods_funs_to_lines = Map.put(acc.mods_funs_to_lines, {current_module, name, nil}, line)
-    end
-    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
-
-    {ast, %{acc | scopes: scopes, imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, mods_funs_to_lines: mods_funs_to_lines, lines_to_env: lines_to_env}}
+  defp pre({def_fun, [line: line], [{name, _, params}, _body]} = ast, state) when def_fun in [:def, :defp] and is_atom(name) do
+    state
+    |> new_named_func(name)
+    |> add_current_env_to_line(line)
+    |> add_func_to_index(name, length(params || []), line)
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_func_vars_scope
+    |> add_vars(find_vars(params))
+    |> result(ast)
   end
 
-  defp pre({def_fun, _, _} = ast, acc) when def_fun in [:def, :defp] do
-    {ast, acc}
+  defp pre({def_fun, _, _} = ast, state) when def_fun in [:def, :defp] do
+    {ast, state}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
-  defp pre({:defmacro, meta, [head]}, acc) do
-    pre({:defmacro, meta, [head,nil]}, acc)
+  defp pre({:defmacro, meta, [head]}, state) do
+    pre({:defmacro, meta, [head,nil]}, state)
   end
 
-  defp pre({:defmacro, meta, args}, acc) do
-    pre({:def, meta, args}, acc)
+  defp pre({:defmacro, meta, args}, state) do
+    pre({:def, meta, args}, state)
   end
 
   # import without options
-  defp pre({:import, meta, [module_info]}, acc) do
-    pre({:import, meta, [module_info, []]}, acc)
+  defp pre({:import, meta, [module_info]}, state) do
+    pre({:import, meta, [module_info, []]}, state)
   end
 
-  defp pre({:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, acc) when is_atom(mod) do
-    current_module  = acc.modules |> :lists.reverse |> Module.concat
-    current_imports = acc.imports |> :lists.reverse |> List.flatten
-    current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-
-    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
-
-    module = Module.concat(module_atoms)
-    [imports_from_scope|other_imports] = acc.imports
-    imports = [[module|imports_from_scope]|other_imports]
-
-    {ast, %{acc | imports: imports, lines_to_env: lines_to_env}}
+  # import with options
+  defp pre({:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, state) when is_atom(mod) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_import(module_atoms |> Module.concat)
+    |> result(ast)
   end
 
   # alias without options
-  defp pre({:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]} = ast, acc) when is_atom(mod) do
+  defp pre({:alias, [line: line], [{:__aliases__, _, module_atoms = [mod|_]}]} = ast, state) when is_atom(mod) do
     alias_tuple = {Module.concat([List.last(module_atoms)]), Module.concat(module_atoms)}
-    do_alias(ast, line, alias_tuple, acc)
+    do_alias(ast, line, alias_tuple, state)
   end
 
-  defp pre({:alias, [line: line], [{_, _, module_atoms = [mod|_]}, [as: {:__aliases__, _, alias_atoms = [al|_]}]]} = ast, acc) when is_atom(mod) and is_atom(al) do
+  # alias with `as` option
+  defp pre({:alias, [line: line], [{_, _, module_atoms = [mod|_]}, [as: {:__aliases__, _, alias_atoms = [al|_]}]]} = ast, state) when is_atom(mod) and is_atom(al) do
     alias_tuple = {Module.concat(alias_atoms), Module.concat(module_atoms)}
-    do_alias(ast, line, alias_tuple, acc)
+    do_alias(ast, line, alias_tuple, state)
   end
 
-  defp pre({atom, [line: line], _} = ast, acc) when atom in @scope_keywords do
-    current_module     = acc.modules    |> :lists.reverse |> Module.concat
-    current_imports    = acc.imports    |> :lists.reverse |> List.flatten
-    current_aliases    = acc.aliases    |> :lists.reverse |> List.flatten
-    current_scope_vars = acc.scope_vars |> :lists.reverse |> List.flatten
-
-    imports    = [[]|acc.imports]
-    aliases    = [[]|acc.aliases]
-    vars       = [[]|acc.vars]
-    scope_vars = [[]|acc.scope_vars]
-
-    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
-
-    {ast, %{acc | imports: imports, aliases: aliases, vars: vars, scope_vars: scope_vars, lines_to_env: lines_to_env}}
+  defp pre({atom, [line: line], _} = ast, state) when atom in @scope_keywords do
+    state
+    |> add_current_env_to_line(line)
+    |> new_vars_scope
+    |> result(ast)
   end
 
-  defp pre({var, [line: _], context} = ast, acc) when is_atom(var) and context in [nil, Elixir] do
-    scope = hd(acc.scopes) |> Atom.to_string
-    [vars_from_scope|other_vars] = acc.vars
-
-    vars_from_scope =
-      if var in vars_from_scope do
-        vars_from_scope
-      else
-        case Atom.to_string(var) do
-          "_" <> _ -> vars_from_scope
-          ^scope   -> vars_from_scope
-          _        -> [var|vars_from_scope]
-        end
-      end
-
-    {ast, %{acc | vars: [vars_from_scope|other_vars], scope_vars: [vars_from_scope|tl(acc.scope_vars)]}}
+  defp pre({atom, _block} = ast, state) when atom in @block_keywords do
+    state
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_vars_scope
+    |> result(ast)
   end
 
-  # Anything else that defining a line
-  defp pre({_, [line: line], _} = ast, acc) do
-    current_module  = acc.modules       |> :lists.reverse |> Module.concat
-    current_imports = acc.imports       |> :lists.reverse |> List.flatten
-    current_aliases = acc.aliases       |> :lists.reverse |> List.flatten
-    current_scope_vars = acc.scope_vars |> :lists.reverse |> List.flatten
+  defp pre({:->, [line: _line], [lhs, _rhs]} = ast, state) do
+    state
+    |> new_alias_scope
+    |> new_import_scope
+    |> new_vars_scope
+    |> add_vars(find_vars(lhs))
+    |> result(ast)
+  end
 
-    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_scope_vars})
+  defp pre({:=, _meta, [lhs, _rhs]} = ast, state) do
+    state
+    |> add_vars(find_vars(lhs))
+    |> result(ast)
+  end
 
-    {ast, %{acc | lines_to_env: lines_to_env}}
+  defp pre({:<-, _meta, [lhs, _rhs]} = ast, state) do
+    state
+    |> add_vars(find_vars(lhs))
+    |> result(ast)
+  end
+
+  # Any other tuple with a line
+  defp pre({_, [line: line], _} = ast, state) do
+    state
+    |> add_current_env_to_line(line)
+    |> result(ast)
   end
 
   # No line defined
-  defp pre(ast, acc) do
-    {ast, acc}
+  defp pre(ast, state) do
+    {ast, state}
   end
 
-  defp do_alias(ast, line, alias_tuple, acc) do
-    current_module  = acc.modules |> :lists.reverse |> Module.concat
-    current_imports = acc.imports |> :lists.reverse |> List.flatten
-    current_aliases = acc.aliases |> :lists.reverse |> List.flatten
-    lines_to_env = Map.put(acc.lines_to_env, line, %{imports: current_imports, aliases: current_aliases, module: current_module})
-
-    [aliases_from_scope|other_aliases] = acc.aliases
-    aliases = [[alias_tuple|aliases_from_scope]|other_aliases]
-
-    {ast, %{acc | aliases: aliases, lines_to_env: lines_to_env}}
+  defp do_alias(ast, line, alias_tuple, state) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_alias(alias_tuple)
+    |> result(ast)
   end
 
-  defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, acc) do
-    outer_mods   = Enum.drop(acc.modules, length(module))
-    outer_scopes = Enum.drop(acc.scopes, length(module))
-    {ast, %{acc | modules: outer_mods, scopes: outer_scopes, imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: [[]]}}
+  defp post({:defmodule, _, [{:__aliases__, _, module}, _]} = ast, state) do
+    state
+    |> remove_module_from_namespace(module)
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
   end
 
-  defp post({def_fun, meta, [{:when, _, [head|_]}, body]}, acc) when def_fun in [:def, :defp] do
-    pre({:def, meta, [head, body]}, acc)
+  defp post({def_fun, meta, [{:when, _, [head|_]}, body]}, state) when def_fun in [:def, :defp] do
+    pre({:def, meta, [head, body]}, state)
   end
 
-  defp post({def_fun, [line: _line], [{name, _, _params}, _]} = ast, acc) when def_fun in [:def, :defp] and is_atom(name) do
-    {ast, %{acc | scopes: tl(acc.scopes), imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: [[]]}}
+  defp post({def_fun, [line: _line], [{name, _, _params}, _]} = ast, state) when def_fun in [:def, :defp] and is_atom(name) do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_func_vars_scope
+    |> remove_last_scope_from_scopes
+    |> result(ast)
   end
-
-  defp post({def_fun, _, _} = ast, acc) when def_fun in [:def, :defp] do
-    {ast, acc}
+  
+  defp post({def_fun, _, _} = ast, state) when def_fun in [:def, :defp] do
+    {ast, state}
   end
 
   # Macro without body. Ex: Kernel.SpecialForms.import
-  defp post({:defmacro, meta, [head]}, acc) do
-    post({:def, meta, [head,nil]}, acc)
+  defp post({:defmacro, meta, [head]}, state) do
+    post({:def, meta, [head,nil]}, state)
   end
 
-  defp post({:defmacro, meta, args}, acc) do
-    post({:def, meta, args}, acc)
+  defp post({:defmacro, meta, args}, state) do
+    post({:def, meta, args}, state)
   end
 
-  defp post({atom, _, _} = ast, acc) when atom in @scope_keywords do
-    {ast, %{acc | imports: tl(acc.imports), aliases: tl(acc.aliases), vars: tl(acc.vars), scope_vars: tl(acc.scope_vars)}}
+  defp post({atom, _, _} = ast, state) when atom in @scope_keywords do
+    state
+    |> remove_vars_scope
+    |> result(ast)
   end
 
-  defp post(ast, acc) do
-    {ast, acc}
+  defp post({atom, _block} = ast, state) when atom in @block_keywords do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
+  end
+
+  defp post({:->, [line: _line], [_lhs, _rhs]} = ast, state) do
+    state
+    |> remove_alias_scope
+    |> remove_import_scope
+    |> remove_vars_scope
+    |> result(ast)
+  end
+
+  defp post(ast, state) do
+    {ast, state}
+  end
+
+  defp result(state, ast) do
+    {ast, state}
+  end
+
+  defp find_vars(ast) do
+    {_ast, vars} = Macro.prewalk(ast, [], &match_var/2)
+    vars |> Enum.uniq
+  end
+
+  defp match_var({var, [line: _], context} = ast, vars) when is_atom(var) and context in [nil, Elixir] do
+    {ast, [var|vars]}
+  end
+
+  defp match_var(ast, vars) do
+    {ast, vars}
   end
 
 end
