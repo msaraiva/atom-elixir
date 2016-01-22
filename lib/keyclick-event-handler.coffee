@@ -9,8 +9,8 @@ class KeyClickEventHandler
     @clickCallback = clickCallback
     @editorView = atom.views.getView(editor)
     @marker = null
-    @lastScreenPosition = null
     @lastBufferPosition = null
+    @firstMouseMove = true
     @subjectAndMarkerRange = null
     @subscriptions = new CompositeDisposable
     @handleEvents()
@@ -22,29 +22,34 @@ class KeyClickEventHandler
     @subscriptions.add @addEventHandler(@editorView, 'mousedown', @mousedownHandler)
     @subscriptions.add @addEventHandler(@editorView, 'keyup',     @keyupHandler)
     @subscriptions.add @addEventHandler(@editorView, 'mousemove', @mousemoveHandler)
+    @subscriptions.add @addEventHandler(@editorView, 'focus', @focusHandler)
 
   addEventHandler: (editorView, eventName, handler) ->
     editorView.addEventListener eventName, handler
     new Disposable ->
       editorView.removeEventListener eventName, handler
 
+  focusHandler: (event) =>
+    @clearMarker()
+    @lastBufferPosition = null
+    @firstMouseMove = true
+
   mousedownHandler: (event) =>
     if @subjectAndMarkerRange != null
       @clickCallback(@editor, @subjectAndMarkerRange.subject, @lastBufferPosition)
-    @clearMarker()
 
   keyupHandler: (event) =>
     @clearMarker()
     @lastBufferPosition = null
 
   mousemoveHandler: (event) =>
-    if event.altKey
+    if @firstMouseMove
+      @firstMouseMove = false
+      return
+
+    if event.altKey && !event.metaKey && !event.ctrlKey
       component = @editorView.component
       screenPosition = component.screenPositionForMouseEvent({clientX: event.clientX, clientY: event.clientY})
-      if @lastScreenPosition != null && screenPosition.compare(@lastScreenPosition) == 0
-        return
-
-      @lastScreenPosition = screenPosition
       bufferPosition = @editor.bufferPositionForScreenPosition(screenPosition)
 
       if @lastBufferPosition != null && bufferPosition.compare(@lastBufferPosition) == 0
