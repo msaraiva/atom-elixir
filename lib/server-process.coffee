@@ -6,6 +6,7 @@ fs = require('fs')
 module.exports =
 
 class ServerProcess
+  ready: false
 
   constructor: (projectPath) ->
     @projectPath = projectPath
@@ -22,6 +23,7 @@ class ServerProcess
     buffer = ''
 
     @proc.stdout.on 'data', (chunk) =>
+      @ready = true
       if ~chunk.indexOf("END-OF-#{@lastRequestType}")
         [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")
         @busy = false
@@ -40,6 +42,7 @@ class ServerProcess
       return
 
     @proc.stderr.on 'data', (chunk) =>
+      @ready = true
       @busy = false
       message = "[atom-elixir] " + chunk.toString()
       if ~chunk.indexOf("Server Error")
@@ -49,16 +52,19 @@ class ServerProcess
 
     @proc.on 'close', (exitCode) =>
       console.error  "[atom-elixir] Child process exited with code " + exitCode
+      @ready = false
       @busy = false
       @proc = null
 
     @proc.on 'error', (error) =>
       console.error "[atom-elixir] " + error.toString()
+      @ready = false
       @busy = false
       @proc = null
 
   stop: ->
     @proc.stdin.end()
+    @ready = false
     @busy = false
     @proc = null
 

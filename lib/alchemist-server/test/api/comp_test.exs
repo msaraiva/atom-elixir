@@ -23,7 +23,7 @@ defmodule Alchemist.API.CompTest do
     assert capture_io(fn ->
       Comp.process(['is_b', Elixir, [], [], []])
     end) =~ """
-    is_b
+    is_b;hint
     is_binary/1;function;term;Kernel;Returns `true` if `term` is a binary\\; otherwise returns `false`.;@spec is_binary(term) :: boolean
     is_bitstring/1;function;term;Kernel;Returns `true` if `term` is a bitstring (including a binary)\\; otherwise returns `false`.;@spec is_bitstring(term) :: boolean
     is_boolean/1;function;term;Kernel;Returns `true` if `term` is either the atom `true` or the atom `false` (i.e.,\\na boolean)\\; otherwise returns `false`.;@spec is_boolean(term) :: boolean
@@ -35,7 +35,7 @@ defmodule Alchemist.API.CompTest do
     assert capture_io(fn ->
       Comp.process(['MyList.flat', Elixir, [], [{MyList, List}], []])
     end) =~ """
-    MyList.flatten
+    MyList.flatten;hint
     flatten/2;function;list,tail;List;Flattens the given `list` of nested lists.\\nThe list `tail` will be added at the end of\\nthe flattened list.;@spec flatten(deep_list, [elem]) :: [elem] when deep_list: [elem | deep_list], elem: var
     flatten/1;function;list;List;Flattens the given `list` of nested lists.;@spec flatten(deep_list) :: list when deep_list: [any | deep_list]
     END-OF-COMP
@@ -46,7 +46,7 @@ defmodule Alchemist.API.CompTest do
     assert capture_io(fn ->
       Comp.process(['Str', Elixir, [], [], []])
     end) =~ """
-    Str
+    Str;hint
     Stream;module;Module for creating and composing streams.
     String;module;A String in Elixir is a UTF-8 encoded binary.
     StringIO;module;This module provides an IO device that wraps a string.

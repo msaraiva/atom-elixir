@@ -29,7 +29,7 @@ defmodule Alchemist.API.Comp do
     first_item = Enum.at(list2, 0)
 
     if first_item in [nil, ""] do
-      first_item = hint
+      first_item = "#{hint};hint"
     else
       list2 = List.delete_at(list2, 0)
     end

@@ -12,7 +12,7 @@ defmodule CompleteTest do
 
   test "return completion candidates for 'List'" do
     assert run('List') == [
-      'List.',
+      'List.;hint',
       'Chars;module;The List.Chars protocol is responsible for\\nconverting a structure to a list (only if applicable).\\nThe only function required to be implemented is\\n`to_char_list` which does the conversion.',
       '__info__/1;function;;List;;',
       'first/1;function;list;List;Returns the first element in `list` or `nil` if `list` is empty.;@spec first([elem]) :: nil | elem when elem: var',
@@ -48,7 +48,7 @@ defmodule CompleteTest do
 
   test "return completion candidates for 'Str'" do
     assert run('Str') == [
-      'Str',
+      'Str;hint',
       'Stream;module;Module for creating and composing streams.',
       'String;module;A String in Elixir is a UTF-8 encoded binary.',
       'StringIO;module;This module provides an IO device that wraps a string.'
@@ -57,7 +57,7 @@ defmodule CompleteTest do
 
   test "return completion candidates for 'List.del'" do
     assert run('List.del') == [
-      'List.delete',
+      'List.delete;hint',
       'delete/2;function;list,item;List;Deletes the given item from the list. Returns a list without\\nthe item. If the item occurs more than once in the list, just\\nthe first occurrence is removed.;@spec delete(list, any) :: list',
       'delete_at/2;function;list,index;List;Produces a new list by removing the value at the specified `index`.\\nNegative indices indicate an offset from the end of the list.\\nIf `index` is out of bounds, the original `list` is returned.;@spec delete_at(list, integer) :: list'
     ]
@@ -67,7 +67,7 @@ defmodule CompleteTest do
     Application.put_env(:"alchemist.el", :aliases, [{MyList, List}])
 
     assert run('MyList.del') == [
-      'MyList.delete',
+      'MyList.delete;hint',
       'delete/2;function;list,item;List;Deletes the given item from the list. Returns a list without\\nthe item. If the item occurs more than once in the list, just\\nthe first occurrence is removed.;@spec delete(list, any) :: list',
       'delete_at/2;function;list,index;List;Produces a new list by removing the value at the specified `index`.\\nNegative indices indicate an offset from the end of the list.\\nIf `index` is out of bounds, the original `list` is returned.;@spec delete_at(list, integer) :: list'
     ]
