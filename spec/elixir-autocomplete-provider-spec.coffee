@@ -112,6 +112,14 @@ describe 'ElixirAutocompleteProvider', ->
       waitsForAutocompleteView(editorView)
       expectListTexts editorView, ['all/2', 'any/2']
 
+    it 'lists functions from alias', ->
+      runs ->
+        editor.setCursorBufferPosition(positionInModule)
+        writeText(editor, 'My')
+
+      waitsForAutocompleteView(editorView)
+      expectListTexts editorView, ['MyEnum', 'MyEnum.EmptyError', 'MyEnum.OutOfBoundsError', 'MyEnum.__info__/1']
+
     describe "lists Elixir module's submodules and functions when the module is the only suggestion", ->
 
       it "lists with partial module name hint", ->
