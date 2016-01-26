@@ -52,11 +52,10 @@ class ElixirAutocompleteProvider
       @server.getSuggestionsForCodeComplete prefix, bufferText, line, (result) ->
         suggestions = result.split('\n')
 
-        hint = suggestions[0]
+        [hint, _type] = suggestions[0].split(';')
         suggestions = suggestions[1...]
         module_prefix = ''
         modules_to_add = []
-
         is_prefix_a_function_call = !!(prefix.match(/\.[^A-Z][^\.]*$/) || prefix.match(/^[^A-Z:][^\.]*$/))
 
         if prefix != '' && !is_prefix_a_function_call
@@ -65,18 +64,16 @@ class ElixirAutocompleteProvider
 
           if prefix[-1...][0] != '.' || ("#{prefix_modules}" != "#{hint_modules}")
             modules_to_add = (m for m,i in hint_modules when m != prefix_modules[i])
-            # modules_to_add = (m for m,i in hint_modules when m != prefix_modules[i] || i == hint_modules.length-1)
-            module_prefix = modules_to_add.join('.') + '.' if modules_to_add.length > 0
+            lastModuleHint = hint_modules[hint_modules.length-1]
 
         suggestions = suggestions.map (serverSuggestion) ->
-          createSuggestion(module_prefix + serverSuggestion, prefix)
-
-        if modules_to_add.length > 0
-          new_suggestion = modules_to_add.join('.')
-          suggestions   = [createSuggestionForModule(new_suggestion, new_suggestion, '', '')].concat(suggestions)
+          fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+          name = fields[0]
+          if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modules_to_add.length > 0
+            fields[0] = modules_to_add.join('.') + '.' + name
+          createSuggestion(serverSuggestion, fields, prefix)
 
         suggestions = sortSuggestions(suggestions)
-
         resolve(suggestions)
 
   getPrefix = (editor, bufferPosition) ->
@@ -84,12 +81,11 @@ class ElixirAutocompleteProvider
     regex = /[\w0-9\._!\?\:]+$/
     line.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, prefix) ->
-    fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+  createSuggestion = (serverSuggestion, fields, prefix) ->
     if fields[1] == 'module'
-      [name, kind, desc] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+      [name, kind, desc] = fields
     else
-      [name, kind, signature, mod, desc, spec] = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
+      [name, kind, signature, mod, desc, spec] = fields
 
     return "" if serverSuggestion.match(/^[\s\d]/)
 

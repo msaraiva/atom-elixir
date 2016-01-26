@@ -13,6 +13,7 @@ defmodule CompleteTest do
   test "return completion candidates for 'List'" do
     assert run('List') == [
       'List.;hint',
+      'List;module;Implements functions that only make sense for lists\\nand cannot be part of the Enum protocol. In general,\\nfavor using the Enum API instead of List.',
       'Chars;module;The List.Chars protocol is responsible for\\nconverting a structure to a list (only if applicable).\\nThe only function required to be implemented is\\n`to_char_list` which does the conversion.',
       '__info__/1;function;;List;;',
       'first/1;function;list;List;Returns the first element in `list` or `nil` if `list` is empty.;@spec first([elem]) :: nil | elem when elem: var',

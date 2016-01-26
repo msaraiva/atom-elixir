@@ -29,10 +29,9 @@ defmodule Alchemist.Helpers.Complete do
     case { status, result, list } do
       { :no, _, _ }  -> ''
       # TODO: test
-      # { :yes, [], _ } -> List.insert_at(list, 0, exp)
       { :yes, [], _ } -> List.insert_at(list, 0, '#{exp};hint')
-      { :yes, _,  _ } -> run(code ++ result)
-      # { :yes, _,  _ } -> List.insert_at(run(code ++ result), 1, Enum.at(list, 0))
+      { :yes, _, [] } -> run(code ++ result)
+      { :yes, _,  _ } -> List.insert_at(run(code ++ result), 1, Enum.at(list, 0))
       #
     end
   end
@@ -148,9 +147,7 @@ defmodule Alchemist.Helpers.Complete do
     case to_hint(uniq, hint) do
       ""   -> yes("", to_uniq_entries(uniq))
       # TODO: test
-      hint -> yes(hint, [])
-      # hint -> yes(hint, to_uniq_entries(uniq))
-      #
+      hint -> yes(hint, to_uniq_entries(uniq))
     end
   end
 
@@ -394,10 +391,8 @@ defmodule Alchemist.Helpers.Complete do
   end
 
   # TODO: test
-  # defp to_uniq_entries(%{kind: :module} = mod) do
-  #   to_entries(mod)
-  defp to_uniq_entries(%{kind: :module}) do
-    []
+  defp to_uniq_entries(%{kind: :module} = mod) do
+    to_entries(mod)
   end
 
   defp to_uniq_entries(%{kind: :function} = fun) do
