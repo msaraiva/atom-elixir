@@ -11,7 +11,7 @@ defmodule Sample do
     my_inspect(module_var |> flatten |> MyEnum.count)
   end
 
-  defp my_inspect(param1) do
+  def my_inspect(param1) do
     IO.inspect(param1)
   end
 

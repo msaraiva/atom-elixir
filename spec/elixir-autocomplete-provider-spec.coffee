@@ -2,6 +2,7 @@ spawn = require('child_process').spawn
 fs = require('fs')
 
 positionInModule = {row: 5, column: 0}
+positionInPublicFunc = {row: 10, column: 0}
 
 writeText = (editor, text) ->
   for i in [0..(text.length-1)]
@@ -119,6 +120,15 @@ describe 'ElixirAutocompleteProvider', ->
 
       waitsForAutocompleteView(editorView)
       expectListTexts editorView, ['MyEnum', 'MyEnum.EmptyError', 'MyEnum.OutOfBoundsError', 'MyEnum.__info__/1']
+
+    it 'lists module attributes, local variables and macro/functions when cursor inside a function', ->
+      runs ->
+        editor.setCursorBufferPosition(positionInPublicFunc)
+        editor.insertNewline()
+        atom.commands.dispatch(editorView, 'autocomplete-plus:activate')
+
+      waitsForAutocompleteView(editorView)
+      expectListTexts editorView, ['module_attr', 'module_var', '!(arg)']
 
     describe "lists Elixir module's submodules and functions when the module is the only suggestion", ->
 
