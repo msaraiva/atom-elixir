@@ -78,7 +78,7 @@ class ElixirAutocompleteProvider
 
   getPrefix = (editor, bufferPosition) ->
     line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
-    regex = /[\w0-9\._!\?\:]+$/
+    regex = /[\w0-9\._!\?\:@]+$/
     line.match(regex)?[0] or ''
 
   createSuggestion = (serverSuggestion, fields, prefix) ->
@@ -90,6 +90,8 @@ class ElixirAutocompleteProvider
     return "" if serverSuggestion.match(/^[\s\d]/)
 
     switch kind
+      when 'attribute'
+        createSuggestionForAttribute(name, prefix)
       when 'var'
         createSuggestionForVariable(name)
       when 'private_function'
@@ -113,11 +115,26 @@ class ElixirAutocompleteProvider
           rightLabel: kind || 'hint'
         }
 
+  createSuggestionForAttribute = (name, prefix) ->
+    if prefix.match(/^@/)
+      snippet = name.replace(/^@/, '')
+    else
+      snippet = name
+
+    {
+      snippet: snippet
+      displayText: name[1...]
+      type: 'property'
+      iconHTML: '@'
+      rightLabel: 'module attribute'
+    }
+
   createSuggestionForVariable = (name) ->
     {
       text: name
       type: 'value'
       iconHTML: 'v'
+      rightLabel: 'variable'
     }
 
   createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix) ->
@@ -142,14 +159,14 @@ class ElixirAutocompleteProvider
 
     snippet = snippet.replace(/^:/, '') + " $0"
 
-    [type, iconHTML] =
+    [type, iconHTML, rightLabel] =
       switch kind
-        when 'private_function' then ['tag',      'f']
-        when 'public_function'  then ['function', 'f']
-        when 'function'         then ['function', 'f']
-        when 'public_macro'     then ['package',  'm']
-        when 'macro'            then ['package',  'm']
-        else                         ['unknown',  '?']
+        when 'private_function' then ['tag',      'f', 'private']
+        when 'public_function'  then ['function', 'f', 'public']
+        when 'function'         then ['function', 'f', mod]
+        when 'public_macro'     then ['package',  'm', 'public']
+        when 'macro'            then ['package',  'm', mod]
+        else                         ['unknown',  '?', '']
 
     # TODO: duplicated
     if prefix.match(/^:/)
@@ -169,7 +186,7 @@ class ElixirAutocompleteProvider
       snippet: snippet
       displayText: displayText
       type: type
-      rightLabel: mod
+      rightLabel: rightLabel
       # description: description
       descriptionHTML: description
       descriptionMoreURL: getDocURL(prefix, func, arity)
@@ -213,8 +230,9 @@ class ElixirAutocompleteProvider
     sort_kind = (a, b) ->
       priority =
         exception: 0 # unknown
-        value:     0 # variable
-        tag:       1 # private function
+        property:  0 # module attribute
+        value:     1 # variable
+        tag:       2 # private function
         class:     3 # module
         package:   4 # macro
         function:  4 # function

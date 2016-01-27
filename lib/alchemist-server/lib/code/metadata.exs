@@ -5,7 +5,7 @@ defmodule Alchemist.Code.Metadata do
             lines_to_env: %{},
             error: nil
 
-  @empty_env %{imports: [], aliases: [], module: nil, vars: []}
+  @empty_env %{imports: [], aliases: [], module: nil, vars: [], attributes: []}
 
   def get_env(%__MODULE__{} = metadata, line_number) do
     case Map.get(metadata.lines_to_env, line_number) do

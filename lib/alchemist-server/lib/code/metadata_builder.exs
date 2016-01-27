@@ -21,6 +21,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> new_namespace(module)
     |> add_current_module_to_index(line)
     |> create_alias_for_current_module
+    |> new_attributes_scope
     |> new_alias_scope
     |> new_import_scope
     |> new_vars_scope
@@ -30,6 +31,7 @@ defmodule Alchemist.Code.MetadataBuilder do
   defp post_module(ast, state, module) do
     state
     |> remove_module_from_namespace(module)
+    |> remove_attributes_scope
     |> remove_alias_scope
     |> remove_import_scope
     |> remove_vars_scope
@@ -117,6 +119,13 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> result(ast)
   end
 
+  defp pre_module_attribute(ast, state, line, name) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_attribute(name)
+    |> result(ast)
+  end
+
   defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, state) do
     pre_module(ast, state, line, module)
   end
@@ -140,6 +149,10 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   defp pre({:defmacro, meta, args}, state) do
     pre({:def, meta, args}, state)
+  end
+
+  defp pre({:@, [line: line], [{name, _, _}]} = ast, state) do
+    pre_module_attribute(ast, state, line, name)
   end
 
   # import without options

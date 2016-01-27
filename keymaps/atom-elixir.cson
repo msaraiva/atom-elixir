@@ -20,7 +20,10 @@
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
   'ctrl-shift-o': 'atom-elixir:expand-once-selected-text'
 
-'atom-text-editor:not(mini)':
+'atom-text-editor':
+  'alt-up': 'atom-elixir:return-from-definition'
+
+'.platform-darwin atom-text-editor:not(mini)':
   'alt-up': 'atom-elixir:return-from-definition'
 
 '.elixir-quoted-view atom-text-editor[mini]':

@@ -16,12 +16,12 @@ defmodule Alchemist.API.Comp do
     |> process
   end
 
-  def process([nil, _, imports, _, _]) do
+  def process([nil, _, imports, _, _, _]) do
     Complete.run('', imports) ++ Complete.run('')
     |> print
   end
 
-  def process([hint, _context, imports, aliases, vars]) do
+  def process([hint, _context, imports, aliases, vars, attributes]) do
     Application.put_env(:"alchemist.el", :aliases, aliases)
 
     list1 = Complete.run(hint, imports)
@@ -34,7 +34,7 @@ defmodule Alchemist.API.Comp do
       list2 = List.delete_at(list2, 0)
     end
 
-    full_list = [first_item] ++ find_vars(vars, hint) ++ list1 ++ list2
+    full_list = [first_item] ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
     full_list |> print
   end
 
@@ -46,9 +46,10 @@ defmodule Alchemist.API.Comp do
     %{imports: imports,
       aliases: aliases,
       vars: vars,
+      attributes: attributes,
       module: module} = Metadata.get_env(metadata, line)
 
-    [hint, context, [module|imports], aliases, vars]
+    [hint, context, [module|imports], aliases, vars, attributes]
   end
 
   defp print(result) do
@@ -62,6 +63,12 @@ defmodule Alchemist.API.Comp do
   defp find_vars(vars, hint) do
     for var <- vars, hint == "" or String.starts_with?("#{var}", hint) do
       "#{var};var"
+    end
+  end
+
+  defp find_attributes(attributes, hint) do
+    for attribute <- attributes, hint in ["", "@"] or String.starts_with?("@#{attribute}", hint) do
+      "@#{attribute};attribute"
     end
   end
 end

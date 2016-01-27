@@ -65,6 +65,12 @@ defmodule Alchemist.Code.Parser do
     |> replace_line_with_marker(line)
   end
 
+  defp fix_parse_error(source, cursor_line_number, {:error, {line, "syntax" <> _, "'end'"}}) when is_integer(line) do
+    IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
+    source
+    |> replace_line_with_marker(cursor_line_number)
+  end
+
   defp fix_parse_error(source, _cursor_line_number, {:error, {line, "syntax" <> _, _token}}) when is_integer(line) do
     IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
     source

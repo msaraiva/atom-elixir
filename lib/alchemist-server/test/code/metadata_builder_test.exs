@@ -15,6 +15,25 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_subject_definition_line(Kernel.SpecialForms, :alias, nil) =~ "defmacro alias(module, opts)"
   end
 
+  test "module attributes" do
+    state = """
+      defmodule MyModule do
+        @myattribute 1
+        IO.puts @myattribute
+        defmodule InnerModule do
+          @inner_attr module_var
+          IO.puts @inner_attr
+        end
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_attributes(state, 3) == [:myattribute]
+    assert get_line_attributes(state, 6) == [:inner_attr]
+    assert get_line_attributes(state, 8) == [:myattribute]
+  end
+
   test "vars defined inside a function without params" do
     state = """
       defmodule MyModule do
@@ -386,6 +405,10 @@ defmodule Alchemist.Code.MetadataBuilderTest do
 
   defp get_line_imports(state, line) do
     (get_in(state.lines_to_env, [line, :imports]) || [])
+  end
+
+  defp get_line_attributes(state, line) do
+    (get_in(state.lines_to_env, [line, :attributes]) || [])
   end
 
   defp get_line_module(state, line) do

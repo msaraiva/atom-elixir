@@ -6,6 +6,8 @@ defmodule Alchemist.Code.State do
       scopes:     [:Elixir],
       imports:    [[]],
       aliases:    [[]],
+      attributes: [[]],
+      scope_attributes: [[]],
       vars:       [[]],
       scope_vars: [[]],
       #TODO: rename to mod_fun_arity_to_line_map
@@ -20,7 +22,8 @@ defmodule Alchemist.Code.State do
     current_imports = state.imports    |> :lists.reverse |> List.flatten
     current_aliases = state.aliases    |> :lists.reverse |> List.flatten
     current_vars    = state.scope_vars |> :lists.reverse |> List.flatten
-    %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_vars}
+    current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
+    %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes}
   end
 
   def add_current_env_to_line(state, line) do
@@ -94,6 +97,10 @@ defmodule Alchemist.Code.State do
     %{state | vars: [[]|state.vars], scope_vars: [[]]}
   end
 
+  def new_attributes_scope(state) do
+    %{state | attributes: [[]|state.attributes], scope_attributes: [[]]}
+  end
+
   def remove_vars_scope(state) do
     %{state | vars: tl(state.vars), scope_vars: tl(state.scope_vars)}
   end
@@ -101,6 +108,11 @@ defmodule Alchemist.Code.State do
   def remove_func_vars_scope(state) do
     vars = tl(state.vars)
     %{state | vars: vars, scope_vars: vars}
+  end
+
+  def remove_attributes_scope(state) do
+    attributes = tl(state.attributes)
+    %{state | attributes: attributes, scope_attributes: attributes}
   end
 
   def add_alias(state, alias_tuple) do
@@ -137,6 +149,23 @@ defmodule Alchemist.Code.State do
       end
 
     %{state | vars: [vars_from_scope|other_vars], scope_vars: [vars_from_scope|tl(state.scope_vars)]}
+  end
+
+  def add_attribute(state, attribute) do
+    scope = hd(state.scopes) |> Atom.to_string
+    [attributes_from_scope|other_attributes] = state.attributes
+
+    attributes_from_scope =
+      if attribute in attributes_from_scope do
+        attributes_from_scope
+      else
+        case Atom.to_string(attribute) do
+          ^scope   -> attributes_from_scope
+          _        -> [attribute|attributes_from_scope]
+        end
+      end
+
+    %{state | attributes: [attributes_from_scope|other_attributes], scope_attributes: [attributes_from_scope|tl(state.scope_attributes)]}
   end
 
   def add_vars(state, vars) do
