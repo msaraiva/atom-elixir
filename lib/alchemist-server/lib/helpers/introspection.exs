@@ -34,6 +34,16 @@ defmodule Introspection do
     end
   end
 
+  def get_module_subtype(module) do
+    has_func = fn f,a -> Kernel.function_exported?(module,f,a) end
+    cond do
+      has_func.(:__protocol__, 1) -> :protocol
+      has_func.(:__impl__,     1) -> :implementation
+      has_func.(:__struct__,   0) -> :struct
+      true -> nil
+    end
+  end
+
   def extract_fun_args_and_desc({ { _fun, _ }, _line, _kind, args, doc }) do
     args = Enum.map_join(args, ",", &print_doc_arg(&1))
     desc = extract_summary_from_docs(doc)

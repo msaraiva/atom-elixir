@@ -13,8 +13,8 @@ defmodule CompleteTest do
   test "return completion candidates for 'List'" do
     assert run('List') == [
       'List.;hint',
-      'List;module;Implements functions that only make sense for lists\\nand cannot be part of the Enum protocol. In general,\\nfavor using the Enum API instead of List.',
-      'Chars;module;The List.Chars protocol is responsible for\\nconverting a structure to a list (only if applicable).\\nThe only function required to be implemented is\\n`to_char_list` which does the conversion.',
+      'List;module;;Implements functions that only make sense for lists\\nand cannot be part of the Enum protocol. In general,\\nfavor using the Enum API instead of List.',
+      'Chars;module;protocol;The List.Chars protocol is responsible for\\nconverting a structure to a list (only if applicable).\\nThe only function required to be implemented is\\n`to_char_list` which does the conversion.',
       '__info__/1;function;;List;;',
       'first/1;function;list;List;Returns the first element in `list` or `nil` if `list` is empty.;@spec first([elem]) :: nil | elem when elem: var',
       'last/1;function;list;List;Returns the last element in `list` or `nil` if `list` is empty.;@spec last([elem]) :: nil | elem when elem: var',
@@ -50,9 +50,9 @@ defmodule CompleteTest do
   test "return completion candidates for 'Str'" do
     assert run('Str') == [
       'Str;hint',
-      'Stream;module;Module for creating and composing streams.',
-      'String;module;A String in Elixir is a UTF-8 encoded binary.',
-      'StringIO;module;This module provides an IO device that wraps a string.'
+      'Stream;module;;Module for creating and composing streams.',
+      'String;module;;A String in Elixir is a UTF-8 encoded binary.',
+      'StringIO;module;;This module provides an IO device that wraps a string.'
     ]
   end
 

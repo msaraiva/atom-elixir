@@ -47,9 +47,9 @@ defmodule Alchemist.API.CompTest do
       Comp.process(['Str', Elixir, [], [], [], []])
     end) =~ """
     Str;hint
-    Stream;module;Module for creating and composing streams.
-    String;module;A String in Elixir is a UTF-8 encoded binary.
-    StringIO;module;This module provides an IO device that wraps a string.
+    Stream;module;;Module for creating and composing streams.
+    String;module;;A String in Elixir is a UTF-8 encoded binary.
+    StringIO;module;;This module provides an IO device that wraps a string.
     END-OF-COMP
     """
   end

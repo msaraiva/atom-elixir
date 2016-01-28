@@ -260,8 +260,10 @@ defmodule Alchemist.Helpers.Complete do
     for mod <- match_modules(base, module === Elixir),
     parts = String.split(mod, "."),
     depth <= length(parts) do
-      desc = Introspection.get_module_docs_summary(mod |> String.to_atom)
-      %{kind: :module, type: :elixir, name: Enum.at(parts, depth-1), desc: desc}
+      mod_as_atom = mod |> String.to_atom
+      desc = Introspection.get_module_docs_summary(mod_as_atom)
+      subtype = Introspection.get_module_subtype(mod_as_atom)
+      %{kind: :module, type: :elixir, name: Enum.at(parts, depth-1), desc: desc, subtype: subtype}
     end
     |> Enum.uniq(fn %{name: name} -> name end)
   end
@@ -366,8 +368,13 @@ defmodule Alchemist.Helpers.Complete do
 
   ## Ad-hoc conversions
 
+  defp to_entries(%{kind: :module, name: name, desc: desc, subtype: subtype}) when subtype != nil do
+    IO.puts(:stderr, subtype)
+    ["#{name};module;#{subtype};#{desc}"]
+  end
+
   defp to_entries(%{kind: :module, name: name, desc: desc}) do
-    ["#{name};module;#{desc}"]
+    ["#{name};module;;#{desc}"]
   end
 
   defp to_entries(%{kind: :function, name: name, arities: arities, module: mod, func_kind: func_kind, docs: docs, specs: specs}) do

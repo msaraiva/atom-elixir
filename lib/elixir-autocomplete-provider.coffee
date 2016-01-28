@@ -83,7 +83,7 @@ class ElixirAutocompleteProvider
 
   createSuggestion = (serverSuggestion, fields, prefix) ->
     if fields[1] == 'module'
-      [name, kind, desc] = fields
+      [name, kind, subtype, desc] = fields
     else
       [name, kind, signature, mod, desc, spec] = fields
 
@@ -105,7 +105,7 @@ class ElixirAutocompleteProvider
       when 'macro'
         createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
       when 'module'
-        createSuggestionForModule(serverSuggestion, name, desc, prefix)
+        createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
       else
         console.log("Unknown kind: #{serverSuggestion}")
         {
@@ -188,14 +188,12 @@ class ElixirAutocompleteProvider
       displayText: displayText
       type: type
       rightLabel: rightLabel
-      # description: description
       descriptionHTML: description
       descriptionMoreURL: getDocURL(prefix, func, arity)
       iconHTML: iconHTML
-      # replacementPrefix: prefix
     }
 
-  createSuggestionForModule = (serverSuggestion, name, desc, prefix) ->
+  createSuggestionForModule = (serverSuggestion, name, desc, prefix, subtype) ->
     return "" if serverSuggestion.match(/^[\s\d]/)
 
     snippet = name.replace(/^:/, '')
@@ -203,13 +201,24 @@ class ElixirAutocompleteProvider
     description = desc || ""
     description = markdownToHTML(description.replace(/\\n/g, "\n"))
 
+    iconHTML =
+      switch subtype
+        when 'protocol'
+          'P'
+        when 'implementation'
+          'I'
+        when 'struct'
+          'S'
+        else
+          'M'
+
     {
       snippet: snippet
       displayText: name
       type: 'class'
-      iconHTML: 'M'
+      iconHTML: iconHTML
       descriptionHTML: description
-      rightLabel: 'module'
+      rightLabel: subtype || 'module'
     }
 
   getDocURL = (prefix, func, arity) ->
