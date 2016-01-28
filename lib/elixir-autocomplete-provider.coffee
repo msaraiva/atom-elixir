@@ -37,7 +37,9 @@ class ElixirAutocompleteProvider
       unless (activatedManually || 'autocomplete-active' in editorElement.classList)
         return
 
-    prefix = getPrefix(editor, bufferPosition)
+    textBeforeCursor = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+    prefix = getPrefix(textBeforeCursor)
+    pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
 
     return if !activatedManually && prefix == ""
 
@@ -71,17 +73,16 @@ class ElixirAutocompleteProvider
           name = fields[0]
           if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modules_to_add.length > 0
             fields[0] = modules_to_add.join('.') + '.' + name
-          createSuggestion(serverSuggestion, fields, prefix)
+          createSuggestion(serverSuggestion, fields, prefix, pipeBefore)
 
         suggestions = sortSuggestions(suggestions)
         resolve(suggestions)
 
-  getPrefix = (editor, bufferPosition) ->
-    line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+  getPrefix = (textBeforeCursor) ->
     regex = /[\w0-9\._!\?\:@]+$/
-    line.match(regex)?[0] or ''
+    textBeforeCursor.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, fields, prefix) ->
+  createSuggestion = (serverSuggestion, fields, prefix, pipeBefore) ->
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
     else
@@ -95,15 +96,15 @@ class ElixirAutocompleteProvider
       when 'var'
         createSuggestionForVariable(name)
       when 'private_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore)
       when 'public_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore)
       when 'function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore)
       when 'public_macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore)
       when 'macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix)
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore)
       when 'module'
         createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
       else
@@ -138,7 +139,7 @@ class ElixirAutocompleteProvider
       rightLabel: 'variable'
     }
 
-  createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix) ->
+  createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore) ->
     args = signature.split(',')
     [func, arity] = name.split('/')
     [moduleParts..., postfix] = prefix.split('.')
@@ -155,10 +156,13 @@ class ElixirAutocompleteProvider
       params  = [1..arity].map (i) -> "${#{i}:arg#{i}}"
       displayText = "#{func}/#{arity}"
 
-    if arity != '0'
-      snippet = "#{func}(#{params.join(', ')})"
+    snippet_params = params
+    snippet_params = snippet_params[1...] if snippet_params.length > 0 && pipeBefore
 
-    snippet = snippet.replace(/^:/, '') + " $0"
+    if snippet_params.length > 0
+      snippet = "#{func}(#{snippet_params.join(', ')})"
+
+    snippet = snippet.replace(/^:/, '') + "$0"
 
     [type, iconHTML, rightLabel] =
       switch kind
