@@ -126,12 +126,13 @@ class ElixirAutocompleteProvider
       displayText: name[1...]
       type: 'property'
       iconHTML: '@'
-      rightLabel: 'module attribute'
+      rightLabel: 'attribute'
     }
 
   createSuggestionForVariable = (name) ->
     {
       text: name
+      displayText: name
       type: 'value'
       iconHTML: 'v'
       rightLabel: 'variable'
