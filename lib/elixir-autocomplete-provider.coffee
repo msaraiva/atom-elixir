@@ -142,7 +142,7 @@ class ElixirAutocompleteProvider
 
   createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore) ->
     args = signature.split(',')
-    [func, arity] = name.split('/')
+    [_, func, arity] = name.match(/(.+)\/(\d+)/)
     [moduleParts..., postfix] = prefix.split('.')
 
     params = []
@@ -191,6 +191,8 @@ class ElixirAutocompleteProvider
     description = markdownToHTML(description)
 
     {
+      func: func
+      arity: arity
       snippet: snippet
       displayText: displayText
       type: type
@@ -244,7 +246,7 @@ class ElixirAutocompleteProvider
       "http://elixir-lang.org/docs/v#{ELIXIR_VERSION}/elixir/#{module}.html\##{func}/#{arity}"
 
   sortSuggestions = (suggestions) ->
-    sort_kind = (a, b) ->
+    sortKind = (a, b) ->
       priority =
         exception: 0 # unknown
         property:  0 # module attribute
@@ -256,13 +258,24 @@ class ElixirAutocompleteProvider
 
       priority[a.type] - priority[b.type]
 
-    sort_text = (a, b) ->
+    sortText = (a, b) ->
       if a.displayText > b.displayText then 1 else if a.displayText < b.displayText then -1 else 0
 
-    sort_func = (a, b) ->
-      sort_kind(a,b) || sort_text(a, b)
+    isFunc = (suggestion) ->
+      !!(suggestion.func)
 
-    suggestions.sort(sort_func)
+    sortFunctionByName = (a, b) ->
+      return 0 if !isFunc(a) || !isFunc(b)
+      if a.func > b.func then 1 else if a.func < b.func then -1 else 0
+
+    sortFunctionByArity = (a, b) ->
+      return 0 if !isFunc(a) || !isFunc(b)
+      if a.arity > b.arity then 1 else if a.arity < b.arity then -1 else 0
+
+    sortFunc = (a, b) ->
+      sortKind(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortText(a, b)
+
+    suggestions.sort(sortFunc)
 
   markdownToHTML = (mdText) ->
     marked.setOptions({
