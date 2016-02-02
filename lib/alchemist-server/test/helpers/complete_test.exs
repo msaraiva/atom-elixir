@@ -50,7 +50,7 @@ defmodule CompleteTest do
   test "return completion candidates for 'Str'" do
     assert run('Str') == [
       'Str;hint',
-      'Stream;module;;Module for creating and composing streams.',
+      'Stream;module;struct;Module for creating and composing streams.',
       'String;module;;A String in Elixir is a UTF-8 encoded binary.',
       'StringIO;module;;This module provides an IO device that wraps a string.'
     ]

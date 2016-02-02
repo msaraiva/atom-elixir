@@ -369,7 +369,6 @@ defmodule Alchemist.Helpers.Complete do
   ## Ad-hoc conversions
 
   defp to_entries(%{kind: :module, name: name, desc: desc, subtype: subtype}) when subtype != nil do
-    IO.puts(:stderr, subtype)
     ["#{name};module;#{subtype};#{desc}"]
   end
 

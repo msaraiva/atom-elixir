@@ -35,7 +35,7 @@ defmodule Introspection do
   end
 
   def get_module_subtype(module) do
-    has_func = fn f,a -> Kernel.function_exported?(module,f,a) end
+    has_func = fn f,a -> Code.ensure_loaded?(module) && Kernel.function_exported?(module,f,a) end
     cond do
       has_func.(:__protocol__, 1) -> :protocol
       has_func.(:__impl__,     1) -> :implementation
