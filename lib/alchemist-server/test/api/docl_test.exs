@@ -103,6 +103,10 @@ defmodule Alchemist.API.DoclTest do
     end) =~ """
     > Mix.Generator.create_file(path, contents, opts \\\\\\\\ [])
 
+    ### Specs
+
+    `@spec create_file(Path.t, iodata, Keyword.t) :: any`
+
     Creates a file with the given contents.
     If the file already exists, asks for user confirmation.
 

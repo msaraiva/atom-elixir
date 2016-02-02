@@ -12,14 +12,12 @@ defmodule CompleteTest do
 
   test "return completion candidates for 'List'" do
     assert run('List') == [
-      'List.;hint',
-      'List;module;;Implements functions that only make sense for lists\\nand cannot be part of the Enum protocol. In general,\\nfavor using the Enum API instead of List.',
+      'List.;hint', 'List;module;;Specialized functions that only work on lists.',
       'Chars;module;protocol;The List.Chars protocol is responsible for\\nconverting a structure to a list (only if applicable).\\nThe only function required to be implemented is\\n`to_char_list` which does the conversion.',
-      '__info__/1;function;;List;;',
-      'first/1;function;list;List;Returns the first element in `list` or `nil` if `list` is empty.;@spec first([elem]) :: nil | elem when elem: var',
+      '__info__/1;function;;List;;', 'first/1;function;list;List;Returns the first element in `list` or `nil` if `list` is empty.;@spec first([elem]) :: nil | elem when elem: var',
       'last/1;function;list;List;Returns the last element in `list` or `nil` if `list` is empty.;@spec last([elem]) :: nil | elem when elem: var',
       'to_atom/1;function;char_list;List;Converts a char list to an atom.;@spec to_atom(char_list) :: atom',
-      'to_existing_atom/1;function;char_list;List;Converts a char list to an existing atom. Raises an `ArguementError`\\nif the atom does not exist.;@spec to_existing_atom(char_list) :: atom',
+      'to_existing_atom/1;function;char_list;List;Converts a char list to an existing atom. Raises an `ArgumentError`\\nif the atom does not exist.;@spec to_existing_atom(char_list) :: atom',
       'to_float/1;function;char_list;List;Returns the float whose text representation is `char_list`.;@spec to_float(char_list) :: float',
       'to_string/1;function;list;List;Converts a list of integers representing codepoints, lists or\\nstrings into a string.;@spec to_string(:unicode.charlist) :: String.t',
       'to_tuple/1;function;list;List;Converts a list to a tuple.;@spec to_tuple(list) :: tuple',
@@ -31,7 +29,7 @@ defmodule CompleteTest do
       'keysort/2;function;list,position;List;Receives a list of tuples and sorts the items\\nat `position` of the tuples. The sort is stable.;@spec keysort([tuple], non_neg_integer) :: [tuple]',
       'flatten/2;function;list,tail;List;Flattens the given `list` of nested lists.\\nThe list `tail` will be added at the end of\\nthe flattened list.;@spec flatten(deep_list, [elem]) :: [elem] when deep_list: [elem | deep_list], elem: var',
       'flatten/1;function;list;List;Flattens the given `list` of nested lists.;@spec flatten(deep_list) :: list when deep_list: [any | deep_list]',
-      'to_integer/2;function;char_list,base;List;Returns an integer whose text representation is `char_list` in base `base`.;@spec to_integer(char_list, 2 .. 36) :: integer',
+      'to_integer/2;function;char_list,base;List;Returns an integer whose text representation is `char_list` in base `base`.;@spec to_integer(char_list, 2..36) :: integer',
       'to_integer/1;function;char_list;List;Returns an integer whose text representation is `char_list`.;@spec to_integer(char_list) :: integer',
       'foldl/3;function;list,acc,function;List;Folds (reduces) the given list from the left with\\na function. Requires an accumulator.;@spec foldl([elem], acc, (elem, acc -> acc)) :: acc when elem: var, acc: var',
       'foldr/3;function;list,acc,function;List;Folds (reduces) the given list from the right with\\na function. Requires an accumulator.;@spec foldr([elem], acc, (elem, acc -> acc)) :: acc when elem: var, acc: var',

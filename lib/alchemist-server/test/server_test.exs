@@ -26,7 +26,7 @@ defmodule ServerTest do
 
   test "Documentation lookup" do
     assert send_signal("DOCL { 'List', \"#{@buffer_file}\", 2}") =~ """
-    > List\n\nImplements functions that only make sense for lists
+    > List\n\nSpecialized functions that only work on lists.
     """
   end
 

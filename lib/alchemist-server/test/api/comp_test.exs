@@ -12,7 +12,8 @@ defmodule Alchemist.API.CompTest do
     assert capture_io(fn ->
       Comp.process([nil, Elixir, [], [], [], []])
     end) =~ """
-    import/2;macro;module,opts;Kernel.SpecialForms;Imports function and macros from other modules.;
+
+    import/2;macro;module,opts;Kernel.SpecialForms;Imports functions and macros from other modules.;
     quote/2;macro;opts,block;Kernel.SpecialForms;Gets the representation of any expression.;
     require/2;macro;module,opts;Kernel.SpecialForms;Requires a given module to be compiled and loaded.;
     END-OF-COMP
