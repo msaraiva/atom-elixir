@@ -44,7 +44,7 @@ defmodule Alchemist.Helpers.Complete do
       (_, mod, f, a)   -> function_exported?(mod, f, a) and !({f, a} in @added_functions)
     end
 
-    for module <- modules do
+    for module <- modules, module != Elixir do
       funs = ModuleInfo.get_functions(module, hint)
       funs_info = Introspection.module_functions_info(module)
       for {f, a} <- funs, accept_function.(context_module, module, f, a) do
