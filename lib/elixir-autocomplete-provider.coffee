@@ -91,31 +91,24 @@ class ElixirAutocompleteProvider
 
     return "" if serverSuggestion.match(/^[\s\d]/)
 
-    switch kind
-      when 'attribute'
-        createSuggestionForAttribute(name, prefix)
-      when 'var'
-        createSuggestionForVariable(name)
-      when 'private_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
-      when 'public_function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
-      when 'function'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
-      when 'public_macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
-      when 'macro'
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
-      when 'module'
-        createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
-      else
-        console.log("Unknown kind: #{serverSuggestion}")
-        {
-          text: serverSuggestion
-          type: 'exception'
-          iconHTML: '?'
-          rightLabel: kind || 'hint'
-        }
+    if kind == 'attribute'
+      createSuggestionForAttribute(name, prefix)
+    else if kind == 'var'
+      createSuggestionForVariable(name)
+    else if kind == 'module'
+      createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
+    else if kind in ['private_function', 'public_function', 'public_macro']
+      createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
+    else if kind in ['function', 'macro']
+      createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
+    else
+      console.log("Unknown kind: #{serverSuggestion}")
+      {
+        text: serverSuggestion
+        type: 'exception'
+        iconHTML: '?'
+        rightLabel: kind || 'hint'
+      }
 
   createSuggestionForAttribute = (name, prefix) ->
     if prefix.match(/^@/)
