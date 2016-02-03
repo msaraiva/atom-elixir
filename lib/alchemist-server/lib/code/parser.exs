@@ -25,14 +25,14 @@ defmodule Alchemist.Code.Parser do
             lines_to_env: acc.lines_to_env
           }
         else
-          IO.puts :stderr, "LINE NOT FOUND"
+          # IO.puts :stderr, "LINE NOT FOUND"
           source
           |> fix_line_not_found(cursor_line_number)
           |> parse_string(false, false, cursor_line_number)
         end
       {:error, error} ->
-        IO.puts :stderr, "CAN'T FIX IT"
-        IO.inspect :stderr, error, []
+        # IO.puts :stderr, "CAN'T FIX IT"
+        # IO.inspect :stderr, error, []
         %Metadata{
           source: source,
           error: error
@@ -45,8 +45,8 @@ defmodule Alchemist.Code.Parser do
       {:ok, ast} ->
         {:ok, ast}
       error ->
-        IO.puts :stderr, "PARSE ERROR"
-        IO.inspect :stderr, error, []
+        # IO.puts :stderr, "PARSE ERROR"
+        # IO.inspect :stderr, error, []
         if try_to_fix_parse_error do
           source
           |> fix_parse_error(cursor_line_number, error)
@@ -58,7 +58,7 @@ defmodule Alchemist.Code.Parser do
   end
 
   defp fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}}) do
-    IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}})"
+    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}})"
     [_, line] = Regex.run(~r/line\s(\d\d)/, text)
     line = line |> String.to_integer
     source
@@ -66,35 +66,35 @@ defmodule Alchemist.Code.Parser do
   end
 
   defp fix_parse_error(source, cursor_line_number, {:error, {line, "syntax" <> _, "'end'"}}) when is_integer(line) do
-    IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
+    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
     source
     |> replace_line_with_marker(cursor_line_number)
   end
 
   defp fix_parse_error(source, _cursor_line_number, {:error, {line, "syntax" <> _, _token}}) when is_integer(line) do
-    IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
+    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
     source
     |> replace_line_with_marker(line)
   end
 
   defp fix_parse_error(_, nil, error) do
-    IO.puts :stderr, "fix_parse_error(_, nil, error)"
+    # IO.puts :stderr, "fix_parse_error(_, nil, error)"
     error
   end
 
   defp fix_parse_error(source, cursor_line_number, _error) do
-    IO.puts :stderr, "fix_parse_error(source, cursor_line_number, _error)"
+    # IO.puts :stderr, "fix_parse_error(source, cursor_line_number, _error)"
     source
     |> replace_line_with_marker(cursor_line_number)
   end
 
   defp fix_line_not_found(source, line_number) do
-    IO.puts :stderr, "fix_line_not_found(source, line_number)"
+    # IO.puts :stderr, "fix_line_not_found(source, line_number)"
     source |> replace_line_with_marker(line_number)
   end
 
   defp replace_line_with_marker(source, line) do
-    IO.puts :stderr, "REPLACING LINE: #{line}"
+    # IO.puts :stderr, "REPLACING LINE: #{line}"
     source
     |> String.split(["\n", "\r\n"])
     |> List.replace_at(line-1, "(__atom_elixir_marker_#{line}__())")

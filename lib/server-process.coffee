@@ -26,8 +26,8 @@ class ServerProcess
       @ready = true
       if ~chunk.indexOf("END-OF-#{@lastRequestType}")
         [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")
-        @busy = false
         @onResult((buffer + before).trim())
+        @busy = false
         if after
           buffer = after
         else
@@ -46,7 +46,7 @@ class ServerProcess
       @busy = false
       message = "[atom-elixir] " + chunk.toString()
       if ~chunk.indexOf("Server Error")
-        console.error(message)
+        console.warn(message)
       else
         console.log(message)
 
