@@ -1,10 +1,6 @@
 {CompositeDisposable} = require 'atom'
 url = require 'url'
 
-#TODO: Duplicated
-os = require('os')
-fs = require('fs')
-
 ElixirQuotedView = null # Defer until used
 
 createElixirQuotedView = (state) ->
@@ -54,9 +50,7 @@ class ElixirQuotedProvider
       onResult("")
       return
 
-    tmpFile = @createTempFile(code)
-    @server.getQuotedCode tmpFile, (result) =>
-      fs.unlink(tmpFile)
+    @server.getQuotedCode code, (result) =>
       onResult(result)
 
   getMatches: (pattern, quotedCode, onResult) =>
@@ -64,10 +58,8 @@ class ElixirQuotedProvider
       onResult("")
       return
 
-    fileContent = "(#{pattern}) = (#{quotedCode})"
-    tmpFile = @createTempFile(fileContent)
-    @server.match tmpFile, (result) =>
-      fs.unlink(tmpFile)
+    code = "(#{pattern}) = (#{quotedCode})"
+    @server.match code, (result) =>
       onResult(result)
 
   showQuotedCodeView: (code) ->
@@ -83,9 +75,3 @@ class ElixirQuotedProvider
       elixirQuotedView.setMatchesGetter(@getMatches)
       elixirQuotedView.setQuotedCodeGetter(@getQuotedCode)
       elixirQuotedView.setCode(code)
-
-  #TODO: Duplicated
-  createTempFile: (content) ->
-    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
-    fs.writeFileSync(tmpFile, content)
-    tmpFile

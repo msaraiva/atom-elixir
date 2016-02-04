@@ -31,7 +31,6 @@ defmodule ServerTest do
   end
 
   test "Getting the definition source file information of code" do
-    IO.puts @buffer_file
     assert send_signal("DEFL {\"List,delete\", \"#{@buffer_file}\", \"#{@buffer_file}\", 2}") =~ "/lib/elixir/lib/list.ex"
   end
 

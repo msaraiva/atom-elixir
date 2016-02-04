@@ -1,6 +1,4 @@
 {CompositeDisposable} = require 'atom'
-os = require('os')
-fs = require('fs')
 
 module.exports =
 class ElixirExpandProvider
@@ -23,23 +21,12 @@ class ElixirExpandProvider
 
   expand: ->
     editor  = atom.workspace.getActiveTextEditor()
-    text    = editor.getSelectedText()
-    tmpFile = @createTempFile(text)
-
-    @server.expand tmpFile, (result) ->
-      fs.unlink(tmpFile)
+    code    = editor.getSelectedText()
+    @server.expand code, (result) ->
       console.log result
 
   expandOnce: ->
     editor  = atom.workspace.getActiveTextEditor()
-    text    = editor.getSelectedText()
-    tmpFile = @createTempFile(text)
-
-    @server.expandOnce tmpFile, (result) ->
-      fs.unlink(tmpFile)
+    code    = editor.getSelectedText()
+    @server.expandOnce code, (result) ->
       console.log result
-
-  createTempFile: (content) ->
-    tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
-    fs.writeFileSync(tmpFile, content)
-    tmpFile

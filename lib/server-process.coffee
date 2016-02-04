@@ -80,23 +80,35 @@ class ServerProcess
       fs.unlink(tmpBufferFile)
       onResult(result)
 
-  getQuotedCode: (file, onResult) ->
-    @sendRequest('EVAL', ":quote, \"#{file}\"", onResult)
-
-  evalCode: (code, onResult) ->
-    tmpBufferFile = createTempFile(code)
-    @sendRequest 'EVAL', ":eval, \"#{tmpBufferFile}\"", (result) ->
-      fs.unlink(tmpBufferFile)
+  getQuotedCode: (code, onResult) ->
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":quote, \"#{tmpFile}\"", (result) ->
+      fs.unlink(tmpFile)
       onResult(result)
 
-  expandOnce: (file, onResult) ->
-    @sendRequest('EVAL', ":expand_once, \"#{file}\"", onResult)
+  evalCode: (code, onResult) ->
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":eval, \"#{tmpFile}\"", (result) ->
+      fs.unlink(tmpFile)
+      onResult(result)
 
-  expand: (file, onResult) ->
-    @sendRequest('EVAL', ":expand, \"#{file}\"", onResult)
+  expandOnce: (code, onResult) ->
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":expand_once, \"#{tmpFile}\"", (result) ->
+      fs.unlink(tmpFile)
+      onResult(result)
 
-  match: (file, onResult) ->
-    @sendRequest('EVAL', ":match, \"#{file}\"", onResult)
+  expand: (code, onResult) ->
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":expand, \"#{tmpFile}\"", (result) ->
+      fs.unlink(tmpFile)
+      onResult(result)
+
+  match: (code, onResult) ->
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":match, \"#{tmpFile}\"", (result) ->
+      fs.unlink(tmpFile)
+      onResult(result)
 
   getDocumentation: (subject, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
