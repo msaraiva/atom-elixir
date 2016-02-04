@@ -120,6 +120,10 @@ defmodule Alchemist.Code.State do
     %{state | aliases: [[alias_tuple|aliases_from_scope]|inherited_aliases]}
   end
 
+  def add_aliases(state, aliases_tuples) do
+    Enum.reduce(aliases_tuples, state, fn(tuple, state) -> add_alias(state, tuple) end)
+  end
+
   def new_import_scope(state) do
     %{state | imports: [[]|state.imports]}
   end
@@ -131,6 +135,10 @@ defmodule Alchemist.Code.State do
   def add_import(state, module) do
     [imports_from_scope|inherited_imports] = state.imports
     %{state | imports: [[module|imports_from_scope]|inherited_imports]}
+  end
+
+  def add_imports(state, modules) do
+    Enum.reduce(modules, state, fn(mod, state) -> add_import(state, mod) end)
   end
 
   def add_var(state, var) do

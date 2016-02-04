@@ -105,6 +105,13 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> result(ast)
   end
 
+  defp pre_alias(ast, state, line, aliases_tuples) when is_list(aliases_tuples) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_aliases(aliases_tuples)
+    |> result(ast)
+  end
+
   defp pre_alias(ast, state, line, alias_tuple) do
     state
     |> add_current_env_to_line(line)
@@ -112,10 +119,17 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> result(ast)
   end
 
-  defp pre_import(ast, state, line, module_atoms) do
+  defp pre_import(ast, state, line, modules) when is_list(modules) do
     state
     |> add_current_env_to_line(line)
-    |> add_import(module_atoms |> Module.concat)
+    |> add_imports(modules)
+    |> result(ast)
+  end
+
+  defp pre_import(ast, state, line, module) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_import(module)
     |> result(ast)
   end
 
@@ -155,6 +169,14 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre_module_attribute(ast, state, line, name)
   end
 
+  # import with v1.2 notation
+  defp pre({:import, [line: line], [{{:., _, [{:__aliases__, _, prefix_atoms}, :{}]}, _, imports}]} = ast, state) do
+    imports_modules = imports |> Enum.map(fn {:__aliases__, _, mods} ->
+      Module.concat(prefix_atoms ++ mods)
+    end)
+    pre_import(ast, state, line, imports_modules)
+  end
+
   # import without options
   defp pre({:import, meta, [module_info]}, state) do
     pre({:import, meta, [module_info, []]}, state)
@@ -162,7 +184,16 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   # import with options
   defp pre({:import, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, state) when is_atom(mod) do
-    pre_import(ast, state, line, module_atoms)
+    module = module_atoms |> Module.concat
+    pre_import(ast, state, line, module)
+  end
+
+  # alias with v1.2 notation
+  defp pre({:alias, [line: line], [{{:., _, [{:__aliases__, _, prefix_atoms}, :{}]}, _, aliases}]} = ast, state) do
+    aliases_tuples = aliases |> Enum.map(fn {:__aliases__, _, mods} ->
+      {Module.concat(mods), Module.concat(prefix_atoms ++ mods)}
+    end)
+    pre_alias(ast, state, line, aliases_tuples)
   end
 
   # alias without options

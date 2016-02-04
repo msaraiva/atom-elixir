@@ -325,6 +325,34 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_line_aliases(state, 8) == [{MyEnum, Enum}]
   end
 
+  test "aliases defined with v1.2 notation" do
+
+    state =
+      """
+      defmodule MyModule do
+        alias Foo.{User, Email}
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_aliases(state, 3) == [{Email, Foo.Email}, {User, Foo.User}]
+  end
+
+  test "imports defined with v1.2 notation" do
+
+    state =
+      """
+      defmodule MyModule do
+        import Foo.Bar.{User, Email}
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_imports(state, 3) == [Foo.Bar.Email, Foo.Bar.User]
+  end
+
   test "imports" do
 
     state =
