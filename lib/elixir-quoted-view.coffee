@@ -23,6 +23,14 @@ class ElixirQuotedView extends ScrollView
           editor.moveDown()
         'editor:newline': =>
           editor.insertText('\n')
+        'core:move-to-top': =>
+          editor.moveToTop()
+        'core:move-to-bottom': =>
+          editor.moveToBottom()
+        'core:select-to-top': =>
+          editor.selectToTop()
+        'core:select-to-bottom': =>
+          editor.selectToBottom()
       element
 
     codeEditorElement = createEditor()
