@@ -57,23 +57,22 @@ class ElixirAutocompleteProvider
 
         [hint, _type] = suggestions[0].split(';')
         suggestions = suggestions[1...]
-        module_prefix = ''
-        modules_to_add = []
-        is_prefix_a_function_call = !!(prefix.match(/\.[^A-Z][^\.]*$/) || prefix.match(/^[^A-Z:][^\.]*$/))
+        modulesToAdd = []
+        isPrefixFunctionCall = !!(prefix.match(/\.[^A-Z][^\.]*$/) || prefix.match(/^[^A-Z:][^\.]*$/))
 
-        if prefix != '' && !is_prefix_a_function_call
-          prefix_modules = prefix.split('.')[...-1]
-          hint_modules   = hint.split('.')[...-1]
+        if prefix != '' && !isPrefixFunctionCall
+          prefixModules = prefix.split('.')[...-1]
+          hintModules   = hint.split('.')[...-1]
 
-          if prefix[-1...][0] != '.' || ("#{prefix_modules}" != "#{hint_modules}")
-            modules_to_add = (m for m,i in hint_modules when m != prefix_modules[i])
-            lastModuleHint = hint_modules[hint_modules.length-1]
+          if prefix[-1...][0] != '.' || ("#{prefixModules}" != "#{hintModules}")
+            modulesToAdd = (m for m,i in hintModules when m != prefixModules[i])
+            lastModuleHint = hintModules[hintModules.length-1]
 
         suggestions = suggestions.map (serverSuggestion) ->
           fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
           name = fields[0]
-          if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modules_to_add.length > 0
-            fields[0] = modules_to_add.join('.') + '.' + name
+          if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modulesToAdd.length > 0
+            fields[0] = modulesToAdd.join('.') + '.' + name
           createSuggestion(serverSuggestion, fields, prefix, pipeBefore, captureBefore)
 
         suggestions = sortSuggestions(suggestions)
@@ -150,13 +149,13 @@ class ElixirAutocompleteProvider
       params  = [1..arity].map (i) -> "${#{i}:arg#{i}}"
       displayText = "#{func}/#{arity}"
 
-    snippet_params = params
-    snippet_params = snippet_params[1...] if snippet_params.length > 0 && pipeBefore
+    snippetParams = params
+    snippetParams = snippetParams[1...] if snippetParams.length > 0 && pipeBefore
 
     if captureBefore
       snippet = "#{func}/#{arity}"
-    else if snippet_params.length > 0
-      snippet = "#{func}(#{snippet_params.join(', ')})"
+    else if snippetParams.length > 0
+      snippet = "#{func}(#{snippetParams.join(', ')})"
 
     snippet = snippet.replace(/^:/, '') + "$0"
 
@@ -170,7 +169,7 @@ class ElixirAutocompleteProvider
         else                         ['unknown',  '?', '']
 
     if prefix.match(/^:/)
-      [module, func_name] = moduleAndFuncName(moduleParts, func)
+      [module, funcName] = moduleAndFuncName(moduleParts, func)
       description = "No documentation available."
 
     description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
@@ -220,8 +219,8 @@ class ElixirAutocompleteProvider
     [moduleParts..., _postfix] = prefix.split('.')
 
     if prefix.match(/^:/)
-      [module, func_name] = moduleAndFuncName(moduleParts, func)
-      "http://www.erlang.org/doc/man/#{module.replace(/^:/, '')}.html\##{func_name}-#{arity}"
+      [module, funcName] = moduleAndFuncName(moduleParts, func)
+      "http://www.erlang.org/doc/man/#{module.replace(/^:/, '')}.html\##{funcName}-#{arity}"
     else
       module = if moduleParts.length > 0 then moduleParts.join('.') else 'Kernel'
       "http://elixir-lang.org/docs/v#{ELIXIR_VERSION}/elixir/#{module}.html\##{func}/#{arity}"
@@ -287,10 +286,10 @@ class ElixirAutocompleteProvider
 
   moduleAndFuncName = (moduleParts, func) ->
     module = ''
-    func_name = ''
+    funcName = ''
     if func.match(/^:/)
-      [module, func_name] = func.split('.')
+      [module, funcName] = func.split('.')
     else if moduleParts.length > 0
       module = moduleParts[0]
-      func_name = func
-    [module, func_name]
+      funcName = func
+    [module, funcName]
