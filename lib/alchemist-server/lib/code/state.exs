@@ -10,9 +10,7 @@ defmodule Alchemist.Code.State do
       scope_attributes: [[]],
       vars:       [[]],
       scope_vars: [[]],
-      #TODO: rename to mod_fun_arity_to_line_map
       mods_funs_to_lines: %{},
-      #TODO: rename to line_to_env_map
       lines_to_env: %{}
     }
   end
