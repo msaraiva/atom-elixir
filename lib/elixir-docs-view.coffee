@@ -1,5 +1,5 @@
 path = require 'path'
-marked = require('marked');
+{markdownToHTML} = require './utils'
 
 {Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 {ScrollView} = require 'atom-space-pen-views'
@@ -49,7 +49,7 @@ class ElixirDocsView extends ScrollView
 
   renderMarkdown: ->
     return unless @source?
-    @html(@markdownToHTML(@source))
+    @html(markdownToHTML(@source))
 
   getTitle: ->
     "Elixir Docs - #{@viewId}"
@@ -65,17 +65,3 @@ class ElixirDocsView extends ScrollView
     selectedText = selection.toString()
     atom.clipboard.write(selectedText)
     true
-
-  # TODO: duplicated
-  markdownToHTML: (markdownSource) ->
-    marked.setOptions({
-      renderer: new marked.Renderer(),
-      gfm: true,
-      tables: true,
-      breaks: false,
-      pedantic: false,
-      sanitize: true,
-      smartLists: true,
-      smartypants: false
-    });
-    marked(markdownSource)

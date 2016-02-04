@@ -1,5 +1,5 @@
 {CompositeDisposable} = require 'atom'
-marked = require('marked');
+{markdownToHTML} = require './utils'
 
 #TODO: Retrieve from the environment or from the server process
 ELIXIR_VERSION = '1.1'
@@ -128,7 +128,7 @@ class ElixirAutocompleteProvider
     {
       text: name
       displayText: name
-      type: 'value'
+      type: 'variable'
       iconHTML: 'v'
       rightLabel: 'variable'
     }
@@ -169,16 +169,9 @@ class ElixirAutocompleteProvider
         when 'macro'            then ['package',  'm', mod]
         else                         ['unknown',  '?', '']
 
-    # TODO: duplicated
     if prefix.match(/^:/)
-      module = ''
-      func_name = ''
-      if func.match(/^:/)
-        [module, func_name] = func.split('.')
-      else if moduleParts.length > 0
-        module = moduleParts[0]
-        func_name = func
-      description = "Erlang function #{module}.#{func_name}/#{arity}"
+      [module, func_name] = moduleAndFuncName(moduleParts, func)
+      description = "No documentation available."
 
     description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
     description = markdownToHTML(description)
@@ -200,7 +193,7 @@ class ElixirAutocompleteProvider
 
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
-    description = desc || ""
+    description = desc || "No documentation available."
     description = markdownToHTML(description.replace(/\\n/g, "\n"))
 
     iconHTML =
@@ -225,14 +218,9 @@ class ElixirAutocompleteProvider
 
   getDocURL = (prefix, func, arity) ->
     [moduleParts..., _postfix] = prefix.split('.')
+
     if prefix.match(/^:/)
-      module = ''
-      func_name = ''
-      if func.match(/^:/)
-        [module, func_name] = func.split('.')
-      else if moduleParts.length > 0
-        module = moduleParts[0]
-        func_name = func
+      [module, func_name] = moduleAndFuncName(moduleParts, func)
       "http://www.erlang.org/doc/man/#{module.replace(/^:/, '')}.html\##{func_name}-#{arity}"
     else
       module = if moduleParts.length > 0 then moduleParts.join('.') else 'Kernel'
@@ -243,7 +231,7 @@ class ElixirAutocompleteProvider
       priority =
         exception: 0 # unknown
         property:  0 # module attribute
-        value:     1 # variable
+        variable:  1 # variable
         tag:       2 # private function
         class:     3 # module
         package:   4 # macro
@@ -269,19 +257,6 @@ class ElixirAutocompleteProvider
       sortKind(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortText(a, b)
 
     suggestions.sort(sortFunc)
-
-  markdownToHTML = (mdText) ->
-    marked.setOptions({
-      renderer: new marked.Renderer(),
-      gfm: true,
-      tables: true,
-      breaks: false,
-      pedantic: false,
-      sanitize: true,
-      smartLists: true,
-      smartypants: false
-    });
-    marked(mdText)
 
   replaceUpdateDescription = ->
     replaceCreateView(p) for p in atom.views.providers when p.modelConstructor.name is 'SuggestionList'
@@ -309,3 +284,13 @@ class ElixirAutocompleteProvider
         else
           @descriptionContainer.style.display = 'none'
       element
+
+  moduleAndFuncName = (moduleParts, func) ->
+    module = ''
+    func_name = ''
+    if func.match(/^:/)
+      [module, func_name] = func.split('.')
+    else if moduleParts.length > 0
+      module = moduleParts[0]
+      func_name = func
+    [module, func_name]
