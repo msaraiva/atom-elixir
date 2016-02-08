@@ -10,11 +10,8 @@ class ElixirQuotedView extends ScrollView
     createEditor = ->
       element = document.createElement('atom-text-editor')
       element.setAttribute('tabIndex', 0)
-      # element.removeAttribute('tabindex')
       editor = element.getModel()
       editor.setLineNumberGutterVisible(true)
-      # editor.setSoftWrapped(true)
-      # editor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
       editor.setGrammar(atom.grammars.grammarForScopeName('source.elixir'))
       atom.commands.add element,
         'core:move-up': =>
@@ -95,11 +92,6 @@ class ElixirQuotedView extends ScrollView
     @matchesEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
     @matchesEditor.setLineNumberGutterVisible(false)
 
-    # Pattern  {var1, var2}
-    # Match
-    #   var1   [lksajdlf]
-    #   var2   {:fedd}
-
   handleEvents: ->
     @disposables.add atom.commands.add @element,
       'elixir-quoted-view:focus-next': => @focusNextElement(1)
@@ -133,12 +125,10 @@ class ElixirQuotedView extends ScrollView
   setQuotedCode:(quotedCode) ->
     @quotedCode = quotedCode
     @quotedCodeEditor.setText(@quotedCode)
-    # @refreshView()
 
   setCode:(code) ->
     @code = code
     @codeEditor.setText(@code)
-    # @refreshView()
 
   refreshView: ->
     return unless @quotedCode?
@@ -161,4 +151,3 @@ class ElixirQuotedView extends ScrollView
     focusedIndex = 0 if focusedIndex >= elements.length
     focusedIndex = elements.length - 1 if focusedIndex < 0
     elements[focusedIndex].focus()
-    # elements[focusedIndex].getModel?().selectAll()
