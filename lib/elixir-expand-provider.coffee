@@ -1,4 +1,17 @@
 {CompositeDisposable} = require 'atom'
+url = require 'url'
+
+ElixirExpandView = null # Defer until used
+
+createElixirExpandView = (state) ->
+  ElixirExpandView ?= require './elixir-expand-view'
+  new ElixirExpandView(state)
+
+atom.deserializers.add
+  name: 'ElixirExpandView'
+  deserialize: (state) ->
+    if state.expandCode
+      createElixirExpandView(state)
 
 module.exports =
 class ElixirExpandProvider
@@ -9,9 +22,22 @@ class ElixirExpandProvider
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-selected-text', =>
-      @expand()
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-once-selected-text', =>
-      @expandOnce()
+      editor  = atom.workspace.getActiveTextEditor()
+      text    = editor.getSelectedText().replace(/\s+$/, '')
+      @showExpandCodeView(text)
+
+    atom.workspace.addOpener (uriToOpen) ->
+      try
+        {protocol, host, pathname} = url.parse(uriToOpen)
+      catch error
+        return
+      return unless protocol is 'atom-elixir:'
+      try
+        pathname = decodeURI(pathname) if pathname
+      catch error
+        return
+      if host is 'elixir-expand-views'
+        createElixirExpandView(viewId: pathname.substring(1))
 
   dispose: ->
     @subscriptions.dispose()
@@ -19,14 +45,32 @@ class ElixirExpandProvider
   setServer: (server) ->
     @server = server
 
-  expand: ->
-    editor  = atom.workspace.getActiveTextEditor()
-    code    = editor.getSelectedText()
-    @server.expand code, (result) ->
-      console.log result
+  getExpandOnce: (code, onResult) =>
+    if code.trim() == ""
+      onResult("")
+      return
 
-  expandOnce: ->
-    editor  = atom.workspace.getActiveTextEditor()
-    code    = editor.getSelectedText()
-    @server.expandOnce code, (result) ->
-      console.log result
+    @server.expandOnce code, (result) =>
+      onResult(result)
+
+  getExpand: (code, onResult) =>
+    if code.trim() == ""
+      onResult("")
+      return
+
+    @server.expand code, (result) =>
+      onResult(result)
+
+  showExpandCodeView: (code) ->
+    if code == ""
+      @addView("", "")
+      return
+    @addView(code, "")
+
+  addView: (code) ->
+    options = {searchAllPanes: true, split: 'right'}
+    uri = "atom-elixir://elixir-expand-views/view"
+    atom.workspace.open(uri, options).then (elixirExpandView) =>
+      elixirExpandView.setExpandOnceGetter(@getExpandOnce)
+      elixirExpandView.setExpandGetter(@getExpand)
+      elixirExpandView.setCode(code)

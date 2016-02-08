@@ -153,12 +153,6 @@ class ElixirQuotedView extends ScrollView
   getURI: ->
     "atom-elixir://elixir-quoted-views/view"
 
-  copyToClipboard: ->
-    selection = window.getSelection()
-    selectedText = selection.toString()
-    atom.clipboard.write(selectedText)
-    true
-
   focusNextElement: (direction) ->
     elements = [@codeEditorElement, @quotedCodeEditorElement, @patternEditorElement]
     focusedElement = (el for el in elements when 'is-focused' in el.classList)[0]

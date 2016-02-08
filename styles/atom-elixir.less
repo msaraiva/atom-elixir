@@ -97,6 +97,50 @@
 
 }
 
+.elixir-expand-view {
+  background-color: @panel-heading-background-color;
+  font-size: 12px;
+
+  .header {
+    padding-top: 4px;
+    padding-bottom: 2px;
+  }
+
+  .expandOnceHeader, .expandHeader {
+    margin-top: 20px;
+  }
+
+  .input-block {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  atom-text-editor[mini] {
+    font-size: 13px;
+  }
+
+  .expandOnceEditorSection atom-text-editor[mini] {
+    margin-top: 7px;
+    background-color: @panel-heading-background-color;
+    border: 0px;
+    line-height: 1.5;
+  }
+
+  .expandEditorSection atom-text-editor[mini] {
+    margin-top: 7px;
+    background-color: @panel-heading-background-color;
+    border: 0px;
+    line-height: 1.5;
+  }
+
+  hr {
+    border-top: 1px solid #31363f;
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
+
+}
+
 atom-text-editor::shadow .editor-contents--private .highlight.keyclick > .region {
   border-bottom: 1px solid @syntax-text-color;
 }
