@@ -22,9 +22,11 @@ class ElixirExpandProvider
     sourceElixirSelector = 'atom-text-editor:not(mini)[data-grammar^="source elixir"]'
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:expand-selected-text', =>
-      editor  = atom.workspace.getActiveTextEditor()
-      text    = editor.getSelectedText().replace(/\s+$/, '')
-      @showExpandCodeView(text)
+      editor = atom.workspace.getActiveTextEditor()
+      buffer = editor.getText()
+      text   = editor.getSelectedText().replace(/\s+$/, '')
+      line   = editor.getSelectedBufferRange().start.row + 1
+      @showExpandCodeView(buffer, text, line)
 
     atom.workspace.addOpener (uriToOpen) ->
       try
@@ -45,32 +47,34 @@ class ElixirExpandProvider
   setServer: (server) ->
     @server = server
 
-  getExpandOnce: (code, onResult) =>
-    if code.trim() == ""
+  getExpandOnce: (buffer, selectedCode, line, onResult) =>
+    if selectedCode.trim() == ""
       onResult("")
       return
 
-    @server.expandOnce code, (result) =>
+    @server.expandOnce buffer, selectedCode, line, (result) =>
       onResult(result)
 
-  getExpand: (code, onResult) =>
-    if code.trim() == ""
+  getExpand: (buffer, selectedCode, line, onResult) =>
+    if selectedCode.trim() == ""
       onResult("")
       return
 
-    @server.expand code, (result) =>
+    @server.expand buffer, selectedCode, line, (result) =>
       onResult(result)
 
-  showExpandCodeView: (code) ->
+  showExpandCodeView: (buffer, code, line) ->
     if code == ""
-      @addView("", "")
+      @addView("", "", "")
       return
-    @addView(code, "")
+    @addView(buffer, code, line)
 
-  addView: (code) ->
+  addView: (buffer, code, line) ->
     options = {searchAllPanes: true, split: 'right'}
     uri = "atom-elixir://elixir-expand-views/view"
     atom.workspace.open(uri, options).then (elixirExpandView) =>
       elixirExpandView.setExpandOnceGetter(@getExpandOnce)
       elixirExpandView.setExpandGetter(@getExpand)
+      elixirExpandView.setBuffer(buffer)
+      elixirExpandView.setLine(line)
       elixirExpandView.setCode(code)

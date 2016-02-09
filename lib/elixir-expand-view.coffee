@@ -59,7 +59,7 @@ class ElixirExpandedView extends ScrollView
           @subview 'expandCodeEditorElement', expandCodeEditorElement
         @hr()
 
-  constructor: ({@code}) ->
+  constructor: ({@buffer, @code, @line}) ->
     super
     @disposables = new CompositeDisposable
 
@@ -67,9 +67,9 @@ class ElixirExpandedView extends ScrollView
     @codeEditor = @codeEditorElement.getModel()
     @codeEditor.onDidChange (e) =>
       @code = @codeEditor.getText()
-      @expandOnceGetter @code, (result) =>
+      @expandOnceGetter @buffer, @code, @line, (result) =>
         @setExpandOnceCode(result)
-      @expandGetter @code, (result) =>
+      @expandGetter @buffer, @code, @line, (result) =>
         @setExpandCode(result)
 
     @expandOnceCodeEditor = @expandOnceCodeEditorElement.getModel()
@@ -112,6 +112,12 @@ class ElixirExpandedView extends ScrollView
   setExpandCode:(expandCode) ->
     @expandCode = expandCode
     @expandCodeEditor.setText(@expandCode)
+
+  setBuffer:(buffer) ->
+    @buffer = buffer
+
+  setLine:(line) ->
+    @line = line
 
   setCode:(code) ->
     @code = code

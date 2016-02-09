@@ -1,8 +1,13 @@
 Code.require_file "../helpers/introspection.exs", __DIR__
+Code.require_file "../code/metadata.exs", __DIR__
+Code.require_file "../code/parser.exs", __DIR__
 
 defmodule Alchemist.API.Eval do
 
   @moduledoc false
+
+  alias Alchemist.Code.Metadata
+  alias Alchemist.Code.Parser
 
   def request(args) do
     args
@@ -63,22 +68,24 @@ defmodule Alchemist.API.Eval do
     end
   end
 
-  def process({:expand, file}) do
+  def process({:expand, buffer_file, file, line}) do
     try do
       {_, expr} = File.read!("#{file}")
       |> Code.string_to_quoted
-      res = Macro.expand(expr, __ENV__)
+      env = create_env(buffer_file, line)
+      res = Macro.expand(expr, env)
       IO.puts Macro.to_string(res)
     rescue
       e -> IO.inspect e
     end
   end
 
-  def process({:expand_once, file}) do
+  def process({:expand_once, buffer_file, file, line}) do
     try do
       {_, expr} = File.read!("#{file}")
       |> Code.string_to_quoted
-      res = Macro.expand_once(expr, __ENV__)
+      env = create_env(buffer_file, line)
+      res = Macro.expand_once(expr, env)
       IO.puts Macro.to_string(res)
     rescue
       e -> IO.inspect e
@@ -113,6 +120,21 @@ defmodule Alchemist.API.Eval do
 
   defp print_match_error(e) do
     IO.inspect(e)
+  end
+
+  defp create_env(file, line) do
+    %{imports: imports} =
+      file
+      |> Parser.parse_file(true, true, line)
+      |> Metadata.get_env(line)
+
+    imports_string =
+      imports
+      |> Enum.map(&"import #{Introspection.module_to_string(&1)}")
+      |> Enum.join("; ")
+
+    {env, _} = Code.eval_string("#{imports_string}; __ENV__")
+    env
   end
 
 end

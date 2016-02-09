@@ -92,16 +92,20 @@ class ServerProcess
       fs.unlink(tmpFile)
       onResult(result)
 
-  expandOnce: (code, onResult) ->
+  expandOnce: (buffer, code, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
     tmpFile = createTempFile(code)
-    @sendRequest 'EVAL', ":expand_once, \"#{tmpFile}\"", (result) ->
+    @sendRequest 'EVAL', ":expand_once, \"#{tmpBufferFile}\", \"#{tmpFile}\", #{line}", (result) ->
       fs.unlink(tmpFile)
+      fs.unlink(tmpBufferFile)
       onResult(result)
 
-  expand: (code, onResult) ->
+  expand: (buffer, code, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
     tmpFile = createTempFile(code)
-    @sendRequest 'EVAL', ":expand, \"#{tmpFile}\"", (result) ->
+    @sendRequest 'EVAL', ":expand, \"#{tmpBufferFile}\", \"#{tmpFile}\", #{line}", (result) ->
       fs.unlink(tmpFile)
+      fs.unlink(tmpBufferFile)
       onResult(result)
 
   match: (code, onResult) ->
