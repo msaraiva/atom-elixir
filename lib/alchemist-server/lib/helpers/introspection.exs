@@ -1,6 +1,8 @@
 defmodule Introspection do
 
-  # From https://github.com/elixir-lang/elixir/blob/c983b3db6936ce869f2668b9465a50007ffb9896/lib/iex/lib/iex/introspection.ex
+  # Based on :
+  # https://github.com/elixir-lang/elixir/blob/c983b3db6936ce869f2668b9465a50007ffb9896/lib/iex/lib/iex/introspection.ex
+  # https://github.com/elixir-lang/ex_doc/blob/82463a56053b29a406fd271e9e2e2f05e87d6248/lib/ex_doc/retriever.ex
 
   alias Kernel.Typespec
 
@@ -29,29 +31,27 @@ defmodule Introspection do
   end
 
   def get_types_md(mod) when is_atom(mod) do
-    types_md =
-      for %{type: type, doc: doc} <- get_types_with_docs(mod) do
-        """
-          `#{type}`
+    for %{type: type, doc: doc} <- get_types_with_docs(mod) do
+      """
+        `#{type}`
 
-          #{doc}
-        """
-      end |> Enum.join("\n\n____\n\n")
-
-    "> Types\n\n____\n\n#{types_md}"
+        #{doc}
+      """
+    end |> Enum.join("\n\n____\n\n")
   end
 
   def get_callbacks_md(mod) when is_atom(mod) do
-    md =
-      for %{callback: callback, doc: doc} <- get_callbacks_with_docs(mod) do
-        """
-          `#{callback}`
+    for %{callback: callback, signature: signature, doc: doc} <- get_callbacks_with_docs(mod) do
+      """
+        > #{signature}
 
-          #{doc}
-        """
-      end |> Enum.join("\n\n____\n\n")
+        ### Specs
 
-    "> Callbacks\n\n____\n\n#{md}"
+        `#{callback}`
+
+        #{doc}
+      """
+    end |> Enum.join("\n\n____\n\n")
   end
 
   def get_types_with_docs(module) when is_atom(module) do
@@ -95,19 +95,24 @@ defmodule Introspection do
           {{fun, arity}, _, kind, doc} ->
             get_callback_with_doc(fun, kind, doc, {fun, arity}, callbacks)
         end
-      other -> []
+      _ -> []
     end
   end
 
   defp get_callback_with_doc(name, kind, doc, key, callbacks) do
     {_, [spec | _]} = List.keyfind(callbacks, key, 0)
+    {_f, arity} = key
+
+    spec_ast = Typespec.spec_to_ast(name, spec)
+    signature = get_typespec_signature(spec_ast, arity)
 
     definition =
-      Typespec.spec_to_ast(name, spec)
+      spec_ast
       |> Macro.prewalk(&drop_macro_env/1)
       |> Macro.to_string
+      |> String.replace("()", "")
 
-    %{callback: "@#{kind} #{definition}", doc: doc}
+    %{callback: "@#{kind} #{definition}", signature: signature, doc: doc}
   end
 
   defp get_callbacks_and_docs(mod) do
@@ -121,9 +126,52 @@ defmodule Introspection do
     end
   end
 
-
   defp drop_macro_env({name, meta, [{:::, _, [{:env, _, _}, _ | _]} | args]}), do: {name, meta, args}
   defp drop_macro_env(other), do: other
+
+  defp get_typespec_signature({:when, _, [{:::, _, [{name, meta, args}, _]}, _]}, arity) do
+    Macro.to_string {name, meta, strip_types(args, arity)}
+  end
+
+  defp get_typespec_signature({:::, _, [{name, meta, args}, _]}, arity) do
+    Macro.to_string {name, meta, strip_types(args, arity)}
+  end
+
+  defp get_typespec_signature({name, meta, args}, arity) do
+    Macro.to_string {name, meta, strip_types(args, arity)}
+  end
+
+  defp strip_types(args, arity) do
+    args
+    |> Enum.take(-arity)
+    |> Enum.with_index()
+    |> Enum.map(fn
+      {{:::, _, [left, _]}, i} -> to_var(left, i)
+      {{:|, _, _}, i}          -> to_var({}, i)
+      {left, i}                -> to_var(left, i)
+    end)
+  end
+
+  defp to_var({name, meta, _}, _) when is_atom(name),
+    do: {name, meta, nil}
+  defp to_var({:<<>>, _, _}, _),
+    do: {:binary, [], nil}
+  defp to_var({:%{}, _, _}, _),
+    do: {:map, [], nil}
+  defp to_var({:{}, _, _}, _),
+    do: {:tuple, [], nil}
+  defp to_var({_, _}, _),
+    do: {:tuple, [], nil}
+  defp to_var(integer, _) when is_integer(integer),
+    do: {:integer, [], nil}
+  defp to_var(float, _) when is_integer(float),
+    do: {:float, [], nil}
+  defp to_var(list, _) when is_list(list),
+    do: {:list, [], nil}
+  defp to_var(atom, _) when is_atom(atom),
+    do: {:atom, [], nil}
+  defp to_var(_, i),
+    do: {:"arg#{i}", [], nil}
 
   def get_module_docs_summary(module) do
     case Code.get_docs module, :moduledoc do

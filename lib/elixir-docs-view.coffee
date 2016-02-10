@@ -74,8 +74,14 @@ class ElixirDocsView extends ScrollView
   setSource: (source) ->
     @source = source
     [@docs, @types, @callbacks] = @source.split('\u000B')
-    @types ||= "Not implemented yet."
-    @callbacks ||= "Not implemented yet."
+
+    if @types
+      @types = "> Types\n\n____\n\n#{@types}"
+    else
+      @types ="No type information available."
+
+    @callbacks ||= "No callback information available."
+
     @renderMarkdown()
 
   renderMarkdown: =>
