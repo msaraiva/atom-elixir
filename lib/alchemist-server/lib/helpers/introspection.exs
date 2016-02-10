@@ -21,13 +21,15 @@ defmodule Introspection do
 
   def get_docs_md(mod, fun) do
     docs = Code.get_docs(mod, :docs)
-    texts = for {{f, arity}, _, _, args, text} <- docs, f == fun do
-      fun_args_text = Enum.map_join(args, ", ", &print_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
-      mod_str = module_to_string(mod)
-      fun_str = Atom.to_string(fun)
-      "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
-    end
-    texts |> Enum.join("\n\n____\n\n")
+    funcs_str =
+      for {{f, arity}, _, _, args, text} <- docs, f == fun do
+        fun_args_text = Enum.map_join(args, ", ", &print_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
+        mod_str = module_to_string(mod)
+        fun_str = Atom.to_string(fun)
+        "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
+      end |> Enum.join("\n\n____\n\n")
+
+    funcs_str <> "\u000B" <> get_types_md(mod)
   end
 
   def get_types_md(mod) when is_atom(mod) do
