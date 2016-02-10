@@ -13,7 +13,8 @@ defmodule Introspection do
       {_line, doc} ->
         doc
     end
-    title <> body
+
+    title <> body <> "\u000B" <> get_types_md(mod)
   end
 
   def get_docs_md(mod, fun) do
@@ -25,6 +26,51 @@ defmodule Introspection do
       "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
     end
     texts |> Enum.join("\n\n____\n\n")
+  end
+
+  def get_types_md(mod) when is_atom(mod) do
+    types_md =
+      for %{type: type, doc: doc} <- get_types_with_docs(mod) do
+        """
+          `#{type}`
+
+          #{doc}
+        """
+      end |> Enum.join("\n\n____\n\n")
+
+    "> Types\n\n____\n\n#{types_md}"
+  end
+
+  def get_types_with_docs(module) when is_atom(module) do
+    get_types(module) |> Enum.map(fn {_, {t, _, _args}} = type ->
+      %{type: format_type(type), doc: get_type_doc(module, t)}
+    end)
+  end
+
+  defp get_types(module) when is_atom(module) do
+    case Typespec.beam_types(module) do
+      nil   -> []
+      []    -> []
+      types -> types
+    end
+  end
+
+  defp format_type({:opaque, type}) do
+    {:::, _, [ast, _]} = Typespec.type_to_ast(type)
+    "@opaque #{Macro.to_string(ast)}" |> String.replace("()", "")
+  end
+
+  defp format_type({kind, type}) do
+    ast = Typespec.type_to_ast(type)
+    "@#{kind} #{Macro.to_string(ast)}" |> String.replace("()", "")
+  end
+
+  defp get_type_doc(module, type) do
+    docs  = Code.get_docs(module, :type_docs)
+    {{_, _}, _, _, description} = Enum.find(docs, fn({{name, _}, _, _, _}) ->
+      type == name
+    end)
+    description || ""
   end
 
   def get_module_docs_summary(module) do
