@@ -18,9 +18,12 @@ defmodule Alchemist.API.DoclTest do
   end
 
   test "DOCL request for List.flatten" do
-    assert capture_io(fn ->
+    output = capture_io(fn ->
       Docl.process(["List.flatten", [], []])
-    end) =~ """
+    end)
+    [docs, _types] = output |> String.split("\u000B")
+
+    assert docs =~ """
     > List.flatten(list)
 
     ### Specs
@@ -52,15 +55,17 @@ defmodule Alchemist.API.DoclTest do
 
         iex> List.flatten([1, [[2], 3]], [4, 5])
         [1, 2, 3, 4, 5]
-
 
     """
   end
 
   test "DOCL request for MyCustomList.flatten with alias" do
-    assert capture_io(fn ->
+    output = capture_io(fn ->
       Docl.process(["MyCustomList.flatten", [], [{MyCustomList, List}]])
-    end) =~ """
+    end)
+    [docs, _types] = output |> String.split("\u000B")
+
+    assert docs =~ """
     > List.flatten(list)
 
     ### Specs
@@ -92,7 +97,6 @@ defmodule Alchemist.API.DoclTest do
 
         iex> List.flatten([1, [[2], 3]], [4, 5])
         [1, 2, 3, 4, 5]
-
 
     """
   end
@@ -118,9 +122,12 @@ defmodule Alchemist.API.DoclTest do
   end
 
   test "DOCL request for defmacro" do
-    assert capture_io(fn ->
+    output = capture_io(fn ->
       Docl.process(["defmacro", [], []])
-    end) =~ """
+    end)
+    [docs, _types] = output |> String.split("\u000B")
+
+    assert docs =~ """
     > Kernel.defmacro(call, expr \\\\\\\\ nil)
 
     Defines a macro with the given name and body.
@@ -139,7 +146,6 @@ defmodule Alchemist.API.DoclTest do
         MyLogic.unless false do
           IO.puts \"It works\"
         end
-
 
     """
   end
