@@ -272,10 +272,9 @@ defmodule Introspection do
   end
 
   defp spec_to_string({kind, {{name, _arity}, specs}}) do
-    Enum.map specs, fn(spec) ->
-      binary = Macro.to_string Typespec.spec_to_ast(name, spec)
-      "@#{kind} #{binary}" |> String.replace("()", "")
-    end
+    spec = hd(specs)
+    binary = Macro.to_string Typespec.spec_to_ast(name, spec)
+    "@#{kind} #{binary}" |> String.replace("()", "")
   end
 
   defp beam_specs(module) do
