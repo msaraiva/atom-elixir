@@ -1,5 +1,5 @@
 path = require 'path'
-{markdownToHTML} = require './utils'
+{markdownToHTML, getDocURL, splitModuleAndFunc} = require './utils'
 
 {Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 {$, ScrollView} = require 'atom-space-pen-views'
@@ -58,6 +58,12 @@ class ElixirDocsView extends ScrollView
     renderTypes = @renderTypes
     renderCallbacks = @renderCallbacks
 
+    getModFuncArity = =>
+      [mod, func] = splitModuleAndFunc(@viewId)
+      if func?
+        arity = @element.querySelector('.markdownContent blockquote p').innerText.split(',').length
+      [mod, func, arity]
+
     @on 'click', ".docs", ->
       unselectAllButtons()
       $(this).addClass('selected')
@@ -70,6 +76,9 @@ class ElixirDocsView extends ScrollView
       unselectAllButtons()
       $(this).addClass('selected')
       renderCallbacks()
+    @on 'click', ".header .link", ->
+      [mod, func, arity] = getModFuncArity()
+      require('shell').openExternal(getDocURL(mod, func, arity))
 
   setSource: (source) ->
     @source = source

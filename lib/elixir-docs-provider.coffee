@@ -50,7 +50,9 @@ class ElixirDocsProvider
     subject = ''
     if subjectAndMarkerRange != null
       subject = subjectAndMarkerRange.subject
-    @addViewForElement(subject)
+
+    if !subject.match(/^:/)
+      @addViewForElement(subject)
 
   uriForElement: (word) ->
     "atom-elixir://elixir-docs-views/#{word}"
