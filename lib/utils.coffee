@@ -31,4 +31,18 @@ splitModuleAndFunc = (text) ->
 isFunction = (word) ->
   !!word.match(/^[^A-Z:]/)
 
-module.exports = {createTempFile, splitModuleAndFunc, markdownToHTML}
+getDocURL = (prefix, func, arity) ->
+  [moduleParts..., _postfix] = prefix.split('.')
+
+  #TODO: Retrieve from the environment or from the server process
+  elixir_version = '1.1'
+
+  if prefix.match(/^:/)
+    [module, funcName] = moduleAndFuncName(moduleParts, func)
+    "http://www.erlang.org/doc/man/#{module.replace(/^:/, '')}.html\##{funcName}-#{arity}"
+  else
+    module = if moduleParts.length > 0 then moduleParts.join('.') else 'Kernel'
+    "http://elixir-lang.org/docs/v#{elixir_version}/elixir/#{module}.html\##{func}/#{arity}"
+
+
+module.exports = {createTempFile, splitModuleAndFunc, markdownToHTML, getDocURL}

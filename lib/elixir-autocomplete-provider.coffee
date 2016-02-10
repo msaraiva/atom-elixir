@@ -1,9 +1,6 @@
 {CompositeDisposable} = require 'atom'
 {markdownToHTML} = require './utils'
 
-#TODO: Retrieve from the environment or from the server process
-ELIXIR_VERSION = '1.1'
-
 module.exports =
 class ElixirAutocompleteProvider
   selector: ".source.elixir"
@@ -183,7 +180,6 @@ class ElixirAutocompleteProvider
       type: type
       rightLabel: rightLabel
       descriptionHTML: description
-      descriptionMoreURL: getDocURL(prefix, func, arity)
       iconHTML: iconHTML
     }
 
@@ -214,16 +210,6 @@ class ElixirAutocompleteProvider
       descriptionHTML: description
       rightLabel: subtype || 'module'
     }
-
-  getDocURL = (prefix, func, arity) ->
-    [moduleParts..., _postfix] = prefix.split('.')
-
-    if prefix.match(/^:/)
-      [module, funcName] = moduleAndFuncName(moduleParts, func)
-      "http://www.erlang.org/doc/man/#{module.replace(/^:/, '')}.html\##{funcName}-#{arity}"
-    else
-      module = if moduleParts.length > 0 then moduleParts.join('.') else 'Kernel'
-      "http://elixir-lang.org/docs/v#{ELIXIR_VERSION}/elixir/#{module}.html\##{func}/#{arity}"
 
   sortSuggestions = (suggestions) ->
     sortKind = (a, b) ->
