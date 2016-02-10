@@ -51,7 +51,7 @@ defmodule ServerTest do
   test "Expand macro once" do
     filename = Path.expand("fixtures/macro_expand_once_fixture.exs", __DIR__)
     File.write(filename, "unless true, do: IO.puts \"this should never be printed\"")
-    assert send_signal("EVAL { :expand_once, '#{filename}' }") =~ """
+    assert send_signal("EVAL { :expand_once, '#{filename}', '#{filename}', 1 }") =~ """
     if(true) do
       nil
     else
@@ -63,7 +63,7 @@ defmodule ServerTest do
   test "Expand macro" do
     filename = Path.expand("fixtures/macro_expand_fixture.exs", __DIR__)
     File.write(filename, "unless true, do: IO.puts \"this should never be printed\"")
-    assert send_signal("EVAL { :expand, '#{filename}' }") =~ """
+    assert send_signal("EVAL { :expand, '#{filename}', '#{filename}', 1 }") =~ """
     case(true) do
       x when x in [false, nil] ->
         IO.puts("this should never be printed")
