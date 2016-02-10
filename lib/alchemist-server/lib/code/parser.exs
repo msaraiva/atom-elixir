@@ -58,38 +58,32 @@ defmodule Alchemist.Code.Parser do
   end
 
   defp fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}}) do
-    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}})"
-    [_, line] = Regex.run(~r/line\s(\d\d)/, text)
+    [_, line] = Regex.run(~r/line\s(\d+)/, text)
     line = line |> String.to_integer
     source
     |> replace_line_with_marker(line)
   end
 
   defp fix_parse_error(source, cursor_line_number, {:error, {line, "syntax" <> _, "'end'"}}) when is_integer(line) do
-    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
     source
     |> replace_line_with_marker(cursor_line_number)
   end
 
   defp fix_parse_error(source, _cursor_line_number, {:error, {line, "syntax" <> _, _token}}) when is_integer(line) do
-    # IO.puts :stderr, "fix_parse_error(source, _cursor_line_number, {:error, {line, _error, _token}}) when is_integer(line)"
     source
     |> replace_line_with_marker(line)
   end
 
   defp fix_parse_error(_, nil, error) do
-    # IO.puts :stderr, "fix_parse_error(_, nil, error)"
     error
   end
 
   defp fix_parse_error(source, cursor_line_number, _error) do
-    # IO.puts :stderr, "fix_parse_error(source, cursor_line_number, _error)"
     source
     |> replace_line_with_marker(cursor_line_number)
   end
 
   defp fix_line_not_found(source, line_number) do
-    # IO.puts :stderr, "fix_line_not_found(source, line_number)"
     source |> replace_line_with_marker(line_number)
   end
 
