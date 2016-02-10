@@ -8,12 +8,13 @@ module.exports =
 class ElixirDocsView extends ScrollView
   @content: ->
     @div class: 'elixir-docs-view native-key-bindings', tabindex: -1, =>
-      @div class: 'btn-group btn-group-sm viewButtons pull-left', style: 'margin-bottom: 8px;', =>
-        @button class: "btn selected docs", 'Docs'
-        @button class: "btn types", "Types"
-        @button class: "btn callbacks", "Callbacks"
-      @a class: 'link pull-right', style: 'margin-top: 14px;', 'See Online Docs'
-      @hr style: 'clear: both;'
+      @div class: 'header', =>
+        @div class: 'btn-group btn-group-sm viewButtons pull-left', style: 'margin-bottom: 8px;', =>
+          @button class: "btn selected docs", 'Docs'
+          @button class: "btn types", "Types"
+          @button class: "btn callbacks", "Callbacks"
+        @a class: 'link pull-right', style: 'margin-top: 14px;', 'See Online Docs'
+        @hr style: 'clear: both;'
       @div class: 'markdownContent padded'
 
   constructor: ({@viewId, @source}) ->

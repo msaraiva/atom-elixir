@@ -14,7 +14,7 @@ defmodule Introspection do
         doc
     end
 
-    title <> body <> "\u000B" <> get_types_md(mod)
+    title <> body <> "\u000B" <> get_types_md(mod) <> "\u000B" <> get_callbacks_md(mod)
   end
 
   def get_docs_md(mod, fun) do
@@ -39,6 +39,19 @@ defmodule Introspection do
       end |> Enum.join("\n\n____\n\n")
 
     "> Types\n\n____\n\n#{types_md}"
+  end
+
+  def get_callbacks_md(mod) when is_atom(mod) do
+    md =
+      for %{callback: callback, doc: doc} <- get_callbacks_with_docs(mod) do
+        """
+          `#{callback}`
+
+          #{doc}
+        """
+      end |> Enum.join("\n\n____\n\n")
+
+    "> Callbacks\n\n____\n\n#{md}"
   end
 
   def get_types_with_docs(module) when is_atom(module) do
@@ -72,6 +85,45 @@ defmodule Introspection do
     end)
     description || ""
   end
+
+  defp get_callbacks_with_docs(mod) when is_atom(mod) do
+    case get_callbacks_and_docs(mod) do
+      {callbacks, docs} ->
+        Enum.filter_map docs, &match?(_, &1), fn
+          {{fun, arity}, _, :macrocallback, doc} ->
+            get_callback_with_doc(fun, :macrocallback, doc, {:"MACRO-#{fun}", arity + 1}, callbacks)
+          {{fun, arity}, _, kind, doc} ->
+            get_callback_with_doc(fun, kind, doc, {fun, arity}, callbacks)
+        end
+      other -> []
+    end
+  end
+
+  defp get_callback_with_doc(name, kind, doc, key, callbacks) do
+    {_, [spec | _]} = List.keyfind(callbacks, key, 0)
+
+    definition =
+      Typespec.spec_to_ast(name, spec)
+      |> Macro.prewalk(&drop_macro_env/1)
+      |> Macro.to_string
+
+    %{callback: "@#{kind} #{definition}", doc: doc}
+  end
+
+  defp get_callbacks_and_docs(mod) do
+    callbacks = Typespec.beam_callbacks(mod)
+    docs = Code.get_docs(mod, :callback_docs)
+
+    cond do
+      is_nil(callbacks) -> {[], []}
+      is_nil(docs) -> {[], []}
+      true -> {callbacks, docs}
+    end
+  end
+
+
+  defp drop_macro_env({name, meta, [{:::, _, [{:env, _, _}, _ | _]} | args]}), do: {name, meta, args}
+  defp drop_macro_env(other), do: other
 
   def get_module_docs_summary(module) do
     case Code.get_docs module, :moduledoc do
