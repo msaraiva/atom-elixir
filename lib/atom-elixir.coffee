@@ -43,7 +43,6 @@ module.exports = AtomElixir =
   provideAutocomplete: ->
     [@autocompleteProvider]
 
-  # https://github.com/lsegal/atom-runner/blob/master/lib/atom-runner.coffee
   initEnv: ->
     if process.platform == 'darwin'
       [shell, out] = [process.env.SHELL || 'bash', '']
