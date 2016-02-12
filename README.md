@@ -1,4 +1,4 @@
-# An experimental Atom package for Elixir
+# An Atom package for Elixir
 
 This package provides a set of tools for Elixir makers. It uses an extended version of the [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini.
 

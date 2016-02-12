@@ -2,7 +2,7 @@
   "name": "atom-elixir",
   "main": "./lib/atom-elixir",
   "version": "0.0.0",
-  "description": "A short description of your package",
+  "description": "A set of tools for Elixir makers",
   "keywords": [
   ],
   "repository": "https://github.com/msaraiva/atom-elixir",
