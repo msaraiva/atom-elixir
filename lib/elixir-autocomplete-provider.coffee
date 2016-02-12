@@ -230,6 +230,13 @@ class ElixirAutocompleteProvider
     isFunc = (suggestion) ->
       !!(suggestion.func)
 
+    sortFunctionByType = (a, b) ->
+      return 0 if !isFunc(a) || !isFunc(b)
+      startsWithLetterRegex = /^[a-zA-Z]/
+      aStartsWithLetter = a.func.match(startsWithLetterRegex)
+      bStartsWithLetter = b.func.match(startsWithLetterRegex)
+      if !aStartsWithLetter && bStartsWithLetter then 1 else if aStartsWithLetter && !bStartsWithLetter then -1 else 0
+
     sortFunctionByName = (a, b) ->
       return 0 if !isFunc(a) || !isFunc(b)
       if a.func > b.func then 1 else if a.func < b.func then -1 else 0
@@ -239,7 +246,7 @@ class ElixirAutocompleteProvider
       if a.arity > b.arity then 1 else if a.arity < b.arity then -1 else 0
 
     sortFunc = (a, b) ->
-      sortKind(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortText(a, b)
+      sortKind(a, b) || sortFunctionByType(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortText(a, b)
 
     suggestions.sort(sortFunc)
 

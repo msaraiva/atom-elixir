@@ -71,7 +71,7 @@ describe 'ElixirAutocompleteProvider', ->
         atom.commands.dispatch(editorView, 'autocomplete-plus:activate')
 
       waitsForAutocompleteView(editorView)
-      expectListTexts editorView, ['top_level_var', '!(arg)', '!=(left, right)']
+      expectListTexts editorView, ['top_level_var', 'abs(number)', 'alias(module, opts)']
 
     it 'lists variables and functions', ->
       runs ->
@@ -103,7 +103,7 @@ describe 'ElixirAutocompleteProvider', ->
         writeText(editor, 'List.')
 
       waitsForAutocompleteView(editorView)
-      expectListTexts editorView, ['Chars', '__info__/1', 'delete(list, item)']
+      expectListTexts editorView, ['Chars', 'delete(list, item)', 'delete_at(list, index)']
 
     it "lists Erlang module's functions", ->
       runs ->
@@ -128,7 +128,7 @@ describe 'ElixirAutocompleteProvider', ->
         atom.commands.dispatch(editorView, 'autocomplete-plus:activate')
 
       waitsForAutocompleteView(editorView)
-      expectListTexts editorView, ['module_attr', 'module_var', '!(arg)']
+      expectListTexts editorView, ['module_attr', 'module_var', 'abs(number)']
 
     describe "lists Elixir module's submodules and functions when the module is the only suggestion", ->
 
