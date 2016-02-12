@@ -2,7 +2,7 @@
 
 This package provides a set of tools for Elixir makers. It uses an extended version of the [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini.
 
-> **Notice:** This package is available for testing and has not been published yet. If you want to test it, clone this repo into your `~/.atom/packages` and run `apm install` inside the newly created folder. Also notice that some features might still be added, changed or even removed before the first stable release. Feature addition and enhancements will heavily depend on feedback and/or contribution.
+> **Notice:** This package is available for testing and has not been published yet. If you want to test it, clone this repo into your `~/.atom/packages`, run `apm install` inside the newly created folder and restart Atom. Also notice that some features might still be added, changed or even removed before the first stable release. Feature addition and enhancements will heavily depend on feedback and/or contribution.
 
 ### Features
 
