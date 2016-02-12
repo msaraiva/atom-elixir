@@ -130,7 +130,7 @@ class ElixirExpandedView extends ScrollView
       @expandCodeEditor.setText(@expandCode)
 
   getTitle: ->
-    "Expand Code"
+    "Expand Macro"
 
   getIconName: ->
     "file-text"
