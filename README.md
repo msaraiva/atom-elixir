@@ -6,7 +6,7 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 ### Features
 
-- Autocomplete
+- Autocomplete [(Screenshots)](#screenshots-autocomplete)
   - Lists modules, functions, variables, function params and module attributes available in the current scope.
   - Indicates the type of the module (Module, Struct, Protocol, Implementation or Exception)
   - Shows documentation summary for each module or function
@@ -18,14 +18,14 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
   - Erlang modules and functions also supported
   - Return from definition (to previous files/positions)
   - Works with aliased and imported modules
-- Go to Documentation View
+- Go to Documentation View [(Screenshots)](#screenshots-documentation)
   - Shows documentation of the module or function under the cursor
   - Also shows specs, types and callbacks (when available)
   - Works with aliased and imported modules
-- Quoted Code view
+- Quoted Code view [(Screenshots)](#screenshots-quoted)
   - Convert selected text into its quoted form
-  - Live pattern matching of the quoted code
-- Expand Macro view
+  - Live pattern matching against quoted code
+- Expand Macro view [(Screenshots)](#screenshots-expand)
   - Expands the selected macro. Shows expanded code using Expand Once, Expand and Expand All.
 - All features depending on aliases and imports are already supporting the new v1.2 notation.
 
@@ -52,7 +52,8 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 ### Screenshots
 
-#### Autocomplete
+#### <a name="screenshots-autocomplete"></a> Autocomplete
+
 - Listing module attributes, variables and functions available in the current scope.
 - Showing specs and documentation summary
 - Showing where each function was originally defined
@@ -63,19 +64,19 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 ![image](/../assets/screenshots/autocomplete3.png?raw=true)
 
-#### Documentation
+#### <a name="screenshots-documentation"></a> Documentation
 - Showing documentation of the module under the cursor.
 
 ![image](/../assets/screenshots/docs_docs.png?raw=true)
 
-#### Quoted Code View
+#### <a name="screenshots-quoted"></a> Quoted Code View
 
 - Quoted form of the selected code
-- Live pattern matching of the quoted code
+- Live pattern matching against quoted code
 
 ![image](/../assets/screenshots/quoted.png?raw=true)
 
-#### Expand Macro View
+#### <a name="screenshots-expand"></a> Expand Macro View
 
 - Expanding selected macro call
 
