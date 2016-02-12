@@ -108,6 +108,14 @@ class ServerProcess
       fs.unlink(tmpBufferFile)
       onResult(result)
 
+  expandFull: (buffer, code, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
+    tmpFile = createTempFile(code)
+    @sendRequest 'EVAL', ":expand_full, \"#{tmpBufferFile}\", \"#{tmpFile}\", #{line}", (result) ->
+      fs.unlink(tmpFile)
+      fs.unlink(tmpBufferFile)
+      onResult(result)
+
   match: (code, onResult) ->
     tmpFile = createTempFile(code)
     @sendRequest 'EVAL', ":match, \"#{tmpFile}\"", (result) ->

@@ -47,20 +47,12 @@ class ElixirExpandProvider
   setServer: (server) ->
     @server = server
 
-  getExpandOnce: (buffer, selectedCode, line, onResult) =>
+  getExpandFull: (buffer, selectedCode, line, onResult) =>
     if selectedCode.trim() == ""
       onResult("")
       return
 
-    @server.expandOnce buffer, selectedCode, line, (result) =>
-      onResult(result)
-
-  getExpand: (buffer, selectedCode, line, onResult) =>
-    if selectedCode.trim() == ""
-      onResult("")
-      return
-
-    @server.expand buffer, selectedCode, line, (result) =>
+    @server.expandFull buffer, selectedCode, line, (result) =>
       onResult(result)
 
   showExpandCodeView: (buffer, code, line) ->
@@ -73,8 +65,7 @@ class ElixirExpandProvider
     options = {searchAllPanes: true, split: 'right'}
     uri = "atom-elixir://elixir-expand-views/view"
     atom.workspace.open(uri, options).then (elixirExpandView) =>
-      elixirExpandView.setExpandOnceGetter(@getExpandOnce)
-      elixirExpandView.setExpandGetter(@getExpand)
+      elixirExpandView.setExpandFullGetter(@getExpandFull)
       elixirExpandView.setBuffer(buffer)
       elixirExpandView.setLine(line)
       elixirExpandView.setCode(code)

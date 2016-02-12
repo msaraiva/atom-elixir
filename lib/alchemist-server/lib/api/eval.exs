@@ -92,6 +92,12 @@ defmodule Alchemist.API.Eval do
     end
   end
 
+  def process({:expand_full, buffer_file, file, line}) do
+    process({:expand_once, buffer_file, file, line})
+    IO.puts("\u000B")
+    process({:expand, buffer_file, file, line})
+  end
+
   def normalize(request) do
     {expr , _} = Code.eval_string(request)
     expr

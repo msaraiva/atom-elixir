@@ -67,10 +67,10 @@ class ElixirExpandedView extends ScrollView
     @codeEditor = @codeEditorElement.getModel()
     @codeEditor.onDidChange (e) =>
       @code = @codeEditor.getText()
-      @expandOnceGetter @buffer, @code, @line, (result) =>
-        @setExpandOnceCode(result)
-      @expandGetter @buffer, @code, @line, (result) =>
-        @setExpandCode(result)
+      @expandFullGetter @buffer, @code, @line, (result) =>
+        [expandedOnce, expanded] = result.split('\u000B')
+        @setExpandOnceCode(expandedOnce.trim())
+        @setExpandCode(expanded.trim())
 
     @expandOnceCodeEditor = @expandOnceCodeEditorElement.getModel()
     @expandOnceCodeEditor.setSoftWrapped(true)
@@ -99,11 +99,8 @@ class ElixirExpandedView extends ScrollView
   destroy: ->
     @disposables.dispose()
 
-  setExpandOnceGetter: (expandOnceGetter) ->
-    @expandOnceGetter = expandOnceGetter
-
-  setExpandGetter: (expandGetter) ->
-    @expandGetter = expandGetter
+  setExpandFullGetter: (getter) ->
+    @expandFullGetter = getter
 
   setExpandOnceCode:(expandOnceCode) ->
     @expandOnceCode = expandOnceCode
