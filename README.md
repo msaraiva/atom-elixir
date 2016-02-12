@@ -8,7 +8,7 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 - Autocomplete
   - Lists modules, functions, variables, function params and module attributes available in the current scope.
-  - Indicates the type of the module (Module, Struct, Protocol or Implementation)
+  - Indicates the type of the module (Module, Struct, Protocol, Implementation or Exception)
   - Shows documentation summary for each module or function
   - Shows function specs
   - Works with aliased and imported modules

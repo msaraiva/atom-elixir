@@ -197,6 +197,8 @@ class ElixirAutocompleteProvider
           'P'
         when 'implementation'
           'I'
+        when 'exception'
+          'E'
         when 'struct'
           'S'
         else

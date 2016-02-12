@@ -187,7 +187,7 @@ defmodule Introspection do
     cond do
       has_func.(:__protocol__, 1) -> :protocol
       has_func.(:__impl__,     1) -> :implementation
-      has_func.(:__struct__,   0) -> :struct
+      has_func.(:__struct__,   0) -> if Map.get(module.__struct__, :__exception__), do: :exception, else: :struct
       true -> nil
     end
   end
