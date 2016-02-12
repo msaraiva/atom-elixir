@@ -13,6 +13,7 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
   - Shows function specs
   - Works with aliased and imported modules
   - Indicates where the function was originally defined (for aliased and imported modules)
+  - Smart snippets for functions: After `|>`, doesn't write first parameter. After `&`, writes `&function/arity`
 - Go to definition
   - Jump to the definition of the module or function under the cursor
   - Erlang modules and functions also supported
