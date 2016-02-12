@@ -54,18 +54,18 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 #### <a name="screenshots-autocomplete"></a> Autocomplete
 
-- Listing module attributes, variables and functions available in the current scope.
+- Listing module attributes, variables and functions available in the current scope
 - Showing specs and documentation summary
 - Showing where each function was originally defined
 
 ![image](/../assets/screenshots/autocomplete1.png?raw=true)
 
-- Listing modules and their type.
+- Listing modules and their types
 
 ![image](/../assets/screenshots/autocomplete3.png?raw=true)
 
 #### <a name="screenshots-documentation"></a> Documentation
-- Showing documentation of the module under the cursor.
+- Showing documentation of the module under the cursor
 
 ![image](/../assets/screenshots/docs_docs.png?raw=true)
 
