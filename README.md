@@ -50,6 +50,37 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 - Open Quoted Code View + quote selected text: `ctrl + shift + t`
 - Open Expand Code View + expand selected text: `ctrl + shift + x`
 
+### Screenshots
+
+#### Autocomplete
+- Listing module attributes, variables and functions available in the current scope.
+- Showing specs and documentation summary
+- Showing where each function was originally defined
+
+![image](/../assets/screenshots/autocomplete1.png?raw=true)
+
+- Listing modules and their type.
+
+![image](/../assets/screenshots/autocomplete3.png?raw=true)
+
+#### Documentation
+- Showing documentation of the module under the cursor.
+
+![image](/../assets/screenshots/docs_docs.png?raw=true)
+
+#### Quoted Code View
+
+- Quoted form of the selected code
+- Live pattern matching of the quoted code
+
+![image](/../assets/screenshots/quoted.png?raw=true)
+
+#### Expand Macro View
+
+- Expanding selected macro call
+
+![image](/../assets/screenshots/expand.png?raw=true)
+
 ### Credits
 
 - The Elixir Server, which is responsible for most of the features, is an extended version of [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini. Pay attention that the current API is no longer compatible with the original one.
