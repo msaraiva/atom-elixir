@@ -29,3 +29,6 @@
   'tab': 'elixir-quoted-view:focus-next'
   'shift-tab': 'elixir-quoted-view:focus-previous'
   'enter': 'editor:newline'
+
+'.elixir-expand-view atom-text-editor[mini]':
+  'enter': 'editor:newline'
