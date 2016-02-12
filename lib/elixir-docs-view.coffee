@@ -15,7 +15,9 @@ class ElixirDocsView extends ScrollView
           @button class: "btn callbacks", "Callbacks"
         @a class: 'link pull-right', style: 'margin-top: 14px;', 'See Online Docs'
         @hr style: 'clear: both;'
-      @div class: 'markdownContent padded'
+      @div class: 'markdownContent docsContent padded'
+      @div class: 'markdownContent typesContent padded', style: 'display: none'
+      @div class: 'markdownContent callbacksContent padded', style: 'display: none'
 
   constructor: ({@viewId, @source}) ->
     super
@@ -60,8 +62,12 @@ class ElixirDocsView extends ScrollView
 
     getModFuncArity = =>
       [mod, func] = splitModuleAndFunc(@viewId)
+      docSubject = @element.querySelector('.docsContent blockquote p').innerText
+      [docMod, docFunc] = splitModuleAndFunc(docSubject.replace(/\(.*\)/, ''))
+      if mod != docMod
+        mod = docMod
       if func?
-        arity = @element.querySelector('.markdownContent blockquote p').innerText.split(',').length
+        arity = docSubject.split(',').length        
       [mod, func, arity]
 
     @on 'click', ".docs", ->
@@ -91,6 +97,10 @@ class ElixirDocsView extends ScrollView
 
     @callbacks ||= "No callback information available."
 
+    @element.querySelector('.docsContent').innerHTML = markdownToHTML(@docs)
+    @element.querySelector('.typesContent').innerHTML = markdownToHTML(@types)
+    @element.querySelector('.callbacksContent').innerHTML = markdownToHTML(@callbacks)
+
     @renderMarkdown()
 
   renderMarkdown: =>
@@ -98,13 +108,16 @@ class ElixirDocsView extends ScrollView
     @renderDocs()
 
   renderDocs: =>
-    @element.querySelector('.markdownContent').innerHTML = markdownToHTML(@docs)
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.docsContent').style.display = ''
 
   renderTypes: =>
-    @element.querySelector('.markdownContent').innerHTML = markdownToHTML(@types)
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.typesContent').style.display = ''
 
   renderCallbacks: =>
-    @element.querySelector('.markdownContent').innerHTML = markdownToHTML(@callbacks)
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.callbacksContent').style.display = ''
 
   getTitle: ->
     "Elixir Docs - #{@viewId}"
