@@ -41,6 +41,10 @@ class ElixirExpandedView extends ScrollView
     expandCodeEditorElement.setAttribute('mini', true)
     expandCodeEditorElement.removeAttribute('tabindex')
 
+    expandAllCodeEditorElement = createEditor()
+    expandAllCodeEditorElement.setAttribute('mini', true)
+    expandAllCodeEditorElement.removeAttribute('tabindex')
+
     @div class: "elixir-expand-view", style: "overflow: scroll;", =>
       @div class: 'padded', =>
         @header 'Code', class: 'header'
@@ -59,6 +63,12 @@ class ElixirExpandedView extends ScrollView
           @subview 'expandCodeEditorElement', expandCodeEditorElement
         @hr()
 
+        @header 'Expand All', class: 'header expandAllHeader'
+        @hr()
+        @section class: 'input-block expandEditorSection', =>
+          @subview 'expandAllCodeEditorElement', expandAllCodeEditorElement
+        @hr()
+
   constructor: ({@buffer, @code, @line}) ->
     super
     @disposables = new CompositeDisposable
@@ -68,9 +78,10 @@ class ElixirExpandedView extends ScrollView
     @codeEditor.onDidChange (e) =>
       @code = @codeEditor.getText()
       @expandFullGetter @buffer, @code, @line, (result) =>
-        [expandedOnce, expanded] = result.split('\u000B')
+        [expandedOnce, expanded, expandedAll] = result.split('\u000B')
         @setExpandOnceCode(expandedOnce.trim())
         @setExpandCode(expanded.trim())
+        @setExpandAllCode(expandedAll.trim())
 
     @expandOnceCodeEditor = @expandOnceCodeEditorElement.getModel()
     @expandOnceCodeEditor.setSoftWrapped(true)
@@ -79,6 +90,10 @@ class ElixirExpandedView extends ScrollView
     @expandCodeEditor = @expandCodeEditorElement.getModel()
     @expandCodeEditor.setSoftWrapped(true)
     @expandCodeEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
+
+    @expandAllCodeEditor = @expandAllCodeEditorElement.getModel()
+    @expandAllCodeEditor.setSoftWrapped(true)
+    @expandAllCodeEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
 
   attached: ->
     return if @isAttached
@@ -102,13 +117,17 @@ class ElixirExpandedView extends ScrollView
   setExpandFullGetter: (getter) ->
     @expandFullGetter = getter
 
-  setExpandOnceCode:(expandOnceCode) ->
-    @expandOnceCode = expandOnceCode
+  setExpandOnceCode:(code) ->
+    @expandOnceCode = code
     @expandOnceCodeEditor.setText(@expandOnceCode)
 
-  setExpandCode:(expandCode) ->
-    @expandCode = expandCode
+  setExpandCode:(code) ->
+    @expandCode = code
     @expandCodeEditor.setText(@expandCode)
+
+  setExpandAllCode:(code) ->
+    @expandAllCode = code
+    @expandAllCodeEditor.setText(@expandAllCode)
 
   setBuffer:(buffer) ->
     @buffer = buffer
@@ -125,6 +144,8 @@ class ElixirExpandedView extends ScrollView
       @expandOnceCodeEditor.setText(@expandOnceCode)
     if @expandCode?
       @expandCodeEditor.setText(@expandCode)
+    if @expandAllCode?
+      @expandAllCodeEditor.setText(@expandAllCode)
 
   getTitle: ->
     "Expand Macro"

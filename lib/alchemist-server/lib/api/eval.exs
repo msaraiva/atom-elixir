@@ -92,10 +92,24 @@ defmodule Alchemist.API.Eval do
     end
   end
 
+  def process({:expand_all, buffer_file, file, line}) do
+    try do
+      {_, expr} = File.read!("#{file}")
+      |> Code.string_to_quoted
+      env = create_env(buffer_file, line)
+      res = expand_all(expr, env)
+      IO.puts Macro.to_string(res)
+    rescue
+      e -> IO.inspect e
+    end
+  end
+
   def process({:expand_full, buffer_file, file, line}) do
     process({:expand_once, buffer_file, file, line})
     IO.puts("\u000B")
     process({:expand, buffer_file, file, line})
+    IO.puts("\u000B")
+    process({:expand_all, buffer_file, file, line})
   end
 
   def normalize(request) do
@@ -141,6 +155,10 @@ defmodule Alchemist.API.Eval do
 
     {env, _} = Code.eval_string("#{imports_string}; __ENV__")
     env
+  end
+
+  defp expand_all(n, env) do
+    Macro.prewalk(n, &Macro.expand(&1, env))
   end
 
 end

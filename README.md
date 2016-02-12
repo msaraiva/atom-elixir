@@ -53,7 +53,5 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 ### Credits
 
 - The Elixir Server, which is responsible for most of the features, is an extended version of [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini. Pay attention that the current API is no longer compatible with the original one.
-
 - The Expand View was totally based on the [mex](https://github.com/mrluc/mex) tool by Luc Fueston. There's also a very nice post where he describes the whole process of [Building A Macro-Expansion Helper for IEx](http://blog.maketogether.com/building-a-macro-expansion-helper/).
-
 - The initEnv trick was based on the code from [Atom Runner](https://github.com/lsegal/atom-runner/blob/master/lib/atom-runner.coffee).
