@@ -11,10 +11,6 @@ class ElixirAutocompleteProvider
 
   constructor: ->
     @subscriptions = new CompositeDisposable
-    @subscriptions.add atom.commands.add 'atom-text-editor', 'atom-elixir:autocomplete-tab', ->
-      editor = atom.workspace.getActiveTextEditor()
-      atom.commands.dispatch(atom.views.getView(editor), 'autocomplete-plus:cancel')
-      atom.commands.dispatch(atom.views.getView(editor), 'snippets:next-tab-stop')
     @subscriptions.add(atom.config.observe('autocomplete-plus.minimumWordLength', (@minimumWordLength) => ))
 
   dispose: ->
