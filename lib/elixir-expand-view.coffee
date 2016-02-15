@@ -79,9 +79,9 @@ class ElixirExpandedView extends ScrollView
       @code = @codeEditor.getText()
       @expandFullGetter @buffer, @code, @line, (result) =>
         [expandedOnce, expanded, expandedAll] = result.split('\u000B')
-        @setExpandOnceCode(expandedOnce.trim())
-        @setExpandCode(expanded.trim())
-        @setExpandAllCode(expandedAll.trim())
+        @setExpandOnceCode(expandedOnce?.trim() || "")
+        @setExpandCode(expanded?.trim() || "")
+        @setExpandAllCode(expandedAll?.trim() || "")
 
     @expandOnceCodeEditor = @expandOnceCodeEditorElement.getModel()
     @expandOnceCodeEditor.setSoftWrapped(true)
