@@ -44,7 +44,7 @@ module.exports = AtomElixir =
     [@autocompleteProvider]
 
   initEnv: ->
-    if process.platform == 'darwin'
+    if process.platform in ['darwin', 'linux']
       [shell, out] = [process.env.SHELL || 'bash', '']
       pid = spawn(shell, ['--login', '-c', 'env'])
       pid.stdout.on 'data', (chunk) -> out += chunk

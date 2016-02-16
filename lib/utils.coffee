@@ -16,7 +16,7 @@ markdownToHTML = (markdownSource) ->
   marked(markdownSource)
 
 createTempFile = (content) ->
-  tmpFile = os.tmpdir() + Math.random().toString(36).substr(2, 9)
+  tmpFile = os.tmpdir() + '/' + Math.random().toString(36).substr(2, 9)
   fs.writeFileSync(tmpFile, content)
   tmpFile
 
