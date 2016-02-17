@@ -139,7 +139,7 @@ class ElixirAutocompleteProvider
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
       displayText = "#{func}(#{args.join(', ')})"
     else
-      params  = [1..arity].map (i) -> "${#{i}:arg#{i}}"
+      params = ([1..arity].map (i) -> "${#{i}:arg#{i}}") if arity > 0
       displayText = "#{func}/#{arity}"
 
     snippetParams = params
