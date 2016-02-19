@@ -5,6 +5,7 @@ defmodule Alchemist.Code.State do
       namespace:  [:Elixir],
       scopes:     [:Elixir],
       imports:    [[]],
+      requires:   [[]],
       aliases:    [[]],
       attributes: [[]],
       scope_attributes: [[]],
@@ -16,12 +17,17 @@ defmodule Alchemist.Code.State do
   end
 
   def get_current_env(state) do
-    current_module  = state.namespace  |> :lists.reverse |> Module.concat
-    current_imports = state.imports    |> :lists.reverse |> List.flatten
-    current_aliases = state.aliases    |> :lists.reverse |> List.flatten
-    current_vars    = state.scope_vars |> :lists.reverse |> List.flatten
+    current_module   = get_current_module(state)
+    current_imports  = state.imports    |> :lists.reverse |> List.flatten
+    current_requires = state.requires   |> :lists.reverse |> List.flatten
+    current_aliases  = state.aliases    |> :lists.reverse |> List.flatten
+    current_vars     = state.scope_vars |> :lists.reverse |> List.flatten
     current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
-    %{imports: current_imports, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes}
+    %{imports: current_imports, requires: current_requires, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes}
+  end
+
+  def get_current_module(state) do
+    state.namespace  |> :lists.reverse |> Module.concat
   end
 
   def add_current_env_to_line(state, line) do
@@ -126,8 +132,16 @@ defmodule Alchemist.Code.State do
     %{state | imports: [[]|state.imports]}
   end
 
+  def new_require_scope(state) do
+    %{state | requires: [[]|state.requires]}
+  end
+
   def remove_import_scope(state) do
     %{state | imports: tl(state.imports)}
+  end
+
+  def remove_require_scope(state) do
+    %{state | requires: tl(state.requires)}
   end
 
   def add_import(state, module) do
@@ -137,6 +151,15 @@ defmodule Alchemist.Code.State do
 
   def add_imports(state, modules) do
     Enum.reduce(modules, state, fn(mod, state) -> add_import(state, mod) end)
+  end
+
+  def add_require(state, module) do
+    [requires_from_scope|inherited_requires] = state.requires
+    %{state | requires: [[module|requires_from_scope]|inherited_requires]}
+  end
+
+  def add_requires(state, modules) do
+    Enum.reduce(modules, state, fn(mod, state) -> add_require(state, mod) end)
   end
 
   def add_var(state, var) do

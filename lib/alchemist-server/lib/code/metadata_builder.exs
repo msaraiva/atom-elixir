@@ -1,4 +1,5 @@
 Code.require_file "./state.exs", __DIR__
+Code.require_file "./ast.exs", __DIR__
 
 if Version.match?(System.version, "<1.2.0-rc.0") do
   Code.require_file "./traverse.exs", __DIR__
@@ -6,6 +7,7 @@ end
 
 defmodule Alchemist.Code.MetadataBuilder do
   import Alchemist.Code.State
+  alias Alchemist.Code.Ast
 
   @scope_keywords [:for, :try, :fn]
   @block_keywords [:do, :else, :rescue, :catch, :after]
@@ -24,6 +26,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> new_attributes_scope
     |> new_alias_scope
     |> new_import_scope
+    |> new_require_scope
     |> new_vars_scope
     |> result(ast)
   end
@@ -34,6 +37,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> remove_attributes_scope
     |> remove_alias_scope
     |> remove_import_scope
+    |> remove_require_scope
     |> remove_vars_scope
     |> result(ast)
   end
@@ -45,6 +49,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> add_func_to_index(name, length(params || []), line)
     |> new_alias_scope
     |> new_import_scope
+    |> new_require_scope
     |> new_func_vars_scope
     |> add_vars(find_vars(params))
     |> result(ast)
@@ -54,6 +59,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> remove_alias_scope
     |> remove_import_scope
+    |> remove_require_scope
     |> remove_func_vars_scope
     |> remove_last_scope_from_scopes
     |> result(ast)
@@ -76,6 +82,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> new_alias_scope
     |> new_import_scope
+    |> new_require_scope
     |> new_vars_scope
     |> result(ast)
   end
@@ -84,6 +91,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> remove_alias_scope
     |> remove_import_scope
+    |> remove_require_scope
     |> remove_vars_scope
     |> result(ast)
   end
@@ -92,6 +100,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> new_alias_scope
     |> new_import_scope
+    |> new_require_scope
     |> new_vars_scope
     |> add_vars(find_vars(lhs))
     |> result(ast)
@@ -101,6 +110,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> remove_alias_scope
     |> remove_import_scope
+    |> remove_require_scope
     |> remove_vars_scope
     |> result(ast)
   end
@@ -130,6 +140,20 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> add_current_env_to_line(line)
     |> add_import(module)
+    |> result(ast)
+  end
+
+  defp pre_require(ast, state, line, modules) when is_list(modules) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_requires(modules)
+    |> result(ast)
+  end
+
+  defp pre_require(ast, state, line, module) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_require(module)
     |> result(ast)
   end
 
@@ -188,6 +212,25 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre_import(ast, state, line, module)
   end
 
+  # require with v1.2 notation
+  defp pre({:require, [line: line], [{{:., _, [{:__aliases__, _, prefix_atoms}, :{}]}, _, requires}]} = ast, state) do
+    requires_modules = requires |> Enum.map(fn {:__aliases__, _, mods} ->
+      Module.concat(prefix_atoms ++ mods)
+    end)
+    pre_require(ast, state, line, requires_modules)
+  end
+
+  # require without options
+  defp pre({:require, meta, [module_info]}, state) do
+    pre({:require, meta, [module_info, []]}, state)
+  end
+
+  # require with options
+  defp pre({:require, [line: line], [{_, _, module_atoms = [mod|_]}, _opts]} = ast, state) when is_atom(mod) do
+    module = module_atoms |> Module.concat
+    pre_require(ast, state, line, module)
+  end
+
   # alias with v1.2 notation
   defp pre({:alias, [line: line], [{{:., _, [{:__aliases__, _, prefix_atoms}, :{}]}, _, aliases}]} = ast, state) do
     aliases_tuples = aliases |> Enum.map(fn {:__aliases__, _, mods} ->
@@ -229,6 +272,22 @@ defmodule Alchemist.Code.MetadataBuilder do
   defp pre({:<-, _meta, [lhs, _rhs]} = ast, state) do
     state
     |> add_vars(find_vars(lhs))
+    |> result(ast)
+  end
+
+  # Kernel: defmacro use(module, opts \\ [])
+  defp pre({:use, [line: _], [{param, _, nil}|_]} = ast, state) when is_atom(param) do
+    state
+    |> result(ast)
+  end
+
+  defp pre({:use, [line: line], _} = ast, state) do
+    %{requires: requires, imports: imports} = Ast.extract_use_metadata(ast, get_current_module(state))
+
+    state
+    |> add_current_env_to_line(line)
+    |> add_requires(requires)
+    |> add_imports(imports)
     |> result(ast)
   end
 
