@@ -7,6 +7,7 @@ Code.require_file "api/info.exs", __DIR__
 defmodule Alchemist.Server do
 
   @version "0.1.0-beta"
+  @minimal_reload_time 2000
 
   @moduledoc """
   The Alchemist-Server operates as an informant for a specific desired
@@ -22,17 +23,36 @@ defmodule Alchemist.Server do
 
   alias Alchemist.API
 
+  def start([[env, line]]) do
+    run(line, all_loaded(), [], [], env, 0)
+  end
+
   def start([env]) do
     IO.puts(:stderr, "Initializing alchemist-server (Elixir version #{System.version})")
     # IO.inspect(:stderr, System.get_env, [])
 
-    loop(all_loaded(), env)
+    loop(all_loaded(), [], [], env, 0)
   end
 
-  def loop(loaded, env) do
+  def loop(loaded, paths, apps, env, last_load_time) do
     line  = IO.gets("") |> String.rstrip()
-    paths = load_paths(env)
-    apps  = load_apps(env)
+    {paths, apps, time} = run(line, loaded, paths, apps, env, last_load_time)
+    loop(loaded, paths, apps, env, time)
+  end
+
+  defp run(line, loaded, paths, apps, env, last_load_time) do
+    time = :erlang.system_time(:milli_seconds)
+    reload = time - last_load_time > @minimal_reload_time
+
+    {paths, apps} =
+      if reload do
+        purge_modules(loaded)
+        purge_paths(paths)
+        purge_apps(apps)
+        {load_paths(env), load_apps(env)}
+      else
+        {paths, apps}
+      end
 
     try do
       read_input(line)
@@ -40,12 +60,7 @@ defmodule Alchemist.Server do
       e ->
         IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
     end
-
-    purge_modules(loaded)
-    purge_paths(paths)
-    purge_apps(apps)
-
-    loop(loaded, env)
+    {paths, apps, time}
   end
 
   def read_input(line) do
