@@ -35,4 +35,18 @@ getWordAndRange = (editor, position, wordRegExp) ->
       data.stop()
   return wordAndRange
 
-module.exports = {getSubjectAndMarkerRange}
+gotoFirstNonCommentPosition = (editor) ->
+  searchRange = new Range(editor.getCursorBufferPosition(), editor.getBuffer().getEndPosition())
+  line = editor.getLastCursor().getCurrentBufferLine()
+  if line.match(/@doc """/)
+    editor.scanInBufferRange /@doc """[\s\S]+?"""\s*/, searchRange, ({range, stop}) ->
+      editor.setCursorBufferPosition(range.end)
+      editor.scrollToScreenPosition(range.end, {center: true})
+      stop()
+  else
+    editor.scanInBufferRange /\S/, searchRange, ({range, stop}) ->
+      editor.setCursorBufferPosition(range.start)
+      editor.scrollToScreenPosition(range.start, {center: true})
+      stop()
+
+module.exports = {getSubjectAndMarkerRange, gotoFirstNonCommentPosition}

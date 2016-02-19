@@ -1,5 +1,5 @@
 {splitModuleAndFunc} = require './utils'
-{getSubjectAndMarkerRange} = require './editor-utils'
+{getSubjectAndMarkerRange, gotoFirstNonCommentPosition} = require './editor-utils'
 {Disposable, CompositeDisposable, Range} = require 'atom'
 KeyClickEventHandler = require './keyclick-event-handler'
 
@@ -74,4 +74,4 @@ class ElixirGotoDefinitionProvider
       [file_path, line] = file.split(':')
       atom.workspace.open(file_path, {initialLine: parseInt(line-1 || 0), searchAllPanes: true}).then (editor) ->
         pane.activateItem(editor)
-        editor.scrollToScreenPosition(editor.getCursorBufferPosition(), {center: true})
+        gotoFirstNonCommentPosition(editor)
