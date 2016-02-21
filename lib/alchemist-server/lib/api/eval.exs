@@ -1,6 +1,7 @@
 Code.require_file "../helpers/introspection.exs", __DIR__
 Code.require_file "../code/metadata.exs", __DIR__
 Code.require_file "../code/parser.exs", __DIR__
+Code.require_file "../code/ast.exs", __DIR__
 
 defmodule Alchemist.API.Eval do
 
@@ -8,6 +9,7 @@ defmodule Alchemist.API.Eval do
 
   alias Alchemist.Code.Metadata
   alias Alchemist.Code.Parser
+  alias Alchemist.Code.Ast
 
   def request(args) do
     args
@@ -143,22 +145,21 @@ defmodule Alchemist.API.Eval do
   end
 
   defp create_env(file, line) do
-    %{imports: imports} =
+    %{requires: requires, imports: imports, module: module} =
       file
       |> Parser.parse_file(true, true, line)
       |> Metadata.get_env(line)
 
-    imports_string =
-      imports
-      |> Enum.map(&"import #{Introspection.module_to_string(&1)}")
-      |> Enum.join("; ")
-
-    {env, _} = Code.eval_string("#{imports_string}; __ENV__")
-    env
+    __ENV__
+    |> Ast.add_requires_to_env(requires)
+    |> Ast.add_imports_to_env(imports)
+    |> Ast.set_module_for_env(module)
   end
 
-  defp expand_all(n, env) do
-    Macro.prewalk(n, &Macro.expand(&1, env))
+  defp expand_all(ast, env) do
+    #TODO: Maybe we should keep this here and create a view just for the "Partial Expand"
+    # Macro.prewalk(n, &Macro.expand(&1, env))
+    Ast.partial_expand(ast, env)
   end
 
 end

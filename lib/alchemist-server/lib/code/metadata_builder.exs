@@ -282,7 +282,7 @@ defmodule Alchemist.Code.MetadataBuilder do
   end
 
   defp pre({:use, [line: line], _} = ast, state) do
-    %{requires: requires, imports: imports} = Ast.extract_use_metadata(ast, get_current_module(state))
+    %{requires: requires, imports: imports} = Ast.extract_use_info(ast, get_current_module(state))
 
     state
     |> add_current_env_to_line(line)

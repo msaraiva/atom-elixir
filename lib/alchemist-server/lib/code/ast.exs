@@ -2,51 +2,60 @@ Code.require_file "../helpers/introspection.exs", __DIR__
 
 defmodule Alchemist.Code.Ast do
 
-  @empty_metadata %{requires: [], imports: [], behavious: []}
+  @empty_env_info %{requires: [], imports: [], behaviours: []}
 
-  def extract_use_metadata(use_ast, module) do
-    {_ast, metadata} =
-      try do
-        env = Map.put(__ENV__, :module, module)
-        expand(use_ast, env)
-      rescue
-        e ->
-          IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
-          IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
-          {nil, @empty_metadata}
-      end
-    metadata
+  def extract_use_info(use_ast, module) do
+    try do
+      env = Map.put(__ENV__, :module, module)
+      {expanded_ast, _requires} = Macro.prewalk(use_ast, env, &do_expand/2)
+      {_ast, env_info} = Macro.prewalk(expanded_ast, @empty_env_info, &pre_walk_expanded/2)
+      env_info
+    rescue
+      e ->
+        IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
+        IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
+        @empty_env_info
+    end
   end
 
-  defp expand(ast, env) do
-    {expanded_ast, _requires} = Macro.prewalk(ast, env, &do_expand/2)
-    Macro.prewalk(expanded_ast, @empty_metadata, &pre_walk_expanded/2)
+  def partial_expand(ast, env) do
+    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand/2)
+    expanded_ast
   end
 
-  defp add_requires_to_env(modules, env) do
-    requires_string = modules
-      |> Enum.map(&"require #{Introspection.module_to_string(&1)}")
-      |> Enum.join("; ")
+  def set_module_for_env(env, module) do
+    Map.put(env, :module, module)
+  end
 
-    {new_env, _} = Code.eval_string("#{requires_string}; __ENV__", [], env)
+  def add_requires_to_env(env, modules) do
+    add_directive_modules_to_env(env, :require, modules)
+  end
+
+  def add_imports_to_env(env, modules) do
+    add_directive_modules_to_env(env, :import, modules)
+  end
+
+  defp add_directive_modules_to_env(env, directive, modules) do
+    directive_string = modules
+    |> Enum.map(&"#{directive} #{Introspection.module_to_string(&1)}")
+    |> Enum.join("; ")
+    {new_env, _} = Code.eval_string("#{directive_string}; __ENV__", [], env)
     new_env
   end
 
   defp do_expand({:require, _, _} = ast, env) do
     modules = extract_directive_modules(:require, ast)
-    new_env = add_requires_to_env(modules, env)
+    new_env = add_requires_to_env(env, modules)
     {ast, new_env}
   end
 
-  defp do_expand({name, _, _} = ast, env) when name in [:def, :defp, :import, :alias, :@, :defmacro, :defoverridable] do
+  defp do_expand({name, _, _} = ast, env) when name in [:def, :defp, :import, :alias, :@, :defmacro, :defoverridable, :__ENV__] do
     {ast, env}
   end
 
   defp do_expand(ast, env) do
-    new_env = Map.put(env, :module, QrTag.Router)
-
-    expanded_ast = Macro.expand(ast, new_env)
-    {expanded_ast, new_env}
+    expanded_ast = Macro.expand(ast, env)
+    {expanded_ast, env}
   end
 
   defp pre_walk_expanded({:__block__, _, _} = ast, acc) do
@@ -61,7 +70,7 @@ defmodule Alchemist.Code.Ast do
     {ast, %{acc | imports: (acc.imports ++ modules)}}
   end
   defp pre_walk_expanded({:@, _, [{:behaviour, _, [module]}]} = ast, acc) do
-    {ast, %{acc | behavious: [module|acc.behavious]}}
+    {ast, %{acc | behaviours: [module|acc.behaviours]}}
   end
   defp pre_walk_expanded({_name, _meta, _args}, acc) do
     {nil, acc}
