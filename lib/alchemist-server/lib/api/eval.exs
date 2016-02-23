@@ -157,9 +157,9 @@ defmodule Alchemist.API.Eval do
   end
 
   defp expand_all(ast, env) do
-    #TODO: Maybe we should keep this here and create a view just for the "Partial Expand"
-    # Macro.prewalk(n, &Macro.expand(&1, env))
-    Ast.partial_expand(ast, env)
+    #TODO: Move "Partial Expand" to its own view
+    # Ast.partial_expand(ast, env)
+    Macro.prewalk(ast, &Macro.expand(&1, env))
   end
 
 end
