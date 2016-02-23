@@ -1,3 +1,12 @@
+## v0.0.3
+
+### Features
+* Improved functionality/accuracy of "Autocomplete", "Go To Definition", "Docs View" and "Expand View" by expanding `use` directives to extract module information (e.g. requires and imports)
+
+### Bug fixes
+* Faster response for Autocomplete
+* Default docs stylesheet results in washed-out heading and code on light theme [(#9)](https://github.com/msaraiva/atom-elixir/issues/9)
+
 ## v0.0.2
 
 ### Bug fixes
