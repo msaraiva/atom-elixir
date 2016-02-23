@@ -1,7 +1,7 @@
 {
   "name": "atom-elixir",
   "main": "./lib/atom-elixir",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "A set of tools for Elixir makers",
   "keywords": [
   ],
