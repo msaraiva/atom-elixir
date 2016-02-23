@@ -44,21 +44,20 @@ module.exports = AtomElixir =
     [@autocompleteProvider]
 
   initEnv: ->
-    if process.platform in ['darwin', 'linux']
-      [shell, out] = [process.env.SHELL || 'bash', '']
-      pid = spawn(shell, ['--login', '-c', 'env'])
-      pid.stdout.on 'data', (chunk) -> out += chunk
-      pid.on 'error', =>
-        console.log('Failed to import ENV from', shell)
-      pid.on 'close', =>
-        for line in out.split('\n')
-          match = line.match(/^(\S+?)=(.+)/)
-          process.env[match[1]] = match[2] if match
-        @server = new ServerProcess(atom.project.getPaths()[0])
-        @server.start()
-        @expandProvider.setServer(@server)
-        @autocompleteProvider.setServer(@server)
-        @gotoDefinitionProvider.setServer(@server)
-        @docsProvider.setServer(@server)
-        @quotedProvider.setServer(@server)
-      pid.stdin.end()
+    [shell, out] = [process.env.SHELL || 'bash', '']
+    pid = if process.platform == 'win32' then spawn('cmd', ['/C', 'set']) else spawn(shell, ['--login', '-c', 'env'])
+    pid.stdout.on 'data', (chunk) -> out += chunk
+    pid.on 'error', =>
+      console.log('Failed to import ENV from', shell)
+    pid.on 'close', =>
+      for line in out.split('\n')
+        match = line.match(/^(\S+?)=(.+)/)
+        process.env[match[1]] = match[2] if match
+      @server = new ServerProcess(atom.project.getPaths()[0])
+      @server.start()
+      @expandProvider.setServer(@server)
+      @autocompleteProvider.setServer(@server)
+      @gotoDefinitionProvider.setServer(@server)
+      @docsProvider.setServer(@server)
+      @quotedProvider.setServer(@server)
+    pid.stdin.end()
