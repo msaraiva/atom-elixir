@@ -32,8 +32,11 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 
 ### Upcoming Features
 
-- Show information on hover
+- Support for `.eex` files
+- Show information about `use` calls (e.g., required/imported modules, aliases, behaviours, ...)
+- Add callbacks to Autocomplete
 - Go to definition of variables and module attributes
+- Show information on hover
 - Auto install dependencies
 - Format [ExSamples](https://github.com/msaraiva/exsamples) tables
 
