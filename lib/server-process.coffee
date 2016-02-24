@@ -129,6 +129,10 @@ class ServerProcess
       onResult(result)
 
   sendRequest: (type, args, onResult) ->
+    # Note: The helper function `createTempFile` returns a path that contains uses backslashes as path separators. 
+    # That's fine for Atom, but the alchemist server does not seem to like it.
+    if process.platform == 'win32'
+      args = args.replace(/\\/g, '/') 
     request = "#{type} { #{args} }\n"
     console.log('[Server] ' + request)
     if !@busy
@@ -147,6 +151,7 @@ class ServerProcess
 
     if process.platform == 'win32'
       options.windowsVerbatimArguments = true
-      spawn('cmd', ['/s', '/c', '"' + [@command].concat(args).join(' ') + '"'], options)
+      # Small typo - `args` instead of `@args`
+      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).join(' ') + '"'], options)
     else
       spawn(@command, @args, options)
