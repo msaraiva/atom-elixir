@@ -4,6 +4,8 @@ defmodule Alchemist.Code.Ast do
 
   @empty_env_info %{requires: [], imports: [], behaviours: []}
 
+  @partial_expressions [:def, :defp, :defmodule, :@, :defmacro, :defmacrop, :defoverridable, :__ENV__, :__CALLER__, :raise, :if, :unless, :in]
+
   def extract_use_info(use_ast, module) do
     try do
       env = Map.put(__ENV__, :module, module)
@@ -18,7 +20,7 @@ defmodule Alchemist.Code.Ast do
     end
   end
 
-  def partial_expand(ast, env) do
+  def expand_partial(ast, env) do
     {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand/2)
     expanded_ast
   end
@@ -49,7 +51,7 @@ defmodule Alchemist.Code.Ast do
     {ast, new_env}
   end
 
-  defp do_expand({name, _, _} = ast, env) when name in [:def, :defp, :import, :alias, :@, :defmacro, :defoverridable, :__ENV__] do
+  defp do_expand({name, _, _} = ast, env) when name in @partial_expressions do
     {ast, env}
   end
 

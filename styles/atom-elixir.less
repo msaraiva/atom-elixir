@@ -115,16 +115,15 @@
 }
 
 .elixir-expand-view {
+  padding: 20px;
+  font-size: 14px;
+  overflow: scroll;
   background-color: @panel-heading-background-color;
-  font-size: 12px;
 
-  .header {
-    padding-top: 4px;
-    padding-bottom: 2px;
-  }
-
-  .expandOnceHeader, .expandHeader, .expandAllHeader {
-    margin-top: 10px;
+  .editor .gutter, atom-text-editor::shadow .gutter {
+  	.line-numbers {
+  		width: 42px;
+  	}
   }
 
   .input-block {
@@ -136,15 +135,7 @@
     font-size: 13px;
     line-height: 1.7;
     max-height: none;
-  }
-
-  .expandOnceEditorSection atom-text-editor[mini] {
-    margin-top: 7px;
-    background-color: @panel-heading-background-color;
-    border: 0px;
-  }
-
-  .expandEditorSection atom-text-editor[mini] {
+    padding-left: 0px;
     margin-top: 7px;
     background-color: @panel-heading-background-color;
     border: 0px;
@@ -155,7 +146,6 @@
     margin-top: 0px;
     margin-bottom: 0px;
   }
-
 }
 
 atom-text-editor::shadow .editor-contents--private .highlight.keyclick > .region {

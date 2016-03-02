@@ -94,6 +94,18 @@ defmodule Alchemist.API.Eval do
     end
   end
 
+  def process({:expand_partial, buffer_file, file, line}) do
+    try do
+      {_, expr} = File.read!("#{file}")
+      |> Code.string_to_quoted
+      env = create_env(buffer_file, line)
+      res = expand_partial(expr, env)
+      IO.puts Macro.to_string(res)
+    rescue
+      e -> IO.inspect e
+    end
+  end
+
   def process({:expand_all, buffer_file, file, line}) do
     try do
       {_, expr} = File.read!("#{file}")
@@ -110,6 +122,8 @@ defmodule Alchemist.API.Eval do
     process({:expand_once, buffer_file, file, line})
     IO.puts("\u000B")
     process({:expand, buffer_file, file, line})
+    IO.puts("\u000B")
+    process({:expand_partial, buffer_file, file, line})
     IO.puts("\u000B")
     process({:expand_all, buffer_file, file, line})
   end
@@ -156,9 +170,11 @@ defmodule Alchemist.API.Eval do
     |> Ast.set_module_for_env(module)
   end
 
+  defp expand_partial(ast, env) do
+    Ast.expand_partial(ast, env)
+  end
+
   defp expand_all(ast, env) do
-    #TODO: Move "Partial Expand" to its own view
-    # Ast.partial_expand(ast, env)
     Macro.prewalk(ast, &Macro.expand(&1, env))
   end
 

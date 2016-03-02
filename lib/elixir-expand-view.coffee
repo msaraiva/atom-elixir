@@ -1,13 +1,13 @@
 path = require 'path'
 
 {Emitter, Disposable, CompositeDisposable, File} = require 'atom'
-{ScrollView} = require 'atom-space-pen-views'
+{$, ScrollView} = require 'atom-space-pen-views'
 
 module.exports =
 class ElixirExpandedView extends ScrollView
-  @content: =>
+  @content: ->
 
-    createEditor = ->
+    createEditor = =>
       element = document.createElement('atom-text-editor')
       element.setAttribute('tabIndex', 0)
       editor = element.getModel()
@@ -30,9 +30,6 @@ class ElixirExpandedView extends ScrollView
           editor.selectToBottom()
       element
 
-    codeEditorElement = createEditor()
-    codeEditorElement.setAttribute('mini', true)
-
     expandOnceCodeEditorElement = createEditor()
     expandOnceCodeEditorElement.setAttribute('mini', true)
     expandOnceCodeEditorElement.removeAttribute('tabindex')
@@ -41,48 +38,40 @@ class ElixirExpandedView extends ScrollView
     expandCodeEditorElement.setAttribute('mini', true)
     expandCodeEditorElement.removeAttribute('tabindex')
 
+    expandPartialCodeEditorElement = createEditor()
+    expandPartialCodeEditorElement.setAttribute('mini', true)
+    expandPartialCodeEditorElement.removeAttribute('tabindex')
+
     expandAllCodeEditorElement = createEditor()
     expandAllCodeEditorElement.setAttribute('mini', true)
     expandAllCodeEditorElement.removeAttribute('tabindex')
 
-    @div class: "elixir-expand-view", style: "overflow: scroll;", =>
-      @div class: 'padded', =>
-        @header 'Code', class: 'header'
+    @div class: 'elixir-expand-view native-key-bindings', tabindex: -1, =>
+      @div class: 'header', =>
+        @div class: 'btn-group btn-group-sm viewButtons pull-left', style: 'margin-bottom: 8px;', =>
+          @button class: "btn expandOnce", 'Expand Once'
+          @button class: "btn expand", "Expand"
+          @button class: "btn expandPartial selected", "Expand Partial"
+          @button class: "btn expandAll", "Expand All"
+        @hr style: 'clear: both;'
+      @div class: 'markdownContent expandOnceContent', style: 'display: none', =>
         @section class: 'input-block', =>
-          @subview 'codeEditorElement', codeEditorElement
-
-        @header 'Expand Once', class: 'header expandOnceHeader'
-        @hr()
-        @section class: 'input-block expandOnceEditorSection', =>
           @subview 'expandOnceCodeEditorElement', expandOnceCodeEditorElement
-        @hr()
-
-        @header 'Expand', class: 'header expandHeader'
-        @hr()
-        @section class: 'input-block expandEditorSection', =>
+      @div class: 'markdownContent expandContent', style: 'display: none', =>
+        @section class: 'input-block', =>
           @subview 'expandCodeEditorElement', expandCodeEditorElement
-        @hr()
-
-        @header 'Expand All', class: 'header expandAllHeader'
-        @hr()
-        @section class: 'input-block expandEditorSection', =>
+      @div class: 'markdownContent expandPartialContent', =>
+        @section class: 'input-block', =>
+          @subview 'expandPartialCodeEditorElement', expandPartialCodeEditorElement
+      @div class: 'markdownContent expandAllContent', style: 'display: none', =>
+        @section class: 'input-block', =>
           @subview 'expandAllCodeEditorElement', expandAllCodeEditorElement
-        @hr()
 
   constructor: ({@buffer, @code, @line}) ->
     super
     @disposables = new CompositeDisposable
 
   initialize: ->
-    @codeEditor = @codeEditorElement.getModel()
-    @codeEditor.onDidChange (e) =>
-      @code = @codeEditor.getText()
-      @expandFullGetter @buffer, @code, @line, (result) =>
-        [expandedOnce, expanded, expandedAll] = result.split('\u000B')
-        @setExpandOnceCode(expandedOnce?.trim() || "")
-        @setExpandCode(expanded?.trim() || "")
-        @setExpandAllCode(expandedAll?.trim() || "")
-
     @expandOnceCodeEditor = @expandOnceCodeEditorElement.getModel()
     @expandOnceCodeEditor.setSoftWrapped(true)
     @expandOnceCodeEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
@@ -90,6 +79,10 @@ class ElixirExpandedView extends ScrollView
     @expandCodeEditor = @expandCodeEditorElement.getModel()
     @expandCodeEditor.setSoftWrapped(true)
     @expandCodeEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
+
+    @expandPartialCodeEditor = @expandPartialCodeEditorElement.getModel()
+    @expandPartialCodeEditor.setSoftWrapped(true)
+    @expandPartialCodeEditor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
 
     @expandAllCodeEditor = @expandAllCodeEditorElement.getModel()
     @expandAllCodeEditor.setSoftWrapped(true)
@@ -101,6 +94,7 @@ class ElixirExpandedView extends ScrollView
 
     resolve = =>
       @refreshView()
+      @handleEvents()
 
     if atom.workspace?
       resolve()
@@ -114,6 +108,49 @@ class ElixirExpandedView extends ScrollView
   destroy: ->
     @disposables.dispose()
 
+  handleEvents: ->
+
+    unselectAllButtons = =>
+      $(@element.querySelector('.viewButtons').children).removeClass('selected')
+
+    renderExpandOnce = @renderExpandOnce
+    renderExpand = @renderExpand
+    renderExpandPartial = @renderExpandPartial
+    renderExpandAll = @renderExpandAll
+
+    @on 'click', ".expandOnce", ->
+      unselectAllButtons()
+      $(this).addClass('selected')
+      renderExpandOnce()
+    @on 'click', ".expand", ->
+      unselectAllButtons()
+      $(this).addClass('selected')
+      renderExpand()
+    @on 'click', ".expandPartial", ->
+      unselectAllButtons()
+      $(this).addClass('selected')
+      renderExpandPartial()
+    @on 'click', ".expandAll", ->
+      unselectAllButtons()
+      $(this).addClass('selected')
+      renderExpandAll()
+
+  renderExpandOnce: =>
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.expandOnceContent').style.display = ''
+
+  renderExpand: =>
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.expandContent').style.display = ''
+
+  renderExpandPartial: =>
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.expandPartialContent').style.display = ''
+
+  renderExpandAll: =>
+    $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
+    @element.querySelector('.expandAllContent').style.display = ''
+
   setExpandFullGetter: (getter) ->
     @expandFullGetter = getter
 
@@ -124,6 +161,10 @@ class ElixirExpandedView extends ScrollView
   setExpandCode:(code) ->
     @expandCode = code
     @expandCodeEditor.setText(@expandCode)
+
+  setExpandPartialCode:(code) ->
+    @expandPartialCode = code
+    @expandPartialCodeEditor.setText(@expandPartialCode)
 
   setExpandAllCode:(code) ->
     @expandAllCode = code
@@ -137,13 +178,21 @@ class ElixirExpandedView extends ScrollView
 
   setCode:(code) ->
     @code = code
-    @codeEditor.setText(@code)
+    @expandFullGetter @buffer, @code, @line, (result) =>
+      [expandedOnce, expanded, expandedPartial, expandedAll] = result.split('\u000B')
+      @setExpandOnceCode(expandedOnce?.trim() || "")
+      @setExpandCode(expanded?.trim() || "")
+      @setExpandPartialCode(expandedPartial?.trim() || "")
+      @setExpandAllCode(expandedAll?.trim() || "")
+      @refreshView()
 
   refreshView: ->
     if @expandOnceCode?
       @expandOnceCodeEditor.setText(@expandOnceCode)
     if @expandCode?
       @expandCodeEditor.setText(@expandCode)
+    if @expandPartialCode?
+      @expandPartialCodeEditor.setText(@expandPartialCode)
     if @expandAllCode?
       @expandAllCodeEditor.setText(@expandAllCode)
 
