@@ -4,7 +4,7 @@ defmodule Alchemist.Code.Ast do
 
   @empty_env_info %{requires: [], imports: [], behaviours: []}
 
-  @partial_expressions [:def, :defp, :defmodule, :@, :defmacro, :defmacrop, :defoverridable, :__ENV__, :__CALLER__, :raise, :if, :unless, :in]
+  @partials [:def, :defp, :defmodule, :@, :defmacro, :defmacrop, :defoverridable, :__ENV__, :__CALLER__, :raise, :if, :unless, :in]
 
   def extract_use_info(use_ast, module) do
     try do
@@ -21,7 +21,12 @@ defmodule Alchemist.Code.Ast do
   end
 
   def expand_partial(ast, env) do
-    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand/2)
+    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand_partial/2)
+    expanded_ast
+  end
+
+  def expand_all(ast, env) do
+    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand_all/2)
     expanded_ast
   end
 
@@ -45,14 +50,21 @@ defmodule Alchemist.Code.Ast do
     new_env
   end
 
+  defp do_expand_all(ast, env) do
+    do_expand(ast, env)
+  end
+
+  defp do_expand_partial({name, _, _} = ast, env) when name in @partials do
+    {ast, env}
+  end
+  defp do_expand_partial(ast, env) do
+    do_expand(ast, env)
+  end
+
   defp do_expand({:require, _, _} = ast, env) do
     modules = extract_directive_modules(:require, ast)
     new_env = add_requires_to_env(env, modules)
     {ast, new_env}
-  end
-
-  defp do_expand({name, _, _} = ast, env) when name in @partial_expressions do
-    {ast, env}
   end
 
   defp do_expand(ast, env) do

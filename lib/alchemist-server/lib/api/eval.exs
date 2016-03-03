@@ -99,7 +99,7 @@ defmodule Alchemist.API.Eval do
       {_, expr} = File.read!("#{file}")
       |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = expand_partial(expr, env)
+      res = Ast.expand_partial(expr, env)
       IO.puts Macro.to_string(res)
     rescue
       e -> IO.inspect e
@@ -111,7 +111,7 @@ defmodule Alchemist.API.Eval do
       {_, expr} = File.read!("#{file}")
       |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = expand_all(expr, env)
+      res = Ast.expand_all(expr, env)
       IO.puts Macro.to_string(res)
     rescue
       e -> IO.inspect e
@@ -168,14 +168,6 @@ defmodule Alchemist.API.Eval do
     |> Ast.add_requires_to_env(requires)
     |> Ast.add_imports_to_env(imports)
     |> Ast.set_module_for_env(module)
-  end
-
-  defp expand_partial(ast, env) do
-    Ast.expand_partial(ast, env)
-  end
-
-  defp expand_all(ast, env) do
-    Macro.prewalk(ast, &Macro.expand(&1, env))
   end
 
 end
