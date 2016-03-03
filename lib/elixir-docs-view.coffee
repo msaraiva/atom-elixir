@@ -67,7 +67,7 @@ class ElixirDocsView extends ScrollView
       if mod != docMod
         mod = docMod
       if func?
-        arity = docSubject.split(',').length        
+        arity = docSubject.split(',').length
       [mod, func, arity]
 
     @on 'click', ".docs", ->
@@ -85,6 +85,24 @@ class ElixirDocsView extends ScrollView
     @on 'click', ".header .link", ->
       [mod, func, arity] = getModFuncArity()
       require('shell').openExternal(getDocURL(mod, func, arity))
+
+    @disposables.add @addEventHandler(@element, 'keyup', @keyupHandler)
+
+  keyupHandler: (event) =>
+    if event.keyCode in [37, 39]
+      selectedBtn = @element.querySelector('.viewButtons .selected')
+      allBtns = @element.querySelectorAll('.viewButtons .btn')
+      allBtnsArray = Array.prototype.slice.call(allBtns)
+      index = allBtnsArray.indexOf(selectedBtn)
+      if event.keyCode == 37 # left
+        $(allBtnsArray[Math.max(0, index-1)]).click()
+      else if event.keyCode == 39 #right
+        $(allBtnsArray[Math.min(allBtnsArray.length-1, index+1)]).click()
+
+  addEventHandler: (element, eventName, handler) ->
+    element.addEventListener eventName, handler
+    new Disposable ->
+      element.removeEventListener eventName, handler
 
   setSource: (source) ->
     @source = source
