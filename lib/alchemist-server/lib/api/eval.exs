@@ -70,25 +70,21 @@ defmodule Alchemist.API.Eval do
     end
   end
 
-  def process({:expand, buffer_file, file, line}) do
+  def process({:expand_once, buffer_file, file, line}) do
     try do
-      {_, expr} = File.read!("#{file}")
-      |> Code.string_to_quoted
+      {_, expr} = File.read!("#{file}") |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = Macro.expand(expr, env)
-      IO.puts Macro.to_string(res)
+      expand_and_print(&Macro.expand_once/2, expr, env)
     rescue
       e -> IO.inspect e
     end
   end
 
-  def process({:expand_once, buffer_file, file, line}) do
+  def process({:expand, buffer_file, file, line}) do
     try do
-      {_, expr} = File.read!("#{file}")
-      |> Code.string_to_quoted
+      {_, expr} = File.read!("#{file}") |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = Macro.expand_once(expr, env)
-      IO.puts Macro.to_string(res)
+      expand_and_print(&Macro.expand/2, expr, env)
     rescue
       e -> IO.inspect e
     end
@@ -99,8 +95,7 @@ defmodule Alchemist.API.Eval do
       {_, expr} = File.read!("#{file}")
       |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = Ast.expand_partial(expr, env)
-      IO.puts Macro.to_string(res)
+      expand_and_print(&Ast.expand_partial/2, expr, env)
     rescue
       e -> IO.inspect e
     end
@@ -108,24 +103,34 @@ defmodule Alchemist.API.Eval do
 
   def process({:expand_all, buffer_file, file, line}) do
     try do
-      {_, expr} = File.read!("#{file}")
-      |> Code.string_to_quoted
+      {_, expr} = File.read!("#{file}") |> Code.string_to_quoted
       env = create_env(buffer_file, line)
-      res = Ast.expand_all(expr, env)
-      IO.puts Macro.to_string(res)
+      expand_and_print(&Ast.expand_all/2, expr, env)
     rescue
       e -> IO.inspect e
     end
   end
 
   def process({:expand_full, buffer_file, file, line}) do
-    process({:expand_once, buffer_file, file, line})
-    IO.puts("\u000B")
-    process({:expand, buffer_file, file, line})
-    IO.puts("\u000B")
-    process({:expand_partial, buffer_file, file, line})
-    IO.puts("\u000B")
-    process({:expand_all, buffer_file, file, line})
+    try do
+      {_, expr} = File.read!("#{file}") |> Code.string_to_quoted
+      env = create_env(buffer_file, line)
+      expand_and_print(&Macro.expand_once/2, expr, env)
+      IO.puts("\u000B")
+      expand_and_print(&Macro.expand/2, expr, env)
+      IO.puts("\u000B")
+      expand_and_print(&Ast.expand_partial/2, expr, env)
+      IO.puts("\u000B")
+      expand_and_print(&Ast.expand_all/2, expr, env)
+    rescue
+      e -> IO.inspect e
+    end
+  end
+
+  defp expand_and_print(expand_func, expr, env) do
+    expand_func.(expr, env)
+    |> Macro.to_string
+    |> IO.puts
   end
 
   def normalize(request) do
