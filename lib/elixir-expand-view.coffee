@@ -13,21 +13,6 @@ class ElixirExpandedView extends ScrollView
       editor = element.getModel()
       editor.setLineNumberGutterVisible(true)
       editor.setGrammar(atom.grammars.grammarForScopeName('source.elixir'))
-      atom.commands.add element,
-        'core:move-up': =>
-          editor.moveUp()
-        'core:move-down': =>
-          editor.moveDown()
-        'editor:newline': =>
-          editor.insertText('\n')
-        'core:move-to-top': =>
-          editor.moveToTop()
-        'core:move-to-bottom': =>
-          editor.moveToBottom()
-        'core:select-to-top': =>
-          editor.selectToTop()
-        'core:select-to-bottom': =>
-          editor.selectToBottom()
       element
 
     expandOnceCodeEditorElement = createEditor()
@@ -134,6 +119,24 @@ class ElixirExpandedView extends ScrollView
       unselectAllButtons()
       $(this).addClass('selected')
       renderExpandAll()
+
+    @disposables.add @addEventHandler(@element, 'keyup', @keyupHandler)
+
+  keyupHandler: (event) =>
+    if event.keyCode in [37, 39]
+      selectedBtn = @element.querySelector('.viewButtons .selected')
+      allBtns = @element.querySelectorAll('.viewButtons .btn')
+      allBtnsArray = Array.prototype.slice.call(allBtns)
+      index = allBtnsArray.indexOf(selectedBtn)
+      if event.keyCode == 37 # left
+        $(allBtnsArray[Math.max(0, index-1)]).click()
+      else if event.keyCode == 39 #right
+        $(allBtnsArray[Math.min(allBtnsArray.length-1, index+1)]).click()
+
+  addEventHandler: (element, eventName, handler) ->
+    element.addEventListener eventName, handler
+    new Disposable ->
+      element.removeEventListener eventName, handler
 
   renderExpandOnce: =>
     $(@element.querySelectorAll('.markdownContent')).css('display', 'none')
