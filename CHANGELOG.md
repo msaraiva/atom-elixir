@@ -1,3 +1,14 @@
+## v0.0.4
+
+### Features
+* Expand View now recursively expands `use` directives
+* An "Expand Partial" tab was added to the Expand View. Partial expansion is the same as  `expand_all` without expanding `:def, :defp, :defmodule, :@, :defmacro, :defmacrop, :defoverridable, :__ENV__, :__CALLER__, :raise, :if, :unless, :in`
+* Navigate through tabs using left/right keys (Docs View & Expand View)
+
+### Bug fixes
+* Autocomplete not listing macros from imported modules
+* Windows compatibility
+
 ## v0.0.3
 
 ### Features
