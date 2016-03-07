@@ -193,7 +193,7 @@ defmodule Introspection do
   end
 
   def extract_fun_args_and_desc({ { _fun, _ }, _line, _kind, args, doc }) do
-    args = Enum.map_join(args, ",", &print_doc_arg(&1))
+    args = Enum.map_join(args, ",", &print_doc_arg(&1)) |> String.replace(~r/\s+/, " ")
     desc = extract_summary_from_docs(doc)
     {args, desc}
   end
