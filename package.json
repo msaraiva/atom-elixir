@@ -1,10 +1,9 @@
 {
   "name": "atom-elixir",
   "main": "./lib/atom-elixir",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "A set of tools for Elixir makers",
-  "keywords": [
-  ],
+  "keywords": [],
   "repository": "https://github.com/msaraiva/atom-elixir",
   "license": "MIT",
   "engines": {
