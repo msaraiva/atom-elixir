@@ -1,3 +1,8 @@
+## v0.1.2
+
+### Bug fixes
+* Fixing tab change event before server is properly initialized
+
 ## v0.1.1
 
 ### Bug fixes

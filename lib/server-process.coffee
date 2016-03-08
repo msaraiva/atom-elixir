@@ -9,6 +9,7 @@ class ServerProcess
   ready: false
   testing: false
   proc: null
+  env: null
 
   constructor: (projectPath) ->
     @projectPath = projectPath
@@ -20,6 +21,7 @@ class ServerProcess
     @lastRequestWhenBusy = null
 
   start: (env) ->
+    @env = env
     @proc = @spawnChildProcess(env)
 
     buffer = ''
@@ -134,8 +136,9 @@ class ServerProcess
     if @testing
       console.log  "[atom-elixir] Not setting environment while testing"
     else
-      @sendRequest 'SENV', "\"#{env}\"", (result) ->
-        console.log  "[atom-elixir] Setting environment to \"#{result}\""
+      @sendRequest 'SENV', "\"#{env}\"", (result) =>
+        @env = result
+        console.log  "[atom-elixir] Setting environment to \"#{@env}\""
 
   sendRequest: (type, args, onResult) ->
     # Note: The helper function `createTempFile` returns a path that contains uses backslashes as path separators.
