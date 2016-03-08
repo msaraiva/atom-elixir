@@ -1,3 +1,8 @@
+## v0.1.1
+
+### Bug fixes
+* Fixing README for the registry
+
 ## v0.1.0
 
 ### Bug fixes
