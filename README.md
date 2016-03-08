@@ -8,6 +8,9 @@ This package provides a set of tools for Elixir makers. It uses an extended vers
 apm install atom-elixir
 ```
 
+### Dependencies
+- [language-elixir](https://atom.io/packages/language-elixir)
+
 ### Features
 
 - Autocomplete [(Screenshots)](#screenshots-autocomplete)
@@ -43,9 +46,6 @@ apm install atom-elixir
 - Show information on hover
 - Auto install dependencies
 - Format [ExSamples](https://github.com/msaraiva/exsamples) tables
-
-### Dependencies
-- [language-elixir](https://atom.io/packages/language-elixir)
 
 ### Shortcuts
 
