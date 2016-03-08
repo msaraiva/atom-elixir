@@ -1,3 +1,10 @@
+## v0.0.5
+
+### Bug fixes
+* Autocomplete and Go To Definition do not work with `use ExUnit.Case`
+* Uncaught TypeError: Cannot read property 'replace' of undefined [(#10)](https://github.com/msaraiva/atom-elixir/issues/10)
+* Modules in `test/support` not loaded or could not be found [(#15)](https://github.com/msaraiva/atom-elixir/issues/15)
+
 ## v0.0.4
 
 ### Features
