@@ -68,6 +68,21 @@ defmodule Alchemist.Code.Ast do
   end
 
   defp do_expand(ast, env) do
+    do_expand_with_fixes(ast, env)
+  end
+
+  # Fix inexpansible `use ExUnit.Case`
+  defp do_expand_with_fixes({:use, _, [{:__aliases__, _, [:ExUnit, :Case]}|_]}, env) do
+    ast = quote do
+      import ExUnit.Callbacks
+      import ExUnit.Assertions
+      import ExUnit.Case
+      import ExUnit.DocTest
+    end
+    {ast, env}
+  end
+
+  defp do_expand_with_fixes(ast, env) do
     expanded_ast = Macro.expand(ast, env)
     {expanded_ast, env}
   end
