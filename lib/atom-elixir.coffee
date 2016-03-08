@@ -32,7 +32,8 @@ module.exports = AtomElixir =
     unless @quotedProvider?
       @quotedProvider = new ElixirQuotedProvider
 
-    atom.workspace.observeActivePaneItem (item) =>
+    @subscriptions = new CompositeDisposable
+    @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
       if item instanceof TextEditor
         @server?.setEnv(@getEditorEnv(item))
 
@@ -43,6 +44,7 @@ module.exports = AtomElixir =
     @docsProvider.dispose()
     @quotedProvider.dispose()
     @server.stop()
+    @subscriptions.dispose()
 
   provideAutocomplete: ->
     [@autocompleteProvider]
