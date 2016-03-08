@@ -1,4 +1,4 @@
-## v0.0.5
+## v0.1.0
 
 ### Bug fixes
 * Autocomplete and Go To Definition do not work with `use ExUnit.Case`

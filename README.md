@@ -2,8 +2,6 @@
 
 This package provides a set of tools for Elixir makers. It uses an extended version of the [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini.
 
-> **Notice:** This package is available for testing. Some features might still be added, changed or even removed before the first stable release. Feature addition and enhancements will heavily depend on feedback and/or contribution.
-
 ### Install
 
 ```
@@ -68,29 +66,29 @@ apm install atom-elixir
 - Showing specs and documentation summary
 - Showing where each function was originally defined
 
-![image](/../assets/screenshots/autocomplete1.png?raw=true)
+![image](https://raw.githubusercontent.com/msaraiva/atom-elixir/assets/screenshots/autocomplete1.png?raw=true)
 
 - Listing modules and their types
 
-![image](/../assets/screenshots/autocomplete3.png?raw=true)
+![image](https://raw.githubusercontent.com/msaraiva/atom-elixir/assets/screenshots/autocomplete3.png?raw=true)
 
 #### <a name="screenshots-documentation"></a> Documentation
 - Showing documentation of the module under the cursor
 
-![image](/../assets/screenshots/docs_docs.png?raw=true)
+![image](https://raw.githubusercontent.com/msaraiva/atom-elixir/assets/screenshots/docs_docs.png?raw=true)
 
 #### <a name="screenshots-quoted"></a> Quoted Code View
 
 - Quoted form of the selected code
 - Live pattern matching against quoted code
 
-![image](/../assets/screenshots/quoted.png?raw=true)
+![image](https://raw.githubusercontent.com/msaraiva/atom-elixir/assets/screenshots/quoted.png?raw=true)
 
 #### <a name="screenshots-expand"></a> Expand Macro View
 
 - Expanding selected macro call
 
-![image](/../assets/screenshots/expand.png?raw=true)
+![image](https://raw.githubusercontent.com/msaraiva/atom-elixir/assets/screenshots/expand.png?raw=true)
 
 ### Credits
 
