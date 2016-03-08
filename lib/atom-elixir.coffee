@@ -1,4 +1,4 @@
-{CompositeDisposable} = require 'atom'
+{TextEditor, CompositeDisposable} = require 'atom'
 spawn = require('child_process').spawn
 ServerProcess = require './server-process'
 
@@ -32,6 +32,10 @@ module.exports = AtomElixir =
     unless @quotedProvider?
       @quotedProvider = new ElixirQuotedProvider
 
+    atom.workspace.observeActivePaneItem (item) =>
+      if item instanceof TextEditor
+        @server?.setEnv(@getEditorEnv(item))
+
   deactivate: ->
     @expandProvider.dispose()
     @autocompleteProvider.dispose()
@@ -42,6 +46,13 @@ module.exports = AtomElixir =
 
   provideAutocomplete: ->
     [@autocompleteProvider]
+
+  getEditorEnv: (editor)->
+    projectPath = atom.project.getPaths()[0]
+    env = "dev"
+    if editor?.getPath()?.startsWith(projectPath + '/test/')
+      env = "test"
+    env
 
   initEnv: ->
     [shell, out] = [process.env.SHELL || 'bash', '']
@@ -54,10 +65,12 @@ module.exports = AtomElixir =
         match = line.match(/^(\S+?)=(.+)/)
         process.env[match[1]] = match[2] if match
       @server = new ServerProcess(atom.project.getPaths()[0])
-      @server.start()
+      editor = atom.workspace.getActiveTextEditor()
+      @server.start(@getEditorEnv(editor))
       @expandProvider.setServer(@server)
       @autocompleteProvider.setServer(@server)
       @gotoDefinitionProvider.setServer(@server)
       @docsProvider.setServer(@server)
       @quotedProvider.setServer(@server)
+
     pid.stdin.end()

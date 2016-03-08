@@ -61,6 +61,7 @@ describe 'ElixirAutocompleteProvider', ->
       try fs.statSync(editor.getPath())
 
     waitsFor 'server to be ready', 3000, ->
+      mainModule.autocompleteProvider.server.testing = true
       mainModule.autocompleteProvider.server.ready
 
   describe 'autocomplete suggestions', ->

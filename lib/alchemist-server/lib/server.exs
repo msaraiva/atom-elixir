@@ -28,7 +28,7 @@ defmodule Alchemist.Server do
   end
 
   def start([env]) do
-    IO.puts(:stderr, "Initializing alchemist-server (Elixir version #{System.version})")
+    IO.puts(:stderr, "Initializing alchemist-server for environment \"#{env}\" (Elixir version #{System.version})")
     # IO.inspect(:stderr, System.get_env, [])
 
     loop(all_loaded(), [], [], env, 0)
@@ -36,7 +36,7 @@ defmodule Alchemist.Server do
 
   def loop(loaded, paths, apps, env, last_load_time) do
     line  = IO.gets("") |> String.rstrip()
-    {paths, apps, time} = run(line, loaded, paths, apps, env, last_load_time)
+    {paths, apps, env, time} = run(line, loaded, paths, apps, env, last_load_time)
     loop(loaded, paths, apps, env, time)
   end
 
@@ -54,13 +54,18 @@ defmodule Alchemist.Server do
         {paths, apps}
       end
 
-    try do
-      read_input(line)
-    rescue
-      e ->
-        IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
-    end
-    {paths, apps, time}
+    env =
+      try do
+        case read_input(line) do
+          {:env, new_env} -> new_env
+          _ -> env
+        end
+      rescue
+        e ->
+          IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
+          env
+      end
+    {paths, apps, env, time}
   end
 
   def read_input(line) do
@@ -75,9 +80,18 @@ defmodule Alchemist.Server do
         API.Eval.request(args)
       ["DEFL", args] ->
         API.Defl.request(args)
+      ["SENV", args] ->
+        {{env}, _} = Code.eval_string(args)
+        set_env(env)
       _ ->
         nil
     end
+  end
+
+  defp set_env(env) when env in ["test", "dev"] do
+    IO.puts env
+    IO.puts "END-OF-SENV"
+    {:env, env}
   end
 
   defp all_loaded() do

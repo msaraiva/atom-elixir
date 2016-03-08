@@ -7,18 +7,19 @@ module.exports =
 
 class ServerProcess
   ready: false
+  testing: false
 
   constructor: (projectPath) ->
     @projectPath = projectPath
     @command     = "elixir"
-    @args        = [path.join(__dirname, "alchemist-server/run.exs"), "dev"]
+    @args        = [path.join(__dirname, "alchemist-server/run.exs")]
     @proc        = null
     @busy        = false
     @lastRequestType = null
     @lastRequestWhenBusy = null
 
-  start: ->
-    @proc = @spawnChildProcess()
+  start: (env) ->
+    @proc = @spawnChildProcess(env)
 
     buffer = ''
 
@@ -128,11 +129,18 @@ class ServerProcess
       fs.unlink(tmpBufferFile)
       onResult(result)
 
+  setEnv: (env) ->
+    if @testing
+      console.log  "[atom-elixir] Not setting environment while testing"
+    else
+      @sendRequest 'SENV', "\"#{env}\"", (result) ->
+        console.log  "[atom-elixir] Setting environment to \"#{result}\""
+
   sendRequest: (type, args, onResult) ->
-    # Note: The helper function `createTempFile` returns a path that contains uses backslashes as path separators. 
+    # Note: The helper function `createTempFile` returns a path that contains uses backslashes as path separators.
     # That's fine for Atom, but the alchemist server does not seem to like it.
     if process.platform == 'win32'
-      args = args.replace(/\\/g, '/') 
+      args = args.replace(/\\/g, '/')
     request = "#{type} { #{args} }\n"
     console.log('[Server] ' + request)
     if !@busy
@@ -144,14 +152,13 @@ class ServerProcess
       console.log('Server busy!')
       @lastRequestWhenBusy = [type, args, onResult]
 
-  spawnChildProcess: ->
+  spawnChildProcess: (env) ->
     options =
       cwd: @projectPath
       stdio: "pipe"
 
     if process.platform == 'win32'
       options.windowsVerbatimArguments = true
-      # Small typo - `args` instead of `@args`
-      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).join(' ') + '"'], options)
+      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(env).join(' ') + '"'], options)
     else
-      spawn(@command, @args, options)
+      spawn(@command, @args.concat(env), options)
