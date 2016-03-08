@@ -8,6 +8,7 @@ module.exports =
 class ServerProcess
   ready: false
   testing: false
+  proc: null
 
   constructor: (projectPath) ->
     @projectPath = projectPath

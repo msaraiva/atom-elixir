@@ -16,7 +16,7 @@ module.exports = AtomElixir =
   quotedProvider: null
 
   activate: (state) ->
-    require('atom-package-deps').install('atom-elixir').then =>    
+    require('atom-package-deps').install('atom-elixir').then =>
       @initEnv()
       unless @expandProvider?
         @expandProvider = new ElixirExpandProvider
@@ -35,7 +35,7 @@ module.exports = AtomElixir =
 
       @subscriptions = new CompositeDisposable
       @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
-        if item instanceof TextEditor
+        if @server?.proc && item instanceof TextEditor
           @server?.setEnv(@getEditorEnv(item))
 
   deactivate: ->
