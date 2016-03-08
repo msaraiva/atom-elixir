@@ -16,26 +16,27 @@ module.exports = AtomElixir =
   quotedProvider: null
 
   activate: (state) ->
-    @initEnv()
-    unless @expandProvider?
-      @expandProvider = new ElixirExpandProvider
+    require('atom-package-deps').install('atom-elixir').then =>    
+      @initEnv()
+      unless @expandProvider?
+        @expandProvider = new ElixirExpandProvider
 
-    unless @autocompleteProvider?
-      @autocompleteProvider = new ElixirAutocompleteProvider
+      unless @autocompleteProvider?
+        @autocompleteProvider = new ElixirAutocompleteProvider
 
-    unless @gotoDefinitionProvider?
-      @gotoDefinitionProvider = new ElixirGotoDefinitionProvider
+      unless @gotoDefinitionProvider?
+        @gotoDefinitionProvider = new ElixirGotoDefinitionProvider
 
-    unless @docsProvider?
-      @docsProvider = new ElixirDocsProvider
+      unless @docsProvider?
+        @docsProvider = new ElixirDocsProvider
 
-    unless @quotedProvider?
-      @quotedProvider = new ElixirQuotedProvider
+      unless @quotedProvider?
+        @quotedProvider = new ElixirQuotedProvider
 
-    @subscriptions = new CompositeDisposable
-    @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
-      if item instanceof TextEditor
-        @server?.setEnv(@getEditorEnv(item))
+      @subscriptions = new CompositeDisposable
+      @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
+        if item instanceof TextEditor
+          @server?.setEnv(@getEditorEnv(item))
 
   deactivate: ->
     @expandProvider.dispose()
