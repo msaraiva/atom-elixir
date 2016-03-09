@@ -2,6 +2,8 @@
 
 This package provides a set of tools for Elixir makers. It uses an extended version of the [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini.
 
+> **Notice:** This package is available for testing. Some features might still be added, changed or even removed before the first stable release. Feature addition and enhancements will heavily depend on feedback and/or contribution.
+
 ### Install
 
 ```
