@@ -17,20 +17,11 @@ module.exports = AtomElixir =
 
   activate: (state) ->
     @initEnv()
-    unless @expandProvider?
-      @expandProvider = new ElixirExpandProvider
-
-    unless @autocompleteProvider?
-      @autocompleteProvider = new ElixirAutocompleteProvider
-
-    unless @gotoDefinitionProvider?
-      @gotoDefinitionProvider = new ElixirGotoDefinitionProvider
-
-    unless @docsProvider?
-      @docsProvider = new ElixirDocsProvider
-
-    unless @quotedProvider?
-      @quotedProvider = new ElixirQuotedProvider
+    @expandProvider = new ElixirExpandProvider
+    @autocompleteProvider = new ElixirAutocompleteProvider
+    @gotoDefinitionProvider = new ElixirGotoDefinitionProvider
+    @docsProvider = new ElixirDocsProvider
+    @quotedProvider = new ElixirQuotedProvider
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
@@ -40,11 +31,17 @@ module.exports = AtomElixir =
 
   deactivate: ->
     @expandProvider.dispose()
+    @expandProvider = null
     @autocompleteProvider.dispose()
+    @autocompleteProvider = null
     @gotoDefinitionProvider.dispose()
+    @gotoDefinitionProvider = null
     @docsProvider.dispose()
+    @docsProvider = null
     @quotedProvider.dispose()
+    @quotedProvider = null
     @server.stop()
+    @server = null
     @subscriptions.dispose()
 
   provideAutocomplete: ->

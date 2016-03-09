@@ -1,3 +1,8 @@
+## v0.1.4
+
+### Bug fixes
+* Package stops working after update [(#19)](https://github.com/msaraiva/atom-elixir/issues/19)
+
 ## v0.1.3
 
 ### Bug fixes
