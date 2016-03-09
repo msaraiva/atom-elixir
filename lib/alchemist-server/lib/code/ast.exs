@@ -13,9 +13,9 @@ defmodule Alchemist.Code.Ast do
       {_ast, env_info} = Macro.prewalk(expanded_ast, @empty_env_info, &pre_walk_expanded/2)
       env_info
     rescue
-      e ->
-        IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
-        IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
+      _e ->
+        # IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
+        # IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
         @empty_env_info
     end
   end
