@@ -55,7 +55,7 @@ class ServerProcess
         console.log(message)
 
     @proc.on 'close', (exitCode) =>
-      console.error  "[atom-elixir] Child process exited with code " + exitCode
+      console.log  "[atom-elixir] Child process exited with code " + exitCode
       @ready = false
       @busy = false
       @proc = null
