@@ -1,3 +1,8 @@
+## v0.1.3
+
+### Bug fixes
+* Uncaught TypeError on Quoted Code View [(#20)](https://github.com/msaraiva/atom-elixir/issues/20) and [(#21)](https://github.com/msaraiva/atom-elixir/issues/21)
+
 ## v0.1.2
 
 ### Bug fixes
