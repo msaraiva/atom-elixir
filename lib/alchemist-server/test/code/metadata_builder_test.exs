@@ -414,6 +414,39 @@ defmodule Alchemist.Code.MetadataBuilderTest do
     assert get_line_module(state, 11) == OuterModule
   end
 
+  test "behaviours" do
+
+    state =
+      """
+      IO.puts ""
+      defmodule OuterModule do
+        use Application
+        @behaviour SomeModule.SomeBehaviour
+        IO.puts ""
+        defmodule InnerModuleWithUse do
+          use GenServer
+          IO.puts ""
+        end
+        defmodule InnerModuleWithBh do
+          @behaviour SomeOtherBehaviour
+          IO.puts ""
+        end
+        defmodule InnerModuleWithoutBh do
+          IO.puts ""
+        end
+        IO.puts ""
+      end
+      """
+      |> string_to_state
+
+    assert get_line_behaviours(state, 1)  == []
+    assert get_line_behaviours(state, 5)  == [SomeModule.SomeBehaviour, :application]
+    assert get_line_behaviours(state, 8)  == [:gen_server]
+    assert get_line_behaviours(state, 12)  == [SomeOtherBehaviour]
+    assert get_line_behaviours(state, 15)  == []
+    assert get_line_behaviours(state, 17)  == [SomeModule.SomeBehaviour, :application]
+  end
+
   defp string_to_state(string) do
     {_ast, state} =
       string
@@ -437,6 +470,10 @@ defmodule Alchemist.Code.MetadataBuilderTest do
 
   defp get_line_attributes(state, line) do
     (get_in(state.lines_to_env, [line, :attributes]) || [])
+  end
+
+  defp get_line_behaviours(state, line) do
+    (get_in(state.lines_to_env, [line, :behaviours]) || [])
   end
 
   defp get_line_module(state, line) do

@@ -89,6 +89,8 @@ class ElixirAutocompleteProvider
       createSuggestionForVariable(name)
     else if kind == 'module'
       createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
+    else if kind == 'callback'
+      createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
     else if kind in ['private_function', 'public_function', 'public_macro']
       createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
     else if kind in ['function', 'macro']
@@ -163,6 +165,43 @@ class ElixirAutocompleteProvider
 
     if prefix.match(/^:/)
       [module, funcName] = moduleAndFuncName(moduleParts, func)
+      description = "No documentation available."
+
+    description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
+    description = markdownToHTML(description)
+
+    {
+      func: func
+      arity: arity
+      snippet: snippet
+      displayText: displayText
+      type: type
+      rightLabel: rightLabel
+      descriptionHTML: description
+      iconHTML: iconHTML
+    }
+
+  createSuggestionForCallback = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore) ->
+    args = signature.split(',')
+    [func, arity] = name.split('/')
+
+    params = []
+    displayText = ''
+    snippet = func
+    description = desc.replace(/\\n/g, "\n")
+
+    if signature
+      params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
+      displayText = "#{func}(#{args.join(', ')})"
+    else
+      params = ([1..arity].map (i) -> "${#{i}:arg#{i}}") if arity > 0
+      displayText = "#{func}/#{arity}"
+
+    snippet = "#{func}(#{params.join(', ')}) do\n\t$0\nend"
+
+    [type, iconHTML, rightLabel] = ['tag', 'c', mod]
+
+    if desc == ""
       description = "No documentation available."
 
     description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""

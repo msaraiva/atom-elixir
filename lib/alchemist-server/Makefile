@@ -21,6 +21,7 @@ test_helpers:
 	@ echo "\n$(INFO_COLOR)Run helper tests: $(NO_COLOR)\n"
 	$(ELIXIR) test/helpers/module_info_test.exs
 	$(ELIXIR) test/helpers/complete_test.exs
+	$(ELIXIR) test/helpers/introspection_test.exs
 
 test_code:
 	@ echo "\n$(INFO_COLOR)Run code tests: $(NO_COLOR)\n"

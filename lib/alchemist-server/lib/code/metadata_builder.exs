@@ -24,6 +24,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> add_current_module_to_index(line)
     |> create_alias_for_current_module
     |> new_attributes_scope
+    |> new_behaviours_scope
     |> new_alias_scope
     |> new_import_scope
     |> new_require_scope
@@ -35,6 +36,7 @@ defmodule Alchemist.Code.MetadataBuilder do
     state
     |> remove_module_from_namespace(module)
     |> remove_attributes_scope
+    |> remove_behaviours_scope
     |> remove_alias_scope
     |> remove_import_scope
     |> remove_require_scope
@@ -164,6 +166,13 @@ defmodule Alchemist.Code.MetadataBuilder do
     |> result(ast)
   end
 
+  defp pre_behaviour(ast, state, line, module) do
+    state
+    |> add_current_env_to_line(line)
+    |> add_behaviour(module)
+    |> result(ast)
+  end
+
   defp pre({:defmodule, [line: line], [{:__aliases__, _, module}, _]} = ast, state) do
     pre_module(ast, state, line, module)
   end
@@ -187,6 +196,11 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   defp pre({:defmacro, meta, args}, state) do
     pre({:def, meta, args}, state)
+  end
+
+  defp pre({:@, [line: line], [{:behaviour, _, [{:__aliases__, _, module_atoms}]}]} = ast, state) do
+    module = module_atoms |> Module.concat
+    pre_behaviour(ast, state, line, module)
   end
 
   defp pre({:@, [line: line], [{name, _, _}]} = ast, state) do
@@ -282,12 +296,13 @@ defmodule Alchemist.Code.MetadataBuilder do
   end
 
   defp pre({:use, [line: line], _} = ast, state) do
-    %{requires: requires, imports: imports} = Ast.extract_use_info(ast, get_current_module(state))
+    %{requires: requires, imports: imports, behaviours: behaviours} = Ast.extract_use_info(ast, get_current_module(state))
 
     state
     |> add_current_env_to_line(line)
     |> add_requires(requires)
     |> add_imports(imports)
+    |> add_behaviours(behaviours)
     |> result(ast)
   end
 

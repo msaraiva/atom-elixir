@@ -56,6 +56,26 @@ defmodule Introspection do
     end |> Enum.join("\n\n____\n\n")
   end
 
+  def get_callbacks_with_docs(mod) when is_atom(mod) do
+    case get_callbacks_and_docs(mod) do
+      {callbacks, []} ->
+        Enum.map(callbacks, fn {{name, arity}, [spec | _]} ->
+          spec_ast = Typespec.spec_to_ast(name, spec)
+          signature = get_typespec_signature(spec_ast, arity)
+          definition = callback_spec_ast_to_string(spec_ast)
+          %{name: name, arity: arity, callback: "@callback #{definition}", signature: signature, doc: nil}
+        end)
+      {callbacks, docs} ->
+        Enum.filter_map docs, &match?(_, &1), fn
+          {{fun, arity}, _, :macrocallback, doc} ->
+            get_callback_with_doc(fun, :macrocallback, doc, {:"MACRO-#{fun}", arity + 1}, callbacks)
+          {{fun, arity}, _, kind, doc} ->
+            get_callback_with_doc(fun, kind, doc, {fun, arity}, callbacks)
+        end
+      _ -> []
+    end
+  end
+
   def get_types_with_docs(module) when is_atom(module) do
     get_types(module) |> Enum.map(fn {_, {t, _, _args}} = type ->
       %{type: format_type(type), doc: get_type_doc(module, t)}
@@ -68,6 +88,15 @@ defmodule Introspection do
       []    -> []
       types -> types
     end
+  end
+
+  def extract_summary_from_docs(doc) when doc in [nil, "", false], do: ""
+  def extract_summary_from_docs(doc) do
+    doc
+    |> String.split("\n\n")
+    |> Enum.at(0)
+    |> String.replace(~r/\n/, "\\\\n")
+    |> String.replace(";", "\\;")
   end
 
   defp format_type({:opaque, type}) do
@@ -88,44 +117,29 @@ defmodule Introspection do
     description || ""
   end
 
-  defp get_callbacks_with_docs(mod) when is_atom(mod) do
-    case get_callbacks_and_docs(mod) do
-      {callbacks, docs} ->
-        Enum.filter_map docs, &match?(_, &1), fn
-          {{fun, arity}, _, :macrocallback, doc} ->
-            get_callback_with_doc(fun, :macrocallback, doc, {:"MACRO-#{fun}", arity + 1}, callbacks)
-          {{fun, arity}, _, kind, doc} ->
-            get_callback_with_doc(fun, kind, doc, {fun, arity}, callbacks)
-        end
-      _ -> []
-    end
-  end
-
   defp get_callback_with_doc(name, kind, doc, key, callbacks) do
     {_, [spec | _]} = List.keyfind(callbacks, key, 0)
-    {_f, arity} = key
+    {f, arity} = key
 
     spec_ast = Typespec.spec_to_ast(name, spec)
     signature = get_typespec_signature(spec_ast, arity)
+    definition = callback_spec_ast_to_string(spec_ast)
 
-    definition =
-      spec_ast
-      |> Macro.prewalk(&drop_macro_env/1)
-      |> Macro.to_string
-      |> String.replace("()", "")
+    %{name: f, arity: arity, callback: "@#{kind} #{definition}", signature: signature, doc: doc}
+  end
 
-    %{callback: "@#{kind} #{definition}", signature: signature, doc: doc}
+  defp callback_spec_ast_to_string(spec_ast) do
+    spec_ast
+    |> Macro.prewalk(&drop_macro_env/1)
+    |> Macro.to_string
+    |> String.replace("()", "")
   end
 
   defp get_callbacks_and_docs(mod) do
     callbacks = Typespec.beam_callbacks(mod)
     docs = Code.get_docs(mod, :callback_docs)
 
-    cond do
-      is_nil(callbacks) -> {[], []}
-      is_nil(docs) -> {[], []}
-      true -> {callbacks, docs}
-    end
+    {callbacks || [], docs || []}
   end
 
   defp drop_macro_env({name, meta, [{:::, _, [{:env, _, _}, _ | _]} | args]}), do: {name, meta, args}
@@ -252,15 +266,6 @@ defmodule Introspection do
       {fun_args, desc} = extract_fun_args_and_desc(func_doc)
       {{f, a}, {func_kind, fun_args, desc, spec}}
     end
-  end
-
-  defp extract_summary_from_docs(doc) when doc in [nil, "", false], do: ""
-  defp extract_summary_from_docs(doc) do
-    doc
-    |> String.split("\n\n")
-    |> Enum.at(0)
-    |> String.replace(~r/\n/, "\\\\n")
-    |> String.replace(";", "\\;")
   end
 
   defp print_doc_arg({ :\\, _, [left, right] }) do

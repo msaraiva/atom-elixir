@@ -9,6 +9,8 @@ defmodule Alchemist.Code.State do
       aliases:    [[]],
       attributes: [[]],
       scope_attributes: [[]],
+      behaviours: [[]],
+      scope_behaviours: [[]],
       vars:       [[]],
       scope_vars: [[]],
       mods_funs_to_lines: %{},
@@ -23,7 +25,8 @@ defmodule Alchemist.Code.State do
     current_aliases  = state.aliases    |> :lists.reverse |> List.flatten
     current_vars     = state.scope_vars |> :lists.reverse |> List.flatten
     current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
-    %{imports: current_imports, requires: current_requires, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes}
+    current_behaviours = hd(state.behaviours)
+    %{imports: current_imports, requires: current_requires, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes, behaviours: current_behaviours}
   end
 
   def get_current_module(state) do
@@ -105,6 +108,10 @@ defmodule Alchemist.Code.State do
     %{state | attributes: [[]|state.attributes], scope_attributes: [[]]}
   end
 
+  def new_behaviours_scope(state) do
+    %{state | behaviours: [[]|state.behaviours], scope_behaviours: [[]]}
+  end
+
   def remove_vars_scope(state) do
     %{state | vars: tl(state.vars), scope_vars: tl(state.scope_vars)}
   end
@@ -117,6 +124,11 @@ defmodule Alchemist.Code.State do
   def remove_attributes_scope(state) do
     attributes = tl(state.attributes)
     %{state | attributes: attributes, scope_attributes: attributes}
+  end
+
+  def remove_behaviours_scope(state) do
+    behaviours = tl(state.behaviours)
+    %{state | behaviours: behaviours, scope_behaviours: behaviours}
   end
 
   def add_alias(state, alias_tuple) do
@@ -195,6 +207,15 @@ defmodule Alchemist.Code.State do
       end
 
     %{state | attributes: [attributes_from_scope|other_attributes], scope_attributes: [attributes_from_scope|tl(state.scope_attributes)]}
+  end
+
+  def add_behaviour(state, module) do
+    [behaviours_from_scope|other_behaviours] = state.behaviours
+    %{state | behaviours: [[module|behaviours_from_scope]|other_behaviours]}
+  end
+
+  def add_behaviours(state, modules) do
+    Enum.reduce(modules, state, fn(mod, state) -> add_behaviour(state, mod) end)
   end
 
   def add_vars(state, vars) do

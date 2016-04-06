@@ -98,8 +98,11 @@ defmodule Alchemist.Code.Ast do
     modules = extract_directive_modules(:import, ast)
     {ast, %{acc | imports: (acc.imports ++ modules)}}
   end
-  defp pre_walk_expanded({:@, _, [{:behaviour, _, [module]}]} = ast, acc) do
-    {ast, %{acc | behaviours: [module|acc.behaviours]}}
+  defp pre_walk_expanded({:@, _, [{:behaviour, _, [behaviour]}]} = ast, acc) do
+    {ast, %{acc | behaviours: [behaviour|acc.behaviours]}}
+  end
+  defp pre_walk_expanded({{:., _, [Module, :put_attribute]}, _, [_module, :behaviour, behaviour]} = ast, acc) do
+    {ast, %{acc | behaviours: [behaviour|acc.behaviours]}}
   end
   defp pre_walk_expanded({_name, _meta, _args}, acc) do
     {nil, acc}
