@@ -6,6 +6,11 @@ defmodule Introspection do
 
   alias Kernel.Typespec
 
+  @wrapped_behaviours %{
+    :gen_server  => GenServer,
+    :gen_event   => GenEvent
+  }
+
   def get_docs_md(mod, nil) do
     mod_str = module_to_string(mod)
     title = "> #{mod_str}\n\n"
@@ -137,7 +142,10 @@ defmodule Introspection do
 
   defp get_callbacks_and_docs(mod) do
     callbacks = Typespec.beam_callbacks(mod)
-    docs = Code.get_docs(mod, :callback_docs)
+    docs =
+      @wrapped_behaviours
+      |> Map.get(mod, mod)
+      |> Code.get_docs(:callback_docs)
 
     {callbacks || [], docs || []}
   end
