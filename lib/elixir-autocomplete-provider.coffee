@@ -34,8 +34,9 @@ class ElixirAutocompleteProvider
     prefix = getPrefix(textBeforeCursor)
     pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
     captureBefore = !!textBeforeCursor.match(///&#{prefix}$///)
+    defBefore = !!textBeforeCursor.match(///def\s*#{prefix}$///)
 
-    return if !activatedManually && prefix == ""
+    return if !activatedManually && prefix == "" && !defBefore
 
     #TODO: maybe we should have our own configuration for that
     # return unless prefix?.length >= @minimumWordLength
@@ -66,7 +67,7 @@ class ElixirAutocompleteProvider
           name = fields[0]
           if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modulesToAdd.length > 0
             fields[0] = modulesToAdd.join('.') + '.' + name
-          createSuggestion(serverSuggestion, fields, prefix, pipeBefore, captureBefore)
+          createSuggestion(serverSuggestion, fields, prefix, pipeBefore, captureBefore, defBefore)
 
         suggestions = sortSuggestions(suggestions)
         resolve(suggestions)
@@ -75,11 +76,13 @@ class ElixirAutocompleteProvider
     regex = /[\w0-9\._!\?\:@]+$/
     textBeforeCursor.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, fields, prefix, pipeBefore, captureBefore) ->
+  createSuggestion = (serverSuggestion, fields, prefix, pipeBefore, captureBefore, defBefore) ->
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
     else
       [name, kind, signature, mod, desc, spec] = fields
+
+    return "" if defBefore and kind != 'callback'
 
     return "" if serverSuggestion.match(/^[\s\d]/)
 
@@ -90,7 +93,7 @@ class ElixirAutocompleteProvider
     else if kind == 'module'
       createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
     else if kind == 'callback'
-      createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
+      createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
     else if kind in ['private_function', 'public_function', 'public_macro']
       createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
     else if kind in ['function', 'macro']
@@ -181,7 +184,7 @@ class ElixirAutocompleteProvider
       iconHTML: iconHTML
     }
 
-  createSuggestionForCallback = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore) ->
+  createSuggestionForCallback = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore) ->
     args = signature.split(',')
     [func, arity] = name.split('/')
 
@@ -197,9 +200,13 @@ class ElixirAutocompleteProvider
       params = ([1..arity].map (i) -> "${#{i}:arg#{i}}") if arity > 0
       displayText = "#{func}/#{arity}"
 
-    snippet = "#{func}(#{params.join(', ')}) do\n\t$0\nend"
+    snippet = "#{func}(#{params.join(', ')}) do\n\t$0\nend\n"
 
-    [type, iconHTML, rightLabel] = ['tag', 'c', mod]
+    if !defBefore
+      snippet = "def #{snippet}"
+      displayText = "def #{displayText}"
+
+    [type, iconHTML, rightLabel] = ['snippet', 'c', mod]
 
     if desc == ""
       description = "No documentation available."
@@ -252,12 +259,13 @@ class ElixirAutocompleteProvider
     sortKind = (a, b) ->
       priority =
         exception: 0 # unknown
-        property:  0 # module attribute
-        variable:  1 # variable
-        tag:       2 # private function
-        class:     3 # module
-        package:   4 # macro
-        function:  4 # function
+        snippet:   0
+        property:  1 # module attribute
+        variable:  2 # variable
+        tag:       3 # private function
+        class:     4 # module
+        package:   5 # macro
+        function:  5 # function
 
       priority[a.type] - priority[b.type]
 

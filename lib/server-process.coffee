@@ -146,7 +146,7 @@ class ServerProcess
     if process.platform == 'win32'
       args = args.replace(/\\/g, '/')
     request = "#{type} { #{args} }\n"
-    console.log('[Server] ' + request)
+    # console.log('[Server] ' + request)
     if !@busy
       @onResult = onResult
       @busy = true

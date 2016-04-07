@@ -60,7 +60,7 @@ defmodule Alchemist.Helpers.Complete do
           {_, _, :defmacro}  -> "macro"
           {m, m, :def}       -> "public_function"
           {_, _, :def}       -> "function"
-          {m, m, :undefined} -> if {f, a} in @added_functions, do: "public_function", else: "private_function"
+          {m, m, :undefined} -> if ({f, a} in @added_functions) or exported?.(module, f, a), do: "public_function", else: "private_function"
           _                  -> "unknown"
         end
 

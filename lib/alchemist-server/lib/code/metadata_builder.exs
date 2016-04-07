@@ -203,6 +203,10 @@ defmodule Alchemist.Code.MetadataBuilder do
     pre_behaviour(ast, state, line, module)
   end
 
+  defp pre({:@, [line: line], [{:behaviour, _, [erlang_module]}]} = ast, state) do
+    pre_behaviour(ast, state, line, erlang_module)
+  end
+
   defp pre({:@, [line: line], [{name, _, _}]} = ast, state) do
     pre_module_attribute(ast, state, line, name)
   end

@@ -74,6 +74,6 @@ defmodule CompleteTest do
 
   test "return completion candidates for functions from import" do
     imports = [MyModule]
-    assert run('say', imports) == ["say_hi/0;private_function;;CompleteTest.MyModule;;"]
+    assert run('say', imports) == ["say_hi/0;public_function;;CompleteTest.MyModule;;"]
   end
 end
