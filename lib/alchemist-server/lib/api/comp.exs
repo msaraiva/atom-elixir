@@ -83,6 +83,7 @@ defmodule Alchemist.API.Comp do
         desc = Introspection.extract_summary_from_docs(doc)
         [_, args_str] = Regex.run(~r/.\((.*)\)/, signature)
         args = args_str |> String.replace(~r/\s/, "")
+        spec = spec |> String.replace(~r/\n/, "\\\\n")
         "#{name}/#{arity};callback;#{args};#{mod_name};#{desc};#{spec}"
       end
     end)

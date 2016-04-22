@@ -34,7 +34,7 @@ class ElixirAutocompleteProvider
     prefix = getPrefix(textBeforeCursor)
     pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
     captureBefore = !!textBeforeCursor.match(///&#{prefix}$///)
-    defBefore = !!textBeforeCursor.match(///def\s*#{prefix}$///)
+    defBefore = !!textBeforeCursor.match(///def\s*#{prefix}$///) or !!textBeforeCursor.match(///defmacro\s*#{prefix}$///)
 
     return if !activatedManually && prefix == "" && !defBefore
 
@@ -139,6 +139,7 @@ class ElixirAutocompleteProvider
     displayText = ''
     snippet = func
     description = desc.replace(/\\n/g, "\n")
+    spec = spec.replace(/\\n/g, "\n")
 
     if signature
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
@@ -192,6 +193,7 @@ class ElixirAutocompleteProvider
     displayText = ''
     snippet = func
     description = desc.replace(/\\n/g, "\n")
+    spec = spec.replace(/\\n/g, "\n")
 
     if signature
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
@@ -203,8 +205,8 @@ class ElixirAutocompleteProvider
     snippet = "#{func}(#{params.join(', ')}) do\n\t$0\nend\n"
 
     if !defBefore
-      snippet = "def #{snippet}"
-      displayText = "def #{displayText}"
+      def_str = if spec.startsWith('@macrocallback') then 'defmacro' else 'def'
+      snippet = "#{def_str} #{snippet}"
 
     [type, iconHTML, rightLabel] = ['snippet', 'c', mod]
 

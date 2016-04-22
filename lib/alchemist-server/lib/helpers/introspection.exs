@@ -1,8 +1,12 @@
 defmodule Introspection do
 
-  # Based on :
-  # https://github.com/elixir-lang/elixir/blob/c983b3db6936ce869f2668b9465a50007ffb9896/lib/iex/lib/iex/introspection.ex
-  # https://github.com/elixir-lang/ex_doc/blob/82463a56053b29a406fd271e9e2e2f05e87d6248/lib/ex_doc/retriever.ex
+  @moduledoc """
+  A collection of functions to introspect/format docs, specs, types and callbacks.
+
+  Based on:
+  https://github.com/elixir-lang/elixir/blob/c983b3db6936ce869f2668b9465a50007ffb9896/lib/iex/lib/iex/introspection.ex
+  https://github.com/elixir-lang/ex_doc/blob/82463a56053b29a406fd271e9e2e2f05e87d6248/lib/ex_doc/retriever.ex
+  """
 
   alias Kernel.Typespec
 
@@ -67,13 +71,14 @@ defmodule Introspection do
         Enum.map(callbacks, fn {{name, arity}, [spec | _]} ->
           spec_ast = Typespec.spec_to_ast(name, spec)
           signature = get_typespec_signature(spec_ast, arity)
-          definition = callback_spec_ast_to_string(spec_ast)
+          definition = format_spec_ast(spec_ast)
           %{name: name, arity: arity, callback: "@callback #{definition}", signature: signature, doc: nil}
         end)
       {callbacks, docs} ->
         Enum.filter_map docs, &match?(_, &1), fn
           {{fun, arity}, _, :macrocallback, doc} ->
             get_callback_with_doc(fun, :macrocallback, doc, {:"MACRO-#{fun}", arity + 1}, callbacks)
+            |> Map.put(:arity, arity)
           {{fun, arity}, _, kind, doc} ->
             get_callback_with_doc(fun, kind, doc, {fun, arity}, callbacks)
         end
@@ -90,7 +95,6 @@ defmodule Introspection do
   defp get_types(module) when is_atom(module) do
     case Typespec.beam_types(module) do
       nil   -> []
-      []    -> []
       types -> types
     end
   end
@@ -106,12 +110,66 @@ defmodule Introspection do
 
   defp format_type({:opaque, type}) do
     {:::, _, [ast, _]} = Typespec.type_to_ast(type)
-    "@opaque #{Macro.to_string(ast)}" |> String.replace("()", "")
+    "@opaque #{format_spec_ast(ast)}"
   end
 
   defp format_type({kind, type}) do
     ast = Typespec.type_to_ast(type)
-    "@#{kind} #{Macro.to_string(ast)}" |> String.replace("()", "")
+    "@#{kind} #{format_spec_ast(ast)}"
+  end
+
+  def format_spec_ast_single_line(spec_ast) do
+    spec_ast
+    |> Macro.prewalk(&drop_macro_env/1)
+    |> Macro.to_string
+    |> String.replace("()", "")
+  end
+
+  def format_spec_ast(spec_ast) do
+    parts =
+      spec_ast
+      |> Macro.prewalk(&drop_macro_env/1)
+      |> extract_spec_ast_parts
+
+    name_str = Macro.to_string(parts.name)
+
+    when_str =
+      case parts[:when_part] do
+        nil -> ""
+        ast ->
+          {:when, [], [:fake_lhs, ast]}
+          |> Macro.to_string
+          |> String.replace_prefix(":fake_lhs", "")
+      end
+
+    returns_str =
+      parts.returns
+      |> Enum.map(&Macro.to_string(&1))
+      |> Enum.join(" |\n  ")
+
+    formated_spec =
+      case length(parts.returns) do
+        1 -> "#{name_str} :: #{returns_str}#{when_str}\n"
+        _ -> "#{name_str} ::\n  #{returns_str}#{when_str}\n"
+      end
+
+    formated_spec |> String.replace("()", "")
+  end
+
+  defp extract_spec_ast_parts({:when, _, [{:::, _, [name_part, return_part]}, when_part]}) do
+    %{name: name_part, returns: extract_return_part(return_part, []), when_part: when_part}
+  end
+
+  defp extract_spec_ast_parts({:::, _, [name_part, return_part]}) do
+    %{name: name_part, returns: extract_return_part(return_part, [])}
+  end
+
+  defp extract_return_part({:|, _, [lhs, rhs]}, returns) do
+    [lhs|extract_return_part(rhs, returns)]
+  end
+
+  defp extract_return_part(ast, returns) do
+    [ast|returns]
   end
 
   defp get_type_doc(module, type) do
@@ -124,20 +182,13 @@ defmodule Introspection do
 
   defp get_callback_with_doc(name, kind, doc, key, callbacks) do
     {_, [spec | _]} = List.keyfind(callbacks, key, 0)
-    {f, arity} = key
+    {_f, arity} = key
 
-    spec_ast = Typespec.spec_to_ast(name, spec)
+    spec_ast = Typespec.spec_to_ast(name, spec) |> Macro.prewalk(&drop_macro_env/1)
     signature = get_typespec_signature(spec_ast, arity)
-    definition = callback_spec_ast_to_string(spec_ast)
+    definition = format_spec_ast(spec_ast)
 
-    %{name: f, arity: arity, callback: "@#{kind} #{definition}", signature: signature, doc: doc}
-  end
-
-  defp callback_spec_ast_to_string(spec_ast) do
-    spec_ast
-    |> Macro.prewalk(&drop_macro_env/1)
-    |> Macro.to_string
-    |> String.replace("()", "")
+    %{name: name, arity: arity, callback: "@#{kind} #{definition}", signature: signature, doc: doc}
   end
 
   defp get_callbacks_and_docs(mod) do
