@@ -1,5 +1,5 @@
 Code.require_file "../test_helper.exs", __DIR__
-Code.require_file "../../lib/helpers/introspection.exs", __DIR__
+Code.require_file "../../lib/code/introspection.exs", __DIR__
 
 defmodule Alchemist.Helpers.IntrospectionTest do
 

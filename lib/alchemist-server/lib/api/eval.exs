@@ -1,4 +1,4 @@
-Code.require_file "../helpers/introspection.exs", __DIR__
+Code.require_file "../code/introspection.exs", __DIR__
 Code.require_file "../code/metadata.exs", __DIR__
 Code.require_file "../code/parser.exs", __DIR__
 Code.require_file "../code/ast.exs", __DIR__

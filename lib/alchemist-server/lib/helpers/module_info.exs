@@ -1,4 +1,4 @@
-Code.require_file "../helpers/introspection.exs", __DIR__
+Code.require_file "../code/introspection.exs", __DIR__
 
 defmodule Alchemist.Helpers.ModuleInfo do
 
