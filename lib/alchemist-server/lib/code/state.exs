@@ -1,32 +1,43 @@
 defmodule Alchemist.Code.State do
 
-  def new do
-    %{
-      namespace:  [:Elixir],
-      scopes:     [:Elixir],
-      imports:    [[]],
-      requires:   [[]],
-      aliases:    [[]],
-      attributes: [[]],
-      scope_attributes: [[]],
-      behaviours: [[]],
-      scope_behaviours: [[]],
-      vars:       [[]],
-      scope_vars: [[]],
-      mods_funs_to_lines: %{},
-      lines_to_env: %{}
-    }
+  defstruct [
+    namespace:  [:Elixir],
+    scopes:     [:Elixir],
+    imports:    [[]],
+    requires:   [[]],
+    aliases:    [[]],
+    attributes: [[]],
+    scope_attributes: [[]],
+    behaviours: [[]],
+    scope_behaviours: [[]],
+    vars:       [[]],
+    scope_vars: [[]],
+    mods_funs_to_lines: %{},
+    lines_to_env: %{}
+  ]
+
+  defmodule Env do
+    defstruct imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: []
   end
 
   def get_current_env(state) do
-    current_module   = get_current_module(state)
-    current_imports  = state.imports    |> :lists.reverse |> List.flatten
-    current_requires = state.requires   |> :lists.reverse |> List.flatten
-    current_aliases  = state.aliases    |> :lists.reverse |> List.flatten
-    current_vars     = state.scope_vars |> :lists.reverse |> List.flatten
+    current_module     = get_current_module(state)
+    current_imports    = state.imports    |> :lists.reverse |> List.flatten
+    current_requires   = state.requires   |> :lists.reverse |> List.flatten
+    current_aliases    = state.aliases    |> :lists.reverse |> List.flatten
+    current_vars       = state.scope_vars |> :lists.reverse |> List.flatten
     current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
     current_behaviours = hd(state.behaviours)
-    %{imports: current_imports, requires: current_requires, aliases: current_aliases, module: current_module, vars: current_vars, attributes: current_attributes, behaviours: current_behaviours}
+
+    %Env{
+      imports: current_imports,
+      requires: current_requires,
+      aliases: current_aliases,
+      module: current_module,
+      vars: current_vars,
+      attributes: current_attributes,
+      behaviours: current_behaviours
+    }
   end
 
   def get_current_module(state) do

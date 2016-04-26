@@ -17,7 +17,7 @@ defmodule Alchemist.Code.Parser do
   defp parse_string(source, try_to_fix_parse_error, try_to_fix_line_not_found, cursor_line_number) do
     case string_to_ast(source, try_to_fix_parse_error, cursor_line_number) do
       {:ok, ast} ->
-        {_ast, acc} = MetadataBuilder.build(ast)
+        acc = MetadataBuilder.build(ast)
         if Map.has_key?(acc.lines_to_env, cursor_line_number) or !try_to_fix_line_not_found  do
           %Metadata{
             source: source,

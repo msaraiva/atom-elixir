@@ -1,11 +1,13 @@
 Code.require_file "../test_helper.exs", __DIR__
 Code.require_file "../../lib/code/metadata_builder.exs", __DIR__
+Code.require_file "../../lib/code/state.exs", __DIR__
 
 defmodule Alchemist.Code.MetadataBuilderTest do
 
   use ExUnit.Case
 
   alias Alchemist.Code.MetadataBuilder
+  alias Alchemist.Code.State
 
   test "build metadata from kernel.ex" do
     assert get_subject_definition_line(Kernel, :defmodule, nil) =~ "defmacro defmodule(alias, do: block) do"
@@ -448,41 +450,54 @@ defmodule Alchemist.Code.MetadataBuilderTest do
   end
 
   defp string_to_state(string) do
-    {_ast, state} =
-      string
-      |> Code.string_to_quoted
-      |> (fn {:ok, ast} -> ast end).()
-      |> MetadataBuilder.build
-    state
+    string
+    |> Code.string_to_quoted
+    |> (fn {:ok, ast} -> ast end).()
+    |> MetadataBuilder.build
   end
 
   defp get_line_vars(state, line) do
-    (get_in(state.lines_to_env, [line, :vars]) || []) |> Enum.sort
+    case state.lines_to_env[line] do
+      nil -> []
+      env -> env.vars
+    end |> Enum.sort
   end
 
   defp get_line_aliases(state, line) do
-    (get_in(state.lines_to_env, [line, :aliases]) || [])
+    case state.lines_to_env[line] do
+      nil -> []
+      env -> env.aliases
+    end
   end
 
   defp get_line_imports(state, line) do
-    (get_in(state.lines_to_env, [line, :imports]) || [])
+    case state.lines_to_env[line] do
+      nil -> []
+      env -> env.imports
+    end
   end
 
   defp get_line_attributes(state, line) do
-    (get_in(state.lines_to_env, [line, :attributes]) || [])
+    case state.lines_to_env[line] do
+      nil -> []
+      env -> env.attributes
+    end |> Enum.sort
   end
 
   defp get_line_behaviours(state, line) do
-    (get_in(state.lines_to_env, [line, :behaviours]) || [])
+    case state.lines_to_env[line] do
+      nil -> []
+      env -> env.behaviours
+    end |> Enum.sort
   end
 
   defp get_line_module(state, line) do
-    (get_in(state.lines_to_env, [line, :module]) || [])
+    (env = state.lines_to_env[line]) && env.module
   end
 
   defp get_subject_definition_line(module, func, arity) do
     file = module.module_info(:compile)[:source]
-    {_ast, acc} =
+    acc =
       File.read!(file)
       |> Code.string_to_quoted
       |> MetadataBuilder.build

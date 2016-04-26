@@ -2,6 +2,7 @@ Code.require_file "../code/introspection.exs", __DIR__
 Code.require_file "../code/metadata.exs", __DIR__
 Code.require_file "../code/parser.exs", __DIR__
 Code.require_file "../code/ast.exs", __DIR__
+Code.require_file "../code/state.exs", __DIR__
 
 defmodule Alchemist.API.Eval do
 
@@ -10,6 +11,7 @@ defmodule Alchemist.API.Eval do
   alias Alchemist.Code.Metadata
   alias Alchemist.Code.Parser
   alias Alchemist.Code.Ast
+  alias Alchemist.Code.State
 
   def request(args) do
     args
@@ -164,7 +166,7 @@ defmodule Alchemist.API.Eval do
   end
 
   defp create_env(file, line) do
-    %{requires: requires, imports: imports, module: module} =
+    %State.Env{requires: requires, imports: imports, module: module} =
       file
       |> Parser.parse_file(true, true, line)
       |> Metadata.get_env(line)

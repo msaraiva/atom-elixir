@@ -1,6 +1,7 @@
 Code.require_file "../helpers/module_info.exs", __DIR__
 Code.require_file "../code/metadata.exs", __DIR__
 Code.require_file "../code/parser.exs", __DIR__
+Code.require_file "../code/state.exs", __DIR__
 
 defmodule Alchemist.API.Defl do
 
@@ -9,14 +10,17 @@ defmodule Alchemist.API.Defl do
   alias Alchemist.Helpers.ModuleInfo
   alias Alchemist.Code.Metadata
   alias Alchemist.Code.Parser
-
+  alias Alchemist.Code.State
+  
   def request(args) do
     [mod, fun, file_path, buffer_file, line] = args |> normalize
 
     buffer_file_metadata = Parser.parse_file(buffer_file, true, true, line)
-    %{imports: imports,
+    %State.Env{
+      imports: imports,
       aliases: aliases,
-      module: module} = Metadata.get_env(buffer_file_metadata, line)
+      module: module
+    } = Metadata.get_env(buffer_file_metadata, line)
 
     context_info = [context: nil, imports: [module|imports], aliases: aliases]
 

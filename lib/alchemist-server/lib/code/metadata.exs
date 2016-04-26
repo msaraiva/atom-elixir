@@ -1,3 +1,5 @@
+Code.require_file "./state.exs", __DIR__
+
 defmodule Alchemist.Code.Metadata do
 
   defstruct source: nil,
@@ -5,11 +7,9 @@ defmodule Alchemist.Code.Metadata do
             lines_to_env: %{},
             error: nil
 
-  @empty_env %{imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: []}
-
   def get_env(%__MODULE__{} = metadata, line_number) do
     case Map.get(metadata.lines_to_env, line_number) do
-      nil -> @empty_env
+      nil -> %Alchemist.Code.State.Env{}
       ctx -> ctx
     end
   end

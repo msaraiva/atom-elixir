@@ -2,6 +2,7 @@ Code.require_file "../helpers/complete.exs", __DIR__
 Code.require_file "../code/introspection.exs", __DIR__
 Code.require_file "../code/metadata.exs", __DIR__
 Code.require_file "../code/parser.exs", __DIR__
+Code.require_file "../code/state.exs", __DIR__
 
 defmodule Alchemist.API.Comp do
 
@@ -10,6 +11,8 @@ defmodule Alchemist.API.Comp do
   alias Alchemist.Helpers.Complete
   alias Alchemist.Code.Metadata
   alias Alchemist.Code.Parser
+  alias Alchemist.Code.Parser
+  alias Alchemist.Code.State
 
   def request(args) do
     args
@@ -44,12 +47,14 @@ defmodule Alchemist.API.Comp do
 
     context = Elixir
     metadata = Parser.parse_file(buffer_file, true, true, line)
-    %{imports: imports,
+    %State.Env{
+      imports: imports,
       aliases: aliases,
       vars: vars,
       attributes: attributes,
       behaviours: behaviours,
-      module: module} = Metadata.get_env(metadata, line)
+      module: module
+    } = Metadata.get_env(metadata, line)
 
     [hint, context, [module|imports], aliases, vars, attributes, behaviours]
   end

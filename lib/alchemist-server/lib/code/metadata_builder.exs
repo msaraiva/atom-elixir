@@ -6,16 +6,25 @@ if Version.match?(System.version, "<1.2.0-rc.0") do
 end
 
 defmodule Alchemist.Code.MetadataBuilder do
+
+  @moduledoc """
+  This module is responsible for building/retrieving environment information from an AST.
+  """
+
   import Alchemist.Code.State
   alias Alchemist.Code.Ast
 
   @scope_keywords [:for, :try, :fn]
   @block_keywords [:do, :else, :rescue, :catch, :after]
 
+  @doc """
+  Traverses the AST building/retrieving the environment information.
+  It returns a `Alchemist.Code.State` struct containing the information.
+  """
   def build(ast) do
-    state = Alchemist.Code.State.new
     mod = if Version.match?(System.version, "<1.2.0-rc.0"), do: Traverse, else: Macro
-    mod.traverse(ast, state, &pre/2, &post/2)
+    {_ast, state} = mod.traverse(ast, %Alchemist.Code.State{}, &pre/2, &post/2)
+    state
   end
 
   defp pre_module(ast, state, line, module) do
