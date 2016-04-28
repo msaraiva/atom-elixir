@@ -10,6 +10,7 @@ class ServerProcess
   testing: false
   proc: null
   env: null
+  projectPath: null
 
   constructor: (projectPath) ->
     @projectPath = projectPath
@@ -132,13 +133,18 @@ class ServerProcess
       fs.unlink(tmpBufferFile)
       onResult(result)
 
-  setEnv: (env) ->
+  setEnv: (env, cwd) ->
     if @testing
       console.log  "[atom-elixir] Not setting environment while testing"
     else
-      @sendRequest 'SENV', "\"#{env}\"", (result) =>
-        @env = result
+      @sendRequest 'SENV', "\"#{env}\", \"#{cwd}\"", (result) =>
+        [@env, @projectPath] = result.split(',')
         console.log  "[atom-elixir] Setting environment to \"#{@env}\""
+        console.log  "[atom-elixir] Working directory is \"#{@projectPath})\""
+
+  debug: ->
+    @sendRequest 'DEBG', "[]", (result) =>
+      console.log  "[atom-elixir] DEBUG INFO:\n#{result}"
 
   sendRequest: (type, args, onResult) ->
     # Note: The helper function `createTempFile` returns a path that contains uses backslashes as path separators.

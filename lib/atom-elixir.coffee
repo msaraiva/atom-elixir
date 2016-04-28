@@ -26,8 +26,14 @@ module.exports = AtomElixir =
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
       if @server?.proc && item instanceof TextEditor
-        if @getEditorEnv(item) != @server.env
-          @server.setEnv(@getEditorEnv(item))
+        env = @getEditorEnv(item)
+        projectPath = atom.project.getPaths()[0]
+        if (env != @server.env) or (projectPath != @server.projectPath)
+          @server.setEnv(@getEditorEnv(item), projectPath)
+
+    sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:debug', =>
+      @server.debug()
 
   deactivate: ->
     @expandProvider.dispose()
