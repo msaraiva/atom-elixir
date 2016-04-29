@@ -115,12 +115,17 @@ class ElixirDocsView extends ScrollView
 
     @callbacks ||= "No callback information available."
 
-    @element.querySelector('.docsContent').innerHTML = markdownToHTML(@docs)
-    convertCodeBlocksToAtomEditors($('.docsContent')[0])
-    @element.querySelector('.typesContent').innerHTML = markdownToHTML(@types)
-    convertCodeBlocksToAtomEditors($('.typesContent')[0])
-    @element.querySelector('.callbacksContent').innerHTML = markdownToHTML(@callbacks)
-    convertCodeBlocksToAtomEditors($('.callbacksContent')[0])
+    docsElement = @element.querySelector('.docsContent')
+    docsElement.innerHTML = markdownToHTML(@docs)
+    convertCodeBlocksToAtomEditors(docsElement)
+
+    typesElement = @element.querySelector('.typesContent')
+    typesElement.innerHTML = markdownToHTML(@types)
+    convertCodeBlocksToAtomEditors(typesElement)
+
+    callbacksElement = @element.querySelector('.callbacksContent')
+    callbacksElement.innerHTML = markdownToHTML(@callbacks)
+    convertCodeBlocksToAtomEditors(callbacksElement)
 
     @renderMarkdown()
 
