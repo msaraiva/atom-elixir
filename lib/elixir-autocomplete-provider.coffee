@@ -34,7 +34,11 @@ class ElixirAutocompleteProvider
     prefix = getPrefix(textBeforeCursor)
     pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
     captureBefore = !!textBeforeCursor.match(///&#{prefix}$///)
-    defBefore = !!textBeforeCursor.match(///def\s*#{prefix}$///) or !!textBeforeCursor.match(///defmacro\s*#{prefix}$///)
+    defBefore = null
+    if textBeforeCursor.match(///def\s*#{prefix}$///)
+      defBefore = 'def'
+    else if textBeforeCursor.match(///defmacro\s*#{prefix}$///)
+      defBefore = 'defmacro'
 
     return if !activatedManually && prefix == "" && !defBefore
 
@@ -204,7 +208,11 @@ class ElixirAutocompleteProvider
 
     snippet = "#{func}(#{params.join(', ')}) do\n\t$0\nend\n"
 
-    if !defBefore
+    if defBefore == 'def'
+      return "" if spec.startsWith('@macrocallback')
+    else if defBefore == 'defmacro'
+      return "" if spec.startsWith('@callback')
+    else
       def_str = if spec.startsWith('@macrocallback') then 'defmacro' else 'def'
       snippet = "#{def_str} #{snippet}"
 
