@@ -216,7 +216,7 @@ class ElixirAutocompleteProvider
       def_str = if spec.startsWith('@macrocallback') then 'defmacro' else 'def'
       snippet = "#{def_str} #{snippet}"
 
-    [type, iconHTML, rightLabel] = ['snippet', 'c', mod]
+    [type, iconHTML, rightLabel] = ['value', 'c', mod]
 
     if desc == ""
       description = "No documentation available."
@@ -270,12 +270,13 @@ class ElixirAutocompleteProvider
       priority =
         exception: 0 # unknown
         snippet:   0
-        property:  1 # module attribute
+        value:     1 # callbacks
         variable:  2 # variable
-        tag:       3 # private function
-        class:     4 # module
-        package:   5 # macro
-        function:  5 # function
+        property:  3 # module attribute
+        tag:       4 # private function
+        class:     5 # module
+        package:   6 # macro
+        function:  6 # function
 
       priority[a.type] - priority[b.type]
 
