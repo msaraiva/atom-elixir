@@ -1,5 +1,5 @@
 path = require 'path'
-{markdownToHTML, getDocURL, splitModuleAndFunc} = require './utils'
+{markdownToHTML, getDocURL, splitModuleAndFunc, convertCodeBlocksToAtomEditors} = require './utils'
 
 {Emitter, Disposable, CompositeDisposable, File} = require 'atom'
 {$, ScrollView} = require 'atom-space-pen-views'
@@ -159,38 +159,3 @@ class ElixirDocsView extends ScrollView
     selectedText = selection.toString()
     atom.clipboard.write(selectedText)
     true
-
-  convertCodeBlocksToAtomEditors = (domFragment, defaultLanguage='text') ->
-    if fontFamily = atom.config.get('editor.fontFamily')
-      for codeElement in domFragment.querySelectorAll('code')
-        codeElement.style.fontFamily = fontFamily
-
-    isSpec = (text) ->
-      text.startsWith('@spec') or
-      text.startsWith('@type') or
-      text.startsWith('@callback') or
-      text.startsWith('@macrocallback')
-
-    for preElement in domFragment.querySelectorAll('pre, code')
-      if preElement.tagName == 'PRE' or (preElement.tagName == 'CODE' and isSpec(preElement.innerText))
-        codeBlock = preElement.firstElementChild ? preElement
-        fenceName = codeBlock.getAttribute('class')?.replace(/^lang-/, '') ? defaultLanguage
-
-        editorElement = document.createElement('atom-text-editor')
-        editorElement.setAttributeNode(document.createAttribute('gutter-hidden'))
-        editorElement.removeAttribute('tabindex') # make read-only
-
-        preElement.parentNode.insertBefore(editorElement, preElement)
-        preElement.remove()
-
-        editor = editorElement.getModel()
-        editor.setSoftWrapped(true)
-
-        # remove the default selection of a line in each editor
-        editor.getDecorations(class: 'cursor-line', type: 'line')[0].destroy()
-        editor.setText(codeBlock.textContent.trim())
-
-        if grammar = atom.grammars.grammarForScopeName('source.elixir')
-          editor.setGrammar(grammar)
-
-    domFragment

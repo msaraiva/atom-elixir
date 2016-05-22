@@ -1,5 +1,5 @@
 {CompositeDisposable} = require 'atom'
-{markdownToHTML} = require './utils'
+{markdownToHTML, convertCodeBlocksToAtomEditors} = require './utils'
 
 module.exports =
 class ElixirAutocompleteProvider
@@ -326,6 +326,7 @@ class ElixirAutocompleteProvider
         if item.descriptionHTML? and item.descriptionHTML.length > 0
           descriptionContainer.style.display = 'block'
           descriptionContent.innerHTML = item.descriptionHTML
+          convertCodeBlocksToAtomEditors(descriptionContent)
         else if item.description? and item.description.length > 0
           descriptionContainer.style.display = 'block'
           descriptionContent.textContent = item.descriptionHTML
