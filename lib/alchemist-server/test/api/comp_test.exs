@@ -22,7 +22,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request without empty hint" do
     assert capture_io(fn ->
-      Comp.process(['is_b', Elixir, [], [], [], [], []])
+      Comp.process(['is_b', Elixir, [], [], [], [], [], :module])
     end) =~ """
     is_b;hint
     is_binary/1;function;term;Kernel;Returns `true` if `term` is a binary\\; otherwise returns `false`.;@spec is_binary(term) :: boolean
@@ -34,7 +34,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request with an alias" do
     assert capture_io(fn ->
-      Comp.process(['MyList.flat', Elixir, [], [{MyList, List}], [], [], []])
+      Comp.process(['MyList.flat', Elixir, [], [{MyList, List}], [], [], [], :module])
     end) =~ """
     MyList.flatten;hint
     flatten/2;function;list,tail;List;Flattens the given `list` of nested lists.\\nThe list `tail` will be added at the end of\\nthe flattened list.;@spec flatten(deep_list, [elem]) :: [elem] when deep_list: [elem | deep_list], elem: var
@@ -45,7 +45,7 @@ defmodule Alchemist.API.CompTest do
 
   test "COMP request with a module hint" do
     assert capture_io(fn ->
-      Comp.process(['Str', Elixir, [], [], [], [], []])
+      Comp.process(['Str', Elixir, [], [], [], [], [], :module])
     end) =~ """
     Str;hint
     Stream;module;struct;Module for creating and composing streams.

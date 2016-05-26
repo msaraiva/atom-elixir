@@ -25,7 +25,7 @@ defmodule Alchemist.API.Comp do
     |> print
   end
 
-  def process([hint, _context, imports, aliases, vars, attributes, behaviours]) do
+  def process([hint, _context, imports, aliases, vars, attributes, behaviours, scope_type]) do
     Application.put_env(:"alchemist.el", :aliases, aliases)
 
     list1 = Complete.run(hint, imports)
@@ -38,7 +38,7 @@ defmodule Alchemist.API.Comp do
       list2 = List.delete_at(list2, 0)
     end
 
-    full_list = [first_item] ++ find_callbacks(behaviours, hint) ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
+    full_list = [first_item] ++ find_callbacks(behaviours, hint, scope_type) ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
     full_list |> print
   end
 
@@ -53,10 +53,11 @@ defmodule Alchemist.API.Comp do
       vars: vars,
       attributes: attributes,
       behaviours: behaviours,
-      module: module
+      module: module,
+      scope_type: scope_type
     } = Metadata.get_env(metadata, line)
 
-    [hint, context, [module|imports], aliases, vars, attributes, behaviours]
+    [hint, context, [module|imports], aliases, vars, attributes, behaviours, scope_type]
   end
 
   defp print(result) do
@@ -79,7 +80,7 @@ defmodule Alchemist.API.Comp do
     end
   end
 
-  defp find_callbacks(behaviours, hint) do
+  defp find_callbacks(behaviours, hint, :module) do
     behaviours |> Enum.flat_map(fn mod ->
       mod_name = mod |> Introspection.module_to_string
       for %{name: name, arity: arity, callback: spec, signature: signature, doc: doc} <- Introspection.get_callbacks_with_docs(mod),
@@ -92,5 +93,9 @@ defmodule Alchemist.API.Comp do
         "#{name}/#{arity};callback;#{args};#{mod_name};#{desc};#{spec}"
       end
     end)
+  end
+
+  defp find_callbacks(_behaviours, _hint, _scope_type) do
+    []
   end
 end

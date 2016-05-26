@@ -55,7 +55,7 @@ defmodule Alchemist.Code.MetadataBuilder do
 
   defp pre_func(ast, state, line, name, params) do
     state
-    |> new_named_func(name)
+    |> new_named_func(name, length(params || []))
     |> add_current_env_to_line(line)
     |> add_func_to_index(name, length(params || []), line)
     |> new_alias_scope

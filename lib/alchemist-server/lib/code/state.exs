@@ -17,7 +17,7 @@ defmodule Alchemist.Code.State do
   ]
 
   defmodule Env do
-    defstruct imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: []
+    defstruct imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: [], scope_type: nil
   end
 
   def get_current_env(state) do
@@ -28,6 +28,7 @@ defmodule Alchemist.Code.State do
     current_vars       = state.scope_vars |> :lists.reverse |> List.flatten
     current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
     current_behaviours = hd(state.behaviours)
+    current_scope_type = get_current_scope_type(state)
 
     %Env{
       imports: current_imports,
@@ -36,17 +37,32 @@ defmodule Alchemist.Code.State do
       module: current_module,
       vars: current_vars,
       attributes: current_attributes,
-      behaviours: current_behaviours
+      behaviours: current_behaviours,
+      scope_type: current_scope_type
     }
   end
 
   def get_current_module(state) do
-    state.namespace  |> :lists.reverse |> Module.concat
+    state.namespace |> :lists.reverse |> Module.concat
   end
 
   def add_current_env_to_line(state, line) do
     env = get_current_env(state)
     %{state | lines_to_env: Map.put(state.lines_to_env, line, env)}
+  end
+
+  def get_current_scope_name(state) do
+    case hd(state.scopes) do
+      {fun, _} -> fun
+      mod      -> mod
+    end |> Atom.to_string
+  end
+
+  def get_current_scope_type(state) do
+    case hd(state.scopes) do
+      {_f, _a} -> :function
+      _        -> :module
+    end
   end
 
   def add_mod_fun_to_line(state, {module, fun, arity}, line) do
@@ -66,8 +82,8 @@ defmodule Alchemist.Code.State do
     %{state | namespace: outer_mods, scopes: outer_scopes}
   end
 
-  def new_named_func(state, name) do
-    %{state | scopes: [name|state.scopes]}
+  def new_named_func(state, name, arity) do
+    %{state | scopes: [{name, arity}|state.scopes]}
   end
 
   def remove_last_scope_from_scopes(state) do
@@ -186,7 +202,7 @@ defmodule Alchemist.Code.State do
   end
 
   def add_var(state, var) do
-    scope = hd(state.scopes) |> Atom.to_string
+    scope = get_current_scope_name(state)
     [vars_from_scope|other_vars] = state.vars
 
     vars_from_scope =
@@ -204,7 +220,7 @@ defmodule Alchemist.Code.State do
   end
 
   def add_attribute(state, attribute) do
-    scope = hd(state.scopes) |> Atom.to_string
+    scope = get_current_scope_name(state)
     [attributes_from_scope|other_attributes] = state.attributes
 
     attributes_from_scope =
