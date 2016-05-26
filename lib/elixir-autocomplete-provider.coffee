@@ -8,6 +8,7 @@ class ElixirAutocompleteProvider
   server: null
   inclusionPriority: 1
   excludeLowerPriority: true
+  lastDescriptionHTML: null
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -325,8 +326,9 @@ class ElixirAutocompleteProvider
         return unless item?
         if item.descriptionHTML? and item.descriptionHTML.length > 0
           descriptionContainer.style.display = 'block'
-          descriptionContent.innerHTML = item.descriptionHTML
-          convertCodeBlocksToAtomEditors(descriptionContent)
+          if item.descriptionHTML != @lastDescriptionHTML
+            descriptionContent.innerHTML = @lastDescriptionHTML = item.descriptionHTML
+            convertCodeBlocksToAtomEditors(descriptionContent)
         else if item.description? and item.description.length > 0
           descriptionContainer.style.display = 'block'
           descriptionContent.textContent = item.descriptionHTML
