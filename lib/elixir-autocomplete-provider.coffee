@@ -180,9 +180,6 @@ class ElixirAutocompleteProvider
       [module, funcName] = moduleAndFuncName(moduleParts, func)
       description = "No documentation available."
 
-    description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
-    description = markdownToHTML(description)
-
     {
       func: func
       arity: arity
@@ -190,8 +187,9 @@ class ElixirAutocompleteProvider
       displayText: displayText
       type: type
       rightLabel: rightLabel
-      descriptionHTML: description
       iconHTML: iconHTML
+      spec: spec
+      summary: description
     }
 
   createSuggestionForCallback = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore) ->
@@ -226,9 +224,6 @@ class ElixirAutocompleteProvider
     if desc == ""
       description = "No documentation available."
 
-    description = "```\n#{spec}```\n\n#{description}" if spec? && spec != ""
-    description = markdownToHTML(description)
-
     {
       func: func
       arity: arity
@@ -236,8 +231,9 @@ class ElixirAutocompleteProvider
       displayText: displayText
       type: type
       rightLabel: rightLabel
-      descriptionHTML: description
       iconHTML: iconHTML
+      spec: spec
+      summary: description
     }
 
   createSuggestionForReturn = (serverSuggestion, name, kind) ->
@@ -260,7 +256,7 @@ class ElixirAutocompleteProvider
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
     description = desc || "No documentation available."
-    description = markdownToHTML(description.replace(/\\n/g, "\n"))
+    description = description.replace(/\\n/g, "\n")
 
     iconHTML =
       switch subtype
@@ -280,7 +276,7 @@ class ElixirAutocompleteProvider
       displayText: name
       type: 'class'
       iconHTML: iconHTML
-      descriptionHTML: description
+      summary: description
       rightLabel: subtype || 'module'
     }
 
@@ -342,14 +338,21 @@ class ElixirAutocompleteProvider
         descriptionMoreLink.style.display = 'none'
         item = item ? @model?.items?[@selectedIndex]
         return unless item?
-        if item.descriptionHTML? and item.descriptionHTML.length > 0
+        if item.spec? or item.summary?
           descriptionContainer.style.display = 'block'
-          if item.descriptionHTML != @lastDescriptionHTML
-            descriptionContent.innerHTML = @lastDescriptionHTML = item.descriptionHTML
+          if descriptionContent.children.length < 2
+            descriptionContent.innerHTML = '<pre><code></code></pre><p></p>'
             convertCodeBlocksToAtomEditors(descriptionContent)
-        else if item.description? and item.description.length > 0
-          descriptionContainer.style.display = 'block'
-          descriptionContent.textContent = item.descriptionHTML
+          if item.spec? and item.spec != ''
+            descriptionContent.children[0].style.display = 'block'
+            descriptionContent.children[0].getModel().setText(item.spec.trim())
+          else
+            descriptionContent.children[0].style.display = 'none'
+          if item.summary? and item.summary != ''
+            descriptionContent.children[1].style.display = 'block'
+            descriptionContent.children[1].outerHTML = markdownToHTML(item.summary)
+          else
+            descriptionContent.children[1].style.display = 'none'
         else
           @descriptionContainer.style.display = 'none'
       element
