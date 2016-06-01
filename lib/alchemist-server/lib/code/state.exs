@@ -17,7 +17,7 @@ defmodule Alchemist.Code.State do
   ]
 
   defmodule Env do
-    defstruct imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: [], scope_type: nil
+    defstruct imports: [], requires: [], aliases: [], module: nil, vars: [], attributes: [], behaviours: [], scope: nil
   end
 
   def get_current_env(state) do
@@ -28,7 +28,7 @@ defmodule Alchemist.Code.State do
     current_vars       = state.scope_vars |> :lists.reverse |> List.flatten
     current_attributes = state.scope_attributes |> :lists.reverse |> List.flatten
     current_behaviours = hd(state.behaviours)
-    current_scope_type = get_current_scope_type(state)
+    current_scope      = hd(state.scopes)
 
     %Env{
       imports: current_imports,
@@ -38,7 +38,7 @@ defmodule Alchemist.Code.State do
       vars: current_vars,
       attributes: current_attributes,
       behaviours: current_behaviours,
-      scope_type: current_scope_type
+      scope: current_scope
     }
   end
 
@@ -56,13 +56,6 @@ defmodule Alchemist.Code.State do
       {fun, _} -> fun
       mod      -> mod
     end |> Atom.to_string
-  end
-
-  def get_current_scope_type(state) do
-    case hd(state.scopes) do
-      {_f, _a} -> :function
-      _        -> :module
-    end
   end
 
   def add_mod_fun_to_line(state, {module, fun, arity}, line) do

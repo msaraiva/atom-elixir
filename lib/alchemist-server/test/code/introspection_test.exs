@@ -60,7 +60,7 @@ defmodule Alchemist.Helpers.IntrospectionTest do
   end
 
   test "format_spec_ast for callback" do
-    ast = get_callback_ast(GenServer, :code_change, 3)
+    ast = Introspection.get_callback_ast(GenServer, :code_change, 3)
     assert Introspection.format_spec_ast(ast) == """
     code_change(old_vsn, state :: term, extra :: term) ::
       {:ok, new_state :: term} |
@@ -68,19 +68,29 @@ defmodule Alchemist.Helpers.IntrospectionTest do
     """
   end
 
+  test "get_returns_from_callback" do
+    assert Introspection.get_returns_from_callback(GenServer, :handle_call, 3) == [
+      "{:reply, reply, new_state}",
+      "{:reply, reply, new_state, timeout | :hibernate}",
+      "{:noreply, new_state}",
+      "{:noreply, new_state, timeout | :hibernate}",
+      "{:stop, reason, reply, new_state}",
+      "{:stop, reason, new_state}"
+    ]
+  end
+
+  test "get_returns_from_callback (with types)" do
+    assert Introspection.get_returns_from_callback(GenServer, :code_change, 3) == [
+      "{:ok, new_state :: term}",
+      "{:error, reason :: term}"
+    ]
+  end
+
   defp get_type_ast(module, type) do
     {_kind, type} =
       Kernel.Typespec.beam_types(module)
       |> Enum.find(fn {_, {name, _, _}} -> name == type end)
     Kernel.Typespec.type_to_ast(type)
-  end
-
-  defp get_callback_ast(module, callback, arity) do
-    {{name, _}, [spec | _]} =
-      Kernel.Typespec.beam_callbacks(module)
-      |> Enum.find(fn {{f, a}, _} -> {f, a} == {callback, arity}  end)
-
-    Kernel.Typespec.spec_to_ast(name, spec)
   end
 
 end

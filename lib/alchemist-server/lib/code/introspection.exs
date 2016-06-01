@@ -156,6 +156,16 @@ defmodule Introspection do
     formated_spec |> String.replace("()", "")
   end
 
+  def get_returns_from_callback(module, func, arity) do
+    parts =
+      get_callback_ast(module, func, arity)
+      |> Macro.prewalk(&drop_macro_env/1)
+      |> extract_spec_ast_parts
+
+    parts.returns
+    |> Enum.map(fn return -> Macro.to_string(return) |> String.replace("()", "") end)
+  end
+
   defp extract_spec_ast_parts({:when, _, [{:::, _, [name_part, return_part]}, when_part]}) do
     %{name: name_part, returns: extract_return_part(return_part, []), when_part: when_part}
   end
@@ -325,6 +335,22 @@ defmodule Introspection do
       {fun_args, desc} = extract_fun_args_and_desc(func_doc)
       {{f, a}, {func_kind, fun_args, desc, spec}}
     end
+  end
+
+  def get_callback_ast(module, callback, arity) do
+    {{name, _}, [spec | _]} =
+      Kernel.Typespec.beam_callbacks(module)
+      |> Enum.find(fn {{f, a}, _} -> {f, a} == {callback, arity}  end)
+
+    Kernel.Typespec.spec_to_ast(name, spec)
+  end
+
+  def get_callback_returns(module, callback, arity) do
+    {{name, _}, [spec | _]} =
+      Kernel.Typespec.beam_callbacks(module)
+      |> Enum.find(fn {{f, a}, _} -> {f, a} == {callback, arity}  end)
+
+    Kernel.Typespec.spec_to_ast(name, spec)
   end
 
   defp print_doc_arg({ :\\, _, [left, right] }) do
