@@ -66,12 +66,12 @@ class ElixirAutocompleteProvider
             modulesToAdd = (m for m,i in hintModules when m != prefixModules[i])
             lastModuleHint = hintModules[hintModules.length-1]
 
-        suggestions = suggestions.map (serverSuggestion) ->
+        suggestions = suggestions.map (serverSuggestion, index) ->
           fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
           name = fields[0]
           if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modulesToAdd.length > 0
             fields[0] = modulesToAdd.join('.') + '.' + name
-          createSuggestion(serverSuggestion, fields, prefix, pipeBefore, captureBefore, defBefore)
+          createSuggestion(serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore)
 
         suggestions = sortSuggestions(suggestions)
         resolve(suggestions)
@@ -80,7 +80,7 @@ class ElixirAutocompleteProvider
     regex = /[\w0-9\._!\?\:@]+$/
     textBeforeCursor.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, fields, prefix, pipeBefore, captureBefore, defBefore) ->
+  createSuggestion = (serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore) ->
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
     if fields[1] == 'return'
@@ -92,28 +92,31 @@ class ElixirAutocompleteProvider
 
     return "" if serverSuggestion.match(/^[\s\d]/)
 
-    if kind == 'attribute'
-      createSuggestionForAttribute(name, prefix)
-    else if kind == 'var'
-      createSuggestionForVariable(name)
-    else if kind == 'module'
-      createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
-    else if kind == 'callback'
-      createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
-    else if kind == 'return'
-      createSuggestionForReturn(serverSuggestion, name, kind)
-    else if kind in ['private_function', 'public_function', 'public_macro']
-      createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
-    else if kind in ['function', 'macro']
-      createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
-    else
-      console.log("Unknown kind: #{serverSuggestion}")
-      {
-        text: serverSuggestion
-        type: 'exception'
-        iconHTML: '?'
-        rightLabel: kind || 'hint'
-      }
+    suggestion =
+      if kind == 'attribute'
+        createSuggestionForAttribute(name, prefix)
+      else if kind == 'var'
+        createSuggestionForVariable(name)
+      else if kind == 'module'
+        createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
+      else if kind == 'callback'
+        createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
+      else if kind == 'return'
+        createSuggestionForReturn(serverSuggestion, name, kind)
+      else if kind in ['private_function', 'public_function', 'public_macro']
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
+      else if kind in ['function', 'macro']
+        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
+      else
+        console.log("Unknown kind: #{serverSuggestion}")
+        {
+          text: serverSuggestion
+          type: 'exception'
+          iconHTML: '?'
+          rightLabel: kind || 'hint'
+        }
+    suggestion.index = index
+    suggestion
 
   createSuggestionForAttribute = (name, prefix) ->
     if prefix.match(/^@/)
@@ -310,10 +313,13 @@ class ElixirAutocompleteProvider
 
     sortFunctionByArity = (a, b) ->
       return 0 if !isFunc(a) || !isFunc(b)
-      if a.arity > b.arity then 1 else if a.arity < b.arity then -1 else 0
+      return a.arity - b.arity
+
+    sortByOriginalOrder = (a, b) ->
+      return a.index - b.index
 
     sortFunc = (a, b) ->
-      sortKind(a, b) || sortFunctionByType(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b)
+      sortKind(a, b) || sortFunctionByType(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortByOriginalOrder(a, b)
 
     suggestions.sort(sortFunc)
 
