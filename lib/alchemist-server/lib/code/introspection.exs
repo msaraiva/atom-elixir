@@ -156,6 +156,11 @@ defmodule Introspection do
     formated_spec |> String.replace("()", "")
   end
 
+  def define_callback?(mod, fun, arity) do
+    Kernel.Typespec.beam_callbacks(mod)
+    |> Enum.any?(fn {{f, a}, _} -> {f, a} == {fun, arity}  end)
+  end
+
   def get_returns_from_callback(module, func, arity) do
     parts =
       get_callback_ast(module, func, arity)
@@ -338,14 +343,6 @@ defmodule Introspection do
   end
 
   def get_callback_ast(module, callback, arity) do
-    {{name, _}, [spec | _]} =
-      Kernel.Typespec.beam_callbacks(module)
-      |> Enum.find(fn {{f, a}, _} -> {f, a} == {callback, arity}  end)
-
-    Kernel.Typespec.spec_to_ast(name, spec)
-  end
-
-  def get_callback_returns(module, callback, arity) do
     {{name, _}, [spec | _]} =
       Kernel.Typespec.beam_callbacks(module)
       |> Enum.find(fn {{f, a}, _} -> {f, a} == {callback, arity}  end)

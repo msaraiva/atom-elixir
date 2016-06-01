@@ -38,7 +38,7 @@ defmodule Alchemist.API.Comp do
       list2 = List.delete_at(list2, 0)
     end
 
-    full_list = [first_item] ++ find_callbacks(behaviours, hint, scope) ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
+    full_list = [first_item] ++ find_callbacks_or_returns(behaviours, hint, scope) ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
     full_list |> print
   end
 
@@ -71,26 +71,31 @@ defmodule Alchemist.API.Comp do
   defp find_vars(vars, hint) do
     for var <- vars, hint == "" or String.starts_with?("#{var}", hint) do
       "#{var};var"
-    end
+    end |> Enum.sort
   end
 
   defp find_attributes(attributes, hint) do
     for attribute <- attributes, hint in ["", "@"] or String.starts_with?("@#{attribute}", hint) do
       "@#{attribute};attribute"
-    end
+    end |> Enum.sort
   end
 
-  defp find_callbacks(behaviours, "", {fun, arity}) do
-    behaviours |> Enum.flat_map(fn mod ->
-      Introspection.get_returns_from_callback(mod, fun, arity) |> Enum.map(fn return -> "#{return};return" end)
-    end)
+  # Find returns when inside callback function's scope
+  defp find_callbacks_or_returns(behaviours, "", {fun, arity}) do
+    Enum.reduce(behaviours, [], fn (mod, acc) ->
+      if Introspection.define_callback?(mod, fun, arity) do
+        acc ++ Introspection.get_returns_from_callback(mod, fun, arity)
+      else
+        acc
+      end
+    end) |> Enum.map(fn return -> "#{return};return" end)
   end
-
-  defp find_callbacks(_behaviours, _hint, {_fun, _arity}) do
+  defp find_callbacks_or_returns(_behaviours, _hint, {_fun, _arity}) do
     []
   end
 
-  defp find_callbacks(behaviours, hint, _module) do
+  # Find callbacks when in module's scope
+  defp find_callbacks_or_returns(behaviours, hint, _module) do
     behaviours |> Enum.flat_map(fn mod ->
       mod_name = mod |> Introspection.module_to_string
       for %{name: name, arity: arity, callback: spec, signature: signature, doc: doc} <- Introspection.get_callbacks_with_docs(mod),

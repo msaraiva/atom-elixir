@@ -8,7 +8,6 @@ class ElixirAutocompleteProvider
   server: null
   inclusionPriority: 1
   excludeLowerPriority: true
-  lastDescriptionHTML: null
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -295,9 +294,6 @@ class ElixirAutocompleteProvider
 
       priority[a.type] - priority[b.type]
 
-    sortText = (a, b) ->
-      if a.displayText > b.displayText then 1 else if a.displayText < b.displayText then -1 else 0
-
     isFunc = (suggestion) ->
       !!(suggestion.func)
 
@@ -317,7 +313,7 @@ class ElixirAutocompleteProvider
       if a.arity > b.arity then 1 else if a.arity < b.arity then -1 else 0
 
     sortFunc = (a, b) ->
-      sortKind(a, b) || sortFunctionByType(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b) || sortText(a, b)
+      sortKind(a, b) || sortFunctionByType(a, b) || sortFunctionByName(a, b) || sortFunctionByArity(a, b)
 
     suggestions.sort(sortFunc)
 
@@ -338,23 +334,47 @@ class ElixirAutocompleteProvider
         descriptionMoreLink.style.display = 'none'
         item = item ? @model?.items?[@selectedIndex]
         return unless item?
+
         if item.spec? or item.summary?
-          descriptionContainer.style.display = 'block'
           if descriptionContent.children.length < 2
             descriptionContent.innerHTML = '<pre><code></code></pre><p></p>'
             convertCodeBlocksToAtomEditors(descriptionContent)
-          if item.spec? and item.spec != ''
-            descriptionContent.children[0].style.display = 'block'
-            descriptionContent.children[0].getModel().setText(item.spec.trim())
+
+          specText       = (item.spec || '').trim()
+          summaryText    = (item.summary || '').trim()
+          specElement    = descriptionContent.children[0]
+          summaryElement = descriptionContent.children[1]
+
+          if specText != ''
+            specElement.style.display = 'block'
+            specElement.getModel().setText(specText)
           else
-            descriptionContent.children[0].style.display = 'none'
-          if item.summary? and item.summary != ''
-            descriptionContent.children[1].style.display = 'block'
-            descriptionContent.children[1].outerHTML = markdownToHTML(item.summary)
+            specElement.style.display = 'none'
+
+          if summaryText != ''
+            summaryElement.style.display = 'block'
+            summaryElement.outerHTML = markdownToHTML(summaryText)
           else
-            descriptionContent.children[1].style.display = 'none'
+            summaryElement.style.display = 'none'
+
+          if specText == summaryText == ''
+            descriptionContainer.style.display = 'none'
+          else
+            descriptionContainer.style.display = 'block'
         else
-          @descriptionContainer.style.display = 'none'
+          # Default implementation from https://github.com/atom/autocomplete-plus/blob/v2.29.1/lib/suggestion-list-element.coffee#L104
+          if item.description? and item.description.length > 0
+            descriptionContainer.style.display = 'block'
+            descriptionContent.textContent = item.description
+            if item.descriptionMoreURL? and item.descriptionMoreURL.length?
+              descriptionMoreLink.style.display = 'inline'
+              descriptionMoreLink.setAttribute('href', item.descriptionMoreURL)
+            else
+              descriptionMoreLink.style.display = 'none'
+              descriptionMoreLink.setAttribute('href', '#')
+          else
+            descriptionContainer.style.display = 'none'
+
       element
 
   moduleAndFuncName = (moduleParts, func) ->
