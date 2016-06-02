@@ -168,7 +168,6 @@ defmodule Introspection do
       |> extract_spec_ast_parts
 
     parts.returns
-    |> Enum.map(fn return -> Macro.to_string(return) |> String.replace("()", "") end)
   end
 
   defp extract_spec_ast_parts({:when, _, [{:::, _, [name_part, return_part]}, when_part]}) do
@@ -240,6 +239,22 @@ defmodule Introspection do
       {{:|, _, _}, i}          -> to_var({}, i)
       {left, i}                -> to_var(left, i)
     end)
+  end
+
+  def strip_return_types(returns) when is_list(returns) do
+    returns |> Enum.map(&strip_return_types/1)
+  end
+  def strip_return_types({:::, _, [left, _]}) do
+    left
+  end
+  def strip_return_types({:|, meta, args}) do
+    {:|, meta, strip_return_types(args)}
+  end
+  def strip_return_types({:{}, meta, args}) do
+    {:{}, meta, strip_return_types(args)}
+  end
+  def strip_return_types(value) do
+    value
   end
 
   defp to_var({name, meta, _}, _) when is_atom(name),

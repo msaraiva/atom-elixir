@@ -82,13 +82,14 @@ defmodule Alchemist.API.Comp do
 
   # Find returns when inside callback function's scope
   defp find_callbacks_or_returns(behaviours, "", {fun, arity}) do
-    Enum.reduce(behaviours, [], fn (mod, acc) ->
-      if Introspection.define_callback?(mod, fun, arity) do
-        acc ++ Introspection.get_returns_from_callback(mod, fun, arity)
-      else
-        acc
+    for mod <- behaviours, Introspection.define_callback?(mod, fun, arity) do
+      for return <- Introspection.get_returns_from_callback(mod, fun, arity) do
+        ast_to_string   = fn r -> r |> Macro.to_string |> String.replace("()", "") end
+        return_spec     = ast_to_string.(return)
+        return_stripped = return |> Introspection.strip_return_types |> ast_to_string.()
+        "#{return_stripped};return;#{return_spec}"
       end
-    end) |> Enum.map(fn return -> "#{return};return" end)
+    end |> List.flatten
   end
   defp find_callbacks_or_returns(_behaviours, _hint, {_fun, _arity}) do
     []

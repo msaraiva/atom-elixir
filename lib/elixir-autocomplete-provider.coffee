@@ -84,7 +84,7 @@ class ElixirAutocompleteProvider
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
     if fields[1] == 'return'
-      [name, kind] = fields
+      [name, kind, spec] = fields
     else
       [name, kind, signature, mod, desc, spec] = fields
 
@@ -102,7 +102,7 @@ class ElixirAutocompleteProvider
       else if kind == 'callback'
         createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
       else if kind == 'return'
-        createSuggestionForReturn(serverSuggestion, name, kind)
+        createSuggestionForReturn(serverSuggestion, name, kind, spec)
       else if kind in ['private_function', 'public_function', 'public_macro']
         createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
       else if kind in ['function', 'macro']
@@ -238,7 +238,7 @@ class ElixirAutocompleteProvider
       summary: description
     }
 
-  createSuggestionForReturn = (serverSuggestion, name, kind) ->
+  createSuggestionForReturn = (serverSuggestion, name, kind, spec) ->
     displayText = name
     snippet = name
 
@@ -250,6 +250,7 @@ class ElixirAutocompleteProvider
       type: type
       rightLabel: rightLabel
       iconHTML: iconHTML
+      spec: spec
     }
 
   createSuggestionForModule = (serverSuggestion, name, desc, prefix, subtype) ->
