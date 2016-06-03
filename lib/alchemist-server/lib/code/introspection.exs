@@ -121,8 +121,7 @@ defmodule Introspection do
   def format_spec_ast_single_line(spec_ast) do
     spec_ast
     |> Macro.prewalk(&drop_macro_env/1)
-    |> Macro.to_string
-    |> String.replace("()", "")
+    |> spec_ast_to_string()
   end
 
   def format_spec_ast(spec_ast) do
@@ -257,6 +256,29 @@ defmodule Introspection do
     value
   end
 
+  def return_to_snippet(ast) do
+    {ast, _} = Macro.prewalk(ast, 1, &term_to_snippet/2)
+    ast |> Macro.to_string
+  end
+  defp term_to_snippet({name, _, nil} = ast, index) when is_atom(name) do
+    next_snippet(ast, index)
+  end
+  defp term_to_snippet({:__aliases__, _, _} = ast, index) do
+    next_snippet(ast, index)
+  end
+  defp term_to_snippet({{:., _, _}, _, _} = ast, index) do
+    next_snippet(ast, index)
+  end
+  defp term_to_snippet({:|, _, _} = ast, index) do
+    next_snippet(ast, index)
+  end
+  defp term_to_snippet(ast, index) do
+    {ast, index}
+  end
+  defp next_snippet(ast, index) do
+    {"${#{index}:#{spec_ast_to_string(ast)}}$", index+1}
+  end
+
   defp to_var({name, meta, _}, _) when is_atom(name),
     do: {name, meta, nil}
   defp to_var({:<<>>, _, _}, _),
@@ -371,6 +393,10 @@ defmodule Introspection do
 
   defp print_doc_arg({ var, _, _ }) do
     Atom.to_string(var)
+  end
+
+  def spec_ast_to_string(ast) do
+    ast |> Macro.to_string |> String.replace("()", "")
   end
 
   defp spec_to_string({kind, {{name, _arity}, specs}}) do

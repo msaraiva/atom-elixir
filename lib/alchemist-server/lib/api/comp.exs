@@ -80,14 +80,15 @@ defmodule Alchemist.API.Comp do
     end |> Enum.sort
   end
 
-  # Find returns when inside callback function's scope
+  # Finds returns when inside callback function's scope
   defp find_callbacks_or_returns(behaviours, "", {fun, arity}) do
     for mod <- behaviours, Introspection.define_callback?(mod, fun, arity) do
       for return <- Introspection.get_returns_from_callback(mod, fun, arity) do
-        ast_to_string   = fn r -> r |> Macro.to_string |> String.replace("()", "") end
-        return_spec     = ast_to_string.(return)
-        return_stripped = return |> Introspection.strip_return_types |> ast_to_string.()
-        "#{return_stripped};return;#{return_spec}"
+        return_spec     = Introspection.spec_ast_to_string(return)
+        return_ast      = return |> Introspection.strip_return_types
+        return_stripped = return_ast |> Introspection.spec_ast_to_string
+        return_snippet  = return_ast |> Introspection.return_to_snippet
+        "#{return_stripped};return;#{return_spec};#{return_snippet}"
       end
     end |> List.flatten
   end
@@ -95,7 +96,7 @@ defmodule Alchemist.API.Comp do
     []
   end
 
-  # Find callbacks when in module's scope
+  # Finds callbacks when in module's scope
   defp find_callbacks_or_returns(behaviours, hint, _module) do
     behaviours |> Enum.flat_map(fn mod ->
       mod_name = mod |> Introspection.module_to_string

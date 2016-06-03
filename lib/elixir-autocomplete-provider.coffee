@@ -84,7 +84,7 @@ class ElixirAutocompleteProvider
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
     if fields[1] == 'return'
-      [name, kind, spec] = fields
+      [name, kind, spec, snippet] = fields
     else
       [name, kind, signature, mod, desc, spec] = fields
 
@@ -102,7 +102,7 @@ class ElixirAutocompleteProvider
       else if kind == 'callback'
         createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
       else if kind == 'return'
-        createSuggestionForReturn(serverSuggestion, name, kind, spec)
+        createSuggestionForReturn(serverSuggestion, name, kind, spec, snippet)
       else if kind in ['private_function', 'public_function', 'public_macro']
         createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
       else if kind in ['function', 'macro']
@@ -238,9 +238,9 @@ class ElixirAutocompleteProvider
       summary: description
     }
 
-  createSuggestionForReturn = (serverSuggestion, name, kind, spec) ->
+  createSuggestionForReturn = (serverSuggestion, name, kind, spec, snippet) ->
     displayText = name
-    snippet = name
+    snippet = snippet.replace(/"(\$\{\d+:)/g, "$1").replace(/(\})\$"/g, "$1") + "$0"
 
     [type, iconHTML, rightLabel] = ['value', 'r', 'return']
 

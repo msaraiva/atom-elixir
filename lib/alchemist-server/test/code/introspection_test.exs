@@ -69,7 +69,8 @@ defmodule Alchemist.Helpers.IntrospectionTest do
   end
 
   test "get_returns_from_callback" do
-    assert Introspection.get_returns_from_callback(GenServer, :handle_call, 3) == [
+    returns = Introspection.get_returns_from_callback(GenServer, :handle_call, 3) |> Enum.map(&Introspection.spec_ast_to_string/1)
+    assert returns == [
       "{:reply, reply, new_state}",
       "{:reply, reply, new_state, timeout | :hibernate}",
       "{:noreply, new_state}",
@@ -80,10 +81,17 @@ defmodule Alchemist.Helpers.IntrospectionTest do
   end
 
   test "get_returns_from_callback (with types)" do
-    assert Introspection.get_returns_from_callback(GenServer, :code_change, 3) == [
+    returns = Introspection.get_returns_from_callback(GenServer, :code_change, 3) |> Enum.map(&Introspection.spec_ast_to_string/1)
+    assert returns == [
       "{:ok, new_state :: term}",
       "{:error, reason :: term}"
     ]
+  end
+
+  test "return_to_snippet" do
+    {:ok, ast} = "{:atom, type, var, type2 | {:atom2, var2}, String.t, [var3, ...], {:atom3, type3}}" |> Code.string_to_quoted
+    assert Introspection.return_to_snippet(ast) ==
+      ~s({:atom, "${1:type}$", "${2:var}$", "${3:type2 | {:atom2, var2}}$", "${4:String.t}$", ["${5:var3}$", "${6:...}$"], {:atom3, "${7:type3}$"}})
   end
 
   defp get_type_ast(module, type) do
