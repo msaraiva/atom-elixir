@@ -13,6 +13,26 @@ class ElixirAutocompleteProvider
     @subscriptions = new CompositeDisposable
     @subscriptions.add(atom.config.observe('autocomplete-plus.minimumWordLength', (@minimumWordLength) => ))
 
+    @subscriptions.add atom.commands.add 'atom-text-editor',
+      # Replacing default autocomplete 'tab' key so that the snippet's tab-stops have precedence
+      'atom-elixir:autocomplete-tab': (event) ->
+        editor = atom.workspace.getActiveTextEditor()
+        snippets = atom.packages.getActivePackage('snippets')?.mainModule
+        nextTab = snippets.goToNextTabStop(editor)
+        if nextTab
+          atom.commands.dispatch(atom.views.getView(editor), 'autocomplete-plus:cancel')
+        else
+          event.abortKeyBinding()
+          atom.commands.dispatch(atom.views.getView(editor), 'autocomplete-plus:confirm')
+      # Replacing default autocomplete 'enter' key so that tab-stops keep working properly after 'enter'
+      'atom-elixir:autocomplete-enter': (event) ->
+        editor = atom.workspace.getActiveTextEditor()
+        snippets = atom.packages.getActivePackage('snippets')?.mainModule
+        nextTab = snippets.goToNextTabStop(editor)
+        if nextTab
+          atom.commands.dispatch(atom.views.getView(editor), 'snippets:previous-tab-stop')
+        atom.commands.dispatch(atom.views.getView(editor), 'autocomplete-plus:confirm')
+
   dispose: ->
     @subscriptions.dispose()
 
