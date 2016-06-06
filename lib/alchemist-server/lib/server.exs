@@ -62,7 +62,7 @@ defmodule Alchemist.Server do
       rescue
         e ->
           IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
-          env
+          {env, cwd}
       end
     {paths, apps, env, cwd, time}
   end

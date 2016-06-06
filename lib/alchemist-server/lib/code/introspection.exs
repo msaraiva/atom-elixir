@@ -166,7 +166,13 @@ defmodule Introspection do
       |> Macro.prewalk(&drop_macro_env/1)
       |> extract_spec_ast_parts
 
-    parts.returns
+    for return <- parts.returns do
+      ast      = return |> strip_return_types()
+      spec     = spec_ast_to_string(return)
+      stripped = ast |> spec_ast_to_string()
+      snippet  = ast |> return_to_snippet()
+      %{description: stripped, spec: spec, snippet: snippet}
+    end
   end
 
   defp extract_spec_ast_parts({:when, _, [{:::, _, [name_part, return_part]}, when_part]}) do
@@ -240,23 +246,23 @@ defmodule Introspection do
     end)
   end
 
-  def strip_return_types(returns) when is_list(returns) do
+  defp strip_return_types(returns) when is_list(returns) do
     returns |> Enum.map(&strip_return_types/1)
   end
-  def strip_return_types({:::, _, [left, _]}) do
+  defp strip_return_types({:::, _, [left, _]}) do
     left
   end
-  def strip_return_types({:|, meta, args}) do
+  defp strip_return_types({:|, meta, args}) do
     {:|, meta, strip_return_types(args)}
   end
-  def strip_return_types({:{}, meta, args}) do
+  defp strip_return_types({:{}, meta, args}) do
     {:{}, meta, strip_return_types(args)}
   end
-  def strip_return_types(value) do
+  defp strip_return_types(value) do
     value
   end
 
-  def return_to_snippet(ast) do
+  defp return_to_snippet(ast) do
     {ast, _} = Macro.prewalk(ast, 1, &term_to_snippet/2)
     ast |> Macro.to_string
   end
@@ -395,7 +401,7 @@ defmodule Introspection do
     Atom.to_string(var)
   end
 
-  def spec_ast_to_string(ast) do
+  defp spec_ast_to_string(ast) do
     ast |> Macro.to_string |> String.replace("()", "")
   end
 

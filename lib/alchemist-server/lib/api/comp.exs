@@ -38,7 +38,12 @@ defmodule Alchemist.API.Comp do
       list2 = List.delete_at(list2, 0)
     end
 
-    full_list = [first_item] ++ find_callbacks_or_returns(behaviours, hint, scope) ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
+    callbacks_or_returns =
+      case scope do
+        {_f, _a} -> find_returns(behaviours, hint, scope)
+        _mod   -> find_callbacks(behaviours, hint)
+      end
+    full_list = [first_item] ++ callbacks_or_returns ++ find_attributes(attributes, hint) ++ find_vars(vars, hint) ++ list1 ++ list2
     full_list |> print
   end
 
@@ -80,24 +85,18 @@ defmodule Alchemist.API.Comp do
     end |> Enum.sort
   end
 
-  # Finds returns when inside callback function's scope
-  defp find_callbacks_or_returns(behaviours, "", {fun, arity}) do
+  defp find_returns(behaviours, "", {fun, arity}) do
     for mod <- behaviours, Introspection.define_callback?(mod, fun, arity) do
       for return <- Introspection.get_returns_from_callback(mod, fun, arity) do
-        return_spec     = Introspection.spec_ast_to_string(return)
-        return_ast      = return |> Introspection.strip_return_types
-        return_stripped = return_ast |> Introspection.spec_ast_to_string
-        return_snippet  = return_ast |> Introspection.return_to_snippet
-        "#{return_stripped};return;#{return_spec};#{return_snippet}"
+        "#{return.description};return;#{return.spec};#{return.snippet}"
       end
     end |> List.flatten
   end
-  defp find_callbacks_or_returns(_behaviours, _hint, {_fun, _arity}) do
+  defp find_returns(_behaviours, _hint, _) do
     []
   end
 
-  # Finds callbacks when in module's scope
-  defp find_callbacks_or_returns(behaviours, hint, _module) do
+  defp find_callbacks(behaviours, hint) do
     behaviours |> Enum.flat_map(fn mod ->
       mod_name = mod |> Introspection.module_to_string
       for %{name: name, arity: arity, callback: spec, signature: signature, doc: doc} <- Introspection.get_callbacks_with_docs(mod),
