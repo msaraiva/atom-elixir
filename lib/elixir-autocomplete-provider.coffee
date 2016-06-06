@@ -93,6 +93,7 @@ class ElixirAutocompleteProvider
             fields[0] = modulesToAdd.join('.') + '.' + name
           createSuggestion(serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore)
 
+        suggestions = suggestions.filter (item) -> item? && item != ''
         suggestions = sortSuggestions(suggestions)
         resolve(suggestions)
 
@@ -308,7 +309,7 @@ class ElixirAutocompleteProvider
       priority =
         exception: 0 # unknown
         snippet:   0
-        value:     1 # callbacks
+        value:     1 # callbacks/returns
         variable:  2 # variable
         property:  3 # module attribute
         tag:       4 # private function

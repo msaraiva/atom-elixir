@@ -109,7 +109,7 @@ defmodule Alchemist.API.Comp do
         spec = spec |> String.replace(~r/\n/, "\\\\n")
         "#{name}/#{arity};callback;#{args};#{mod_name};#{desc};#{spec}"
       end
-    end)
+    end) |> Enum.sort
   end
 
 end
