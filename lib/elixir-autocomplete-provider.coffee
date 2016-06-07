@@ -192,7 +192,7 @@ class ElixirAutocompleteProvider
 
     [type, iconHTML, rightLabel] =
       switch kind
-        when 'private_function' then ['tag',      'f', 'private']
+        when 'private_function' then ['method', 'f', 'private']
         when 'public_function'  then ['function', 'f', 'public']
         when 'function'         then ['function', 'f', mod]
         when 'public_macro'     then ['package',  'm', 'public']
@@ -312,7 +312,7 @@ class ElixirAutocompleteProvider
         value:     1 # callbacks/returns
         variable:  2 # variable
         property:  3 # module attribute
-        tag:       4 # private function
+        method:    4 # private function
         class:     5 # module
         package:   6 # macro
         function:  6 # function
