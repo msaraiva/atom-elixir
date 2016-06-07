@@ -104,7 +104,7 @@ class ElixirAutocompleteProvider
   createSuggestion = (serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore) ->
     if fields[1] == 'module'
       [name, kind, subtype, desc] = fields
-    if fields[1] == 'return'
+    else if fields[1] == 'return'
       [name, kind, spec, snippet] = fields
     else
       [name, kind, signature, mod, desc, spec] = fields
