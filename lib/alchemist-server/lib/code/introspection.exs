@@ -66,6 +66,10 @@ defmodule Introspection do
   end
 
   def get_callbacks_with_docs(mod) when is_atom(mod) do
+    mod =
+      @wrapped_behaviours
+      |> Map.get(mod, mod)
+
     case get_callbacks_and_docs(mod) do
       {callbacks, []} ->
         Enum.map(callbacks, fn {{name, arity}, [spec | _]} ->
@@ -162,13 +166,21 @@ defmodule Introspection do
 
   def get_returns_from_callback(module, func, arity) do
     parts =
-      get_callback_ast(module, func, arity)
+      @wrapped_behaviours
+      |> Map.get(module, module)
+      |> get_callback_ast(func, arity)
       |> Macro.prewalk(&drop_macro_env/1)
       |> extract_spec_ast_parts
 
     for return <- parts.returns do
-      ast      = return |> strip_return_types()
-      spec     = spec_ast_to_string(return)
+      ast = return |> strip_return_types()
+      return =
+        case parts[:when_part] do
+          nil -> return
+          _   -> {:when, [], [return, parts.when_part]}
+        end
+
+      spec     = return |> spec_ast_to_string()
       stripped = ast |> spec_ast_to_string()
       snippet  = ast |> return_to_snippet()
       %{description: stripped, spec: spec, snippet: snippet}

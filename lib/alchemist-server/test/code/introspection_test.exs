@@ -69,29 +69,32 @@ defmodule Alchemist.Helpers.IntrospectionTest do
   end
 
   test "get_returns_from_callback" do
-    returns = Introspection.get_returns_from_callback(GenServer, :handle_call, 3) |> Enum.map(&Introspection.spec_ast_to_string/1)
+    returns = Introspection.get_returns_from_callback(GenServer, :code_change, 3)
     assert returns == [
-      "{:reply, reply, new_state}",
-      "{:reply, reply, new_state, timeout | :hibernate}",
-      "{:noreply, new_state}",
-      "{:noreply, new_state, timeout | :hibernate}",
-      "{:stop, reason, reply, new_state}",
-      "{:stop, reason, new_state}"
+      %{description: "{:ok, new_state}", snippet: "{:ok, \"${1:new_state}$\"}", spec: "{:ok, new_state :: term} when old_vsn: term | {:down, term}"},
+      %{description: "{:error, reason}", snippet: "{:error, \"${1:reason}$\"}", spec: "{:error, reason :: term} when old_vsn: term | {:down, term}"}
     ]
   end
 
-  test "get_returns_from_callback (with types)" do
-    returns = Introspection.get_returns_from_callback(GenServer, :code_change, 3) |> Enum.map(&Introspection.spec_ast_to_string/1)
+  test "get_returns_from_callback (all types in 'when')" do
+    returns = Introspection.get_returns_from_callback(:gen_server, :handle_call, 3)
     assert returns == [
-      "{:ok, new_state :: term}",
-      "{:error, reason :: term}"
+      %{description: "{:reply, reply, new_state}", snippet: "{:reply, \"${1:reply}$\", \"${2:new_state}$\"}", spec: "{:reply, reply, new_state} when reply: term, new_state: term, reason: term"},
+      %{description: "{:reply, reply, new_state, timeout | :hibernate}", snippet: "{:reply, \"${1:reply}$\", \"${2:new_state}$\", \"${3:timeout | :hibernate}$\"}", spec: "{:reply, reply, new_state, timeout | :hibernate} when reply: term, new_state: term, reason: term"},
+      %{description: "{:noreply, new_state}", snippet: "{:noreply, \"${1:new_state}$\"}", spec: "{:noreply, new_state} when reply: term, new_state: term, reason: term"},
+      %{description: "{:noreply, new_state, timeout | :hibernate}", snippet: "{:noreply, \"${1:new_state}$\", \"${2:timeout | :hibernate}$\"}", spec: "{:noreply, new_state, timeout | :hibernate} when reply: term, new_state: term, reason: term"},
+      %{description: "{:stop, reason, reply, new_state}", snippet: "{:stop, \"${1:reason}$\", \"${2:reply}$\", \"${3:new_state}$\"}", spec: "{:stop, reason, reply, new_state} when reply: term, new_state: term, reason: term"},
+      %{description: "{:stop, reason, new_state}", snippet: "{:stop, \"${1:reason}$\", \"${2:new_state}$\"}", spec: "{:stop, reason, new_state} when reply: term, new_state: term, reason: term"}
     ]
   end
 
-  test "return_to_snippet" do
-    {:ok, ast} = "{:atom, type, var, type2 | {:atom2, var2}, String.t, [var3, ...], {:atom3, type3}}" |> Code.string_to_quoted
-    assert Introspection.return_to_snippet(ast) ==
-      ~s({:atom, "${1:type}$", "${2:var}$", "${3:type2 | {:atom2, var2}}$", "${4:String.t}$", ["${5:var3}$", "${6:...}$"], {:atom3, "${7:type3}$"}})
+  test "get_returns_from_callback (erlang specs)" do
+    returns = Introspection.get_returns_from_callback(:gen_fsm, :handle_event, 3)
+    assert returns == [
+      %{description: "{:next_state, nextStateName, newStateData}", snippet: "{:next_state, \"${1:nextStateName}$\", \"${2:newStateData}$\"}", spec: "{:next_state, nextStateName :: atom, newStateData :: term}"},
+      %{description: "{:next_state, nextStateName, newStateData, timeout | :hibernate}", snippet: "{:next_state, \"${1:nextStateName}$\", \"${2:newStateData}$\", \"${3:timeout | :hibernate}$\"}", spec: "{:next_state, nextStateName :: atom, newStateData :: term, timeout | :hibernate}"},
+      %{description: "{:stop, reason, newStateData}", snippet: "{:stop, \"${1:reason}$\", \"${2:newStateData}$\"}", spec: "{:stop, reason :: term, newStateData :: term}"}
+    ]
   end
 
   defp get_type_ast(module, type) do
