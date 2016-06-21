@@ -1,12 +1,5 @@
 {TextEditor, CompositeDisposable} = require 'atom'
 spawn = require('child_process').spawn
-ServerProcess = require './server-process'
-
-ElixirExpandProvider = require('./elixir-expand-provider')
-ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
-ElixirDocsProvider = require('./elixir-docs-provider')
-ElixirQuotedProvider = require('./elixir-quoted-provider')
-ElixirGotoDefinitionProvider = require('./elixir-goto-definition-provider')
 
 module.exports = AtomElixir =
   expandProvider: null
@@ -16,6 +9,12 @@ module.exports = AtomElixir =
   quotedProvider: null
 
   activate: (state) ->
+    ElixirExpandProvider = require('./elixir-expand-provider')
+    ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
+    ElixirDocsProvider = require('./elixir-docs-provider')
+    ElixirQuotedProvider = require('./elixir-quoted-provider')
+    ElixirGotoDefinitionProvider = require('./elixir-goto-definition-provider')
+
     @initEnv()
     @expandProvider = new ElixirExpandProvider
     @autocompleteProvider = new ElixirAutocompleteProvider
@@ -61,6 +60,8 @@ module.exports = AtomElixir =
     env
 
   initEnv: ->
+    ServerProcess = require './server-process'
+
     [shell, out] = [process.env.SHELL || 'bash', '']
     pid = if process.platform == 'win32' then spawn('cmd', ['/C', 'set']) else spawn(shell, ['--login', '-c', 'env'])
     pid.stdout.on 'data', (chunk) -> out += chunk
