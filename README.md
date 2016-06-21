@@ -13,7 +13,7 @@ apm install atom-elixir
 
 ### Updating
 
-If you're updating from v0.1.4 to v0.2.0, you will need to restart Atom or hit `ctrl-option-cmd-l`.
+If you're updating from v0.1.4 to v0.2.0 or above, you will need to restart Atom or hit `ctrl-option-cmd-l`.
 
 ### Features
 

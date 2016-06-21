@@ -1,3 +1,8 @@
+## v0.2.1
+
+### Bug fixes
+* Stopping the server process properly when shutting down alchemist-server
+
 ## v0.2.0
 
 ### Features
