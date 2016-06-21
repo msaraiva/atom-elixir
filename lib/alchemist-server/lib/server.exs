@@ -34,9 +34,14 @@ defmodule Alchemist.Server do
   end
 
   def loop(loaded, paths, apps, env, cwd, last_load_time) do
-    line  = IO.gets("") |> String.rstrip()
-    {paths, apps, env, cwd, time} = run(line, loaded, paths, apps, env, cwd, last_load_time)
-    loop(loaded, paths, apps, env, cwd, time)
+    case IO.gets("") do
+      :eof ->
+        IO.puts(:stderr, "Stopping alchemist-server")
+      str  ->
+        line  = str |> String.rstrip()
+        {paths, apps, env, cwd, time} = run(line, loaded, paths, apps, env, cwd, last_load_time)
+        loop(loaded, paths, apps, env, cwd, time)
+    end
   end
 
   defp run(line, loaded, paths, apps, env, cwd, last_load_time) do
