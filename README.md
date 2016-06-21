@@ -39,12 +39,12 @@ apm install atom-elixir
   - Expands the selected macro. Shows expanded code using Expand Once, Expand and Expand All.
 - All features depending on aliases and imports are already supporting the new v1.2 notation.
 
-> **IMPORTANT:** Most of the features only work properly if you have the related .beam files in the project's `_build` folder. So please, before opening an issue, make sure you can successfully compile your project. You can also hit `ALT+CMD+i` to open the console (ALT+CTRL+i on windows/linux, i guess) in order to see the server's output. When the server successfully starts, you should be able to see something like:
+> **IMPORTANT:** Most of the features only work properly if you have the related `.beam` files in the project's `_build` folder. So please, before opening an issue, make sure you can successfully compile your project in the environment you're trying to use it ("dev" and/or "test"). You can also hit `ALT+CMD+i` to open the Atom's console (ALT+CTRL+i on windows/linux) in order to see the server's output. When successfully started, atom-elixir prints:
 ```
 [atom-elixir] Initializing alchemist-server for environment "dev" (Elixir version 1.2.0)
 [atom-elixir] Working directory is "/Users/your_name/workspace/your_project/"
 ```
-All error messages from the server should also be displayed in the console.
+All error messages from the server should also be displayed in the console. Please send those messages when reporting an issue.
 
 ### Shortcuts
 
