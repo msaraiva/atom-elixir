@@ -9,6 +9,7 @@ module.exports = AtomElixir =
   quotedProvider: null
 
   activate: (state) ->
+    @cleanRequireCache()
     ElixirExpandProvider = require('./elixir-expand-provider')
     ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
     ElixirDocsProvider = require('./elixir-docs-provider')
@@ -58,6 +59,13 @@ module.exports = AtomElixir =
     if editor?.getPath()?.startsWith(projectPath + '/test/')
       env = "test"
     env
+
+  cleanRequireCache: ->
+    Object.keys(require.cache)
+      .filter (p) -> p.indexOf("/atom-elixir/lib/") > 0
+      .forEach (p) ->
+        console.log("Unloading: #{p}")
+        delete require.cache[p]
 
   initEnv: ->
     ServerProcess = require './server-process'
