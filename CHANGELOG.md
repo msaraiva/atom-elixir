@@ -1,3 +1,15 @@
+## v0.2.0
+
+### Features
+* Autocomplete - Lists callbacks from used behaviours
+* Autocomplete - Lists accepted "returns" when inside a callback implementation
+* Highlight Elixir code in autocomplete and documentation view
+* Format specs for documentation (autocomplete and documentation view)
+
+### Bug fixes
+* Autocomplete, Documentation and Go to definition not working because of empty working dir on alchemist-server
+* Breaks descriptions of other autocomplete packages [(#31)](https://github.com/msaraiva/atom-elixir/issues/31)
+
 ## v0.1.4
 
 ### Bug fixes
