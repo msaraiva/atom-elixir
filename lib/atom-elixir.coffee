@@ -9,7 +9,8 @@ module.exports = AtomElixir =
   quotedProvider: null
 
   activate: (state) ->
-    @cleanRequireCache()
+    console.log "[atom-elixir] Activating atom-elixir version #{@packageVersion()}"
+
     ElixirExpandProvider = require('./elixir-expand-provider')
     ElixirAutocompleteProvider = require('./elixir-autocomplete-provider')
     ElixirDocsProvider = require('./elixir-docs-provider')
@@ -36,6 +37,9 @@ module.exports = AtomElixir =
       @server.debug()
 
   deactivate: ->
+    console.log "[atom-elixir] Deactivating atom-elixir version #{@packageVersion()}"
+
+    @cleanRequireCache()
     @expandProvider.dispose()
     @expandProvider = null
     @autocompleteProvider.dispose()
@@ -49,6 +53,9 @@ module.exports = AtomElixir =
     @server.stop()
     @server = null
     @subscriptions.dispose()
+
+  packageVersion: ->
+    atom.packages.getLoadedPackage('atom-elixir').metadata.version
 
   provideAutocomplete: ->
     [@autocompleteProvider]
@@ -64,7 +71,6 @@ module.exports = AtomElixir =
     Object.keys(require.cache)
       .filter (p) -> p.indexOf("/atom-elixir/lib/") > 0
       .forEach (p) ->
-        console.log("Unloading: #{p}")
         delete require.cache[p]
 
   initEnv: ->
