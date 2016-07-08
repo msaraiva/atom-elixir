@@ -7,7 +7,7 @@ class ElixirAutocompleteProvider
   # disableForSelector: '.source.elixir .comment'
   server: null
   inclusionPriority: 1
-  excludeLowerPriority: true
+  excludeLowerPriority: false
 
   constructor: ->
     @subscriptions = new CompositeDisposable
