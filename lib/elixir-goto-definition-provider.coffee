@@ -71,7 +71,8 @@ class ElixirGotoDefinitionProvider
           return
 
       pane = atom.workspace.getActivePane()
-      [file_path, line] = file.split(':')
+      # "_" is match group 0, which is the original file name;
+      [_, file_path, line] = file.match /(.*):(\d+)/
       atom.workspace.open(file_path, {initialLine: parseInt(line-1 || 0), searchAllPanes: true}).then (editor) ->
         pane.activateItem(editor)
         gotoFirstNonCommentPosition(editor)
