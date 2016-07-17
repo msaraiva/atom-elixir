@@ -1,3 +1,0 @@
-defmodule MyModule do
-  
-end
