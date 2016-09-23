@@ -29,6 +29,6 @@
 '.elixir-expand-view atom-text-editor[mini]':
   'enter': 'editor:newline'
 
-'atom-text-editor:not(mini).autocomplete-active':
+'atom-text-editor:not(mini)[data-grammar^="source elixir"].autocomplete-active':
   'tab': 'atom-elixir:autocomplete-tab'
   'enter': 'atom-elixir:autocomplete-enter'
