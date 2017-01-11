@@ -145,10 +145,10 @@
   overflow: scroll;
   background-color: @panel-heading-background-color;
 
-  .editor .gutter, atom-text-editor::shadow .gutter {
-  	.line-numbers {
-  		width: 42px;
-  	}
+  .editor .gutter, atom-text-editor.editor .gutter {
+    .line-numbers {
+      width: 42px;
+    }
   }
 
   .input-block {
@@ -173,11 +173,11 @@
   }
 }
 
-atom-text-editor::shadow .editor-contents--private .highlight.keyclick > .region {
+atom-text-editor.editor .editor-contents--private .highlight.keyclick > .region {
   border-bottom: 1px solid @syntax-text-color;
 }
 
-atom-text-editor:not([mini]).keyclick::shadow .editor-contents--private {
+atom-text-editor:not([mini]).keyclick.editor .editor-contents--private {
   /**
    * Unfortunately, this cannot be a property of `.keyclick .region`:
    * https://discuss.atom.io/t/some-css-styles-not-honored-by-decorations/11662
