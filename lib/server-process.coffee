@@ -31,7 +31,11 @@ class ServerProcess
       @ready = true
       if ~chunk.indexOf("END-OF-#{@lastRequestType}")
         [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")
-        @onResult((buffer + before).trim())
+        try
+          @onResult((buffer + before).trim())
+        catch e
+          console.error(e)
+
         @busy = false
         if after
           buffer = after
