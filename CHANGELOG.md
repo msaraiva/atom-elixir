@@ -1,3 +1,13 @@
+## v0.2.2
+
+### Features
+* Compatibility with Elixir 1.4.0
+
+### Bug fixes
+* Fix deprecated selector in `atom-elixir/styles/atom-elixir.less` [(#56)](https://github.com/msaraiva/atom-elixir/issues/56) and [(#57)](https://github.com/msaraiva/atom-elixir/issues/57) thanks to @jayjun
+* Fix high CPU usage when parsing/expanding code containing recursive macros [(#51)](https://github.com/msaraiva/atom-elixir/issues/56)
+* Fix server busy problem after unexpected exceptions
+
 ## v0.2.1
 
 ### Bug fixes
