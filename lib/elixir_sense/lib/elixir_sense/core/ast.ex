@@ -6,14 +6,17 @@ defmodule ElixirSense.Core.Ast do
 
   @partials [:def, :defp, :defmodule, :@, :defmacro, :defmacrop, :defoverridable, :__ENV__, :__CALLER__, :raise, :if, :unless, :in]
 
+  @max_expand_count 10000
+
   def extract_use_info(use_ast, module) do
     try do
       env = Map.put(__ENV__, :module, module)
-      {expanded_ast, _requires} = Macro.prewalk(use_ast, env, &do_expand/2)
+      {expanded_ast, _requires} = Macro.prewalk(use_ast, {env, 1}, &do_expand/2)
       {_ast, env_info} = Macro.prewalk(expanded_ast, @empty_env_info, &pre_walk_expanded/2)
       env_info
     rescue
       _e ->
+        # DEBUG
         # IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
         # IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
         @empty_env_info
@@ -21,13 +24,25 @@ defmodule ElixirSense.Core.Ast do
   end
 
   def expand_partial(ast, env) do
-    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand_partial/2)
-    expanded_ast
+    try do
+      {expanded_ast, _} = Macro.prewalk(ast, {env, 1}, &do_expand_partial/2)
+      expanded_ast
+    rescue
+      _e -> ast
+    catch
+      e -> e
+    end
   end
 
   def expand_all(ast, env) do
-    {expanded_ast, _} = Macro.prewalk(ast, env, &do_expand_all/2)
-    expanded_ast
+    try do
+      {expanded_ast, _} = Macro.prewalk(ast, {env, 1}, &do_expand_all/2)
+      expanded_ast
+    rescue
+      _e -> ast
+    catch
+      e -> e
+    end
   end
 
   def set_module_for_env(env, module) do
@@ -50,41 +65,44 @@ defmodule ElixirSense.Core.Ast do
     new_env
   end
 
-  defp do_expand_all(ast, env) do
-    do_expand(ast, env)
+  defp do_expand_all(ast, acc) do
+    do_expand(ast, acc)
   end
 
-  defp do_expand_partial({name, _, _} = ast, env) when name in @partials do
-    {ast, env}
+  defp do_expand_partial({name, _, _} = ast, acc) when name in @partials do
+    {ast, acc}
   end
-  defp do_expand_partial(ast, env) do
-    do_expand(ast, env)
+  defp do_expand_partial(ast, acc) do
+    do_expand(ast, acc)
   end
 
-  defp do_expand({:require, _, _} = ast, env) do
+  defp do_expand({:require, _, _} = ast, {env, count}) do
     modules = extract_directive_modules(:require, ast)
     new_env = add_requires_to_env(env, modules)
-    {ast, new_env}
+    {ast, {new_env, count}}
   end
 
-  defp do_expand(ast, env) do
-    do_expand_with_fixes(ast, env)
+  defp do_expand(ast, acc) do
+    do_expand_with_fixes(ast, acc)
   end
 
   # Fix inexpansible `use ExUnit.Case`
-  defp do_expand_with_fixes({:use, _, [{:__aliases__, _, [:ExUnit, :Case]}|_]}, env) do
+  defp do_expand_with_fixes({:use, _, [{:__aliases__, _, [:ExUnit, :Case]}|_]}, acc) do
     ast = quote do
       import ExUnit.Callbacks
       import ExUnit.Assertions
       import ExUnit.Case
       import ExUnit.DocTest
     end
-    {ast, env}
+    {ast, acc}
   end
 
-  defp do_expand_with_fixes(ast, env) do
+  defp do_expand_with_fixes(ast, {env, count}) do
+    if count > @max_expand_count do
+      throw {:expand_error, "Cannot expand recursive macro"}
+    end
     expanded_ast = Macro.expand(ast, env)
-    {expanded_ast, env}
+    {expanded_ast, {env, count+1}}
   end
 
   defp pre_walk_expanded({:__block__, _, _} = ast, acc) do
@@ -101,7 +119,7 @@ defmodule ElixirSense.Core.Ast do
   defp pre_walk_expanded({:@, _, [{:behaviour, _, [behaviour]}]} = ast, acc) do
     {ast, %{acc | behaviours: [behaviour|acc.behaviours]}}
   end
-  defp pre_walk_expanded({{:., _, [Module, :put_attribute]}, _, [_module, :behaviour, behaviour]} = ast, acc) do
+  defp pre_walk_expanded({{:., _, [Module, :put_attribute]}, _, [_module, :behaviour, behaviour | _]} = ast, acc) do
     {ast, %{acc | behaviours: [behaviour|acc.behaviours]}}
   end
   defp pre_walk_expanded({_name, _meta, _args}, acc) do

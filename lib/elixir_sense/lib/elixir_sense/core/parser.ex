@@ -54,6 +54,11 @@ defmodule ElixirSense.Core.Parser do
     end
   end
 
+  defp fix_parse_error(source, _cursor_line_number, {:error, {line, {"\"" <> <<_::bytes-size(1)>> <> "\" is missing terminator" <> _, _}, _}}) when is_integer(line) do
+    source
+    |> replace_line_with_marker(line)
+  end
+
   defp fix_parse_error(source, _cursor_line_number, {:error, {_line, {_error_type, text}, _token}}) do
     [_, line] = Regex.run(~r/line\s(\d+)/, text)
     line = line |> String.to_integer

@@ -9,7 +9,7 @@ defmodule Alchemist.API.Defl do
 
     path =
       case ElixirSense.definition(mod, fun, buffer, line) do
-        {file, nil}  -> file
+        {file, nil}  -> "#{file}:0"
         {file, line} -> "#{file}:#{line}"
       end
 

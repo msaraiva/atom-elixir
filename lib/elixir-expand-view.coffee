@@ -35,17 +35,17 @@ class ElixirExpandedView extends ScrollView
       @div class: 'header', =>
         @div class: 'btn-group btn-group-sm viewButtons pull-left', style: 'margin-bottom: 8px;', =>
           @button class: "btn expandOnce", 'Expand Once'
-          @button class: "btn expand", "Expand"
-          @button class: "btn expandPartial selected", "Expand Partial"
+          @button class: "btn expand selected", "Expand"
+          @button class: "btn expandPartial", "Expand Partial"
           @button class: "btn expandAll", "Expand All"
         @hr style: 'clear: both;'
       @div class: 'markdownContent expandOnceContent', style: 'display: none', =>
         @section class: 'input-block', =>
           @subview 'expandOnceCodeEditorElement', expandOnceCodeEditorElement
-      @div class: 'markdownContent expandContent', style: 'display: none', =>
+      @div class: 'markdownContent expandContent', =>
         @section class: 'input-block', =>
           @subview 'expandCodeEditorElement', expandCodeEditorElement
-      @div class: 'markdownContent expandPartialContent', =>
+      @div class: 'markdownContent expandPartialContent', style: 'display: none', =>
         @section class: 'input-block', =>
           @subview 'expandPartialCodeEditorElement', expandPartialCodeEditorElement
       @div class: 'markdownContent expandAllContent', style: 'display: none', =>

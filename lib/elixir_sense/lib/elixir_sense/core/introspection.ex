@@ -93,7 +93,7 @@ defmodule ElixirSense.Core.Introspection do
           %{name: name, arity: arity, callback: "@callback #{definition}", signature: signature, doc: nil}
         end)
       {callbacks, docs} ->
-        Enum.filter_map docs, &match?(_, &1), fn
+        Enum.map docs, fn
           {{fun, arity}, _, :macrocallback, doc} ->
             get_callback_with_doc(fun, :macrocallback, doc, {:"MACRO-#{fun}", arity + 1}, callbacks)
             |> Map.put(:arity, arity)

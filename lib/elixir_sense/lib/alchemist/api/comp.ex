@@ -17,7 +17,7 @@ defmodule Alchemist.API.Comp do
     "#{name};var"
   end
   defp format_suggestion(%{type: :attribute, name: name}) do
-    "@#{name};attribute"
+    "#{name};attribute"
   end
   defp format_suggestion(%{type: :hint, value: value}) do
     "#{value};hint"

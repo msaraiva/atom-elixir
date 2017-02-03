@@ -2,10 +2,6 @@ defmodule Alchemist.API.Eval do
 
   @moduledoc false
 
-  alias ElixirSense.Core.Metadata
-  alias ElixirSense.Core.Parser
-  alias ElixirSense.Core.Ast
-  alias ElixirSense.Core.State
   alias ElixirSense.Core.Introspection
 
   def request(args) do
@@ -27,6 +23,18 @@ defmodule Alchemist.API.Eval do
         IO.puts format_signatures(signatures)
       :none ->
         IO.puts "none"
+    end
+  end
+
+  def process({:expand_full, buffer_file, file, line}) do
+    buffer = File.read!(buffer_file)
+    code = File.read!(file)
+
+    case ElixirSense.expand_full(buffer, code, line) do
+      {:error, e} ->
+        IO.inspect(e)
+      expanded_code_map ->
+        format_expand_full(expanded_code_map)
     end
   end
 
@@ -65,28 +73,6 @@ defmodule Alchemist.API.Eval do
     |> IO.inspect
   end
 
-  def process({:expand_full, buffer_file, file, line}) do
-    try do
-      {_, expr} = File.read!("#{file}") |> Code.string_to_quoted
-      env = create_env(buffer_file, line)
-      expand_and_print(&Macro.expand_once/2, expr, env)
-      IO.puts("\u000B")
-      expand_and_print(&Macro.expand/2, expr, env)
-      IO.puts("\u000B")
-      expand_and_print(&Ast.expand_partial/2, expr, env)
-      IO.puts("\u000B")
-      expand_and_print(&Ast.expand_all/2, expr, env)
-    rescue
-      e -> IO.inspect e
-    end
-  end
-
-  defp expand_and_print(expand_func, expr, env) do
-    expand_func.(expr, env)
-    |> Macro.to_string
-    |> IO.puts
-  end
-
   def normalize(request) do
     {expr , _} = Code.eval_string(request)
     expr
@@ -113,23 +99,28 @@ defmodule Alchemist.API.Eval do
     IO.puts "# No match"
   end
 
-  defp create_env(file, line) do
-    %State.Env{requires: requires, imports: imports, module: module} =
-      file
-      |> Parser.parse_file(true, true, line)
-      |> Metadata.get_env(line)
-
-    __ENV__
-    |> Ast.add_requires_to_env(requires)
-    |> Ast.add_imports_to_env(imports)
-    |> Ast.set_module_for_env(module)
-  end
-
   defp format_signatures(signatures) do
     for %{name: name, params: params} <- signatures do
       fun_args_text = params |> Enum.join(",") |> String.replace("\\\\", "\\\\\\\\")
       "#{name};#{fun_args_text}"
     end |> Enum.join("\n")
+  end
+
+  defp format_expand_full(expanded_code_map) do
+    %{
+      expand_once: expand_once,
+      expand: expand,
+      expand_partial: expand_partial,
+      expand_all: expand_all,
+    } = expanded_code_map
+
+    IO.puts(expand_once)
+    IO.puts("\u000B")
+    IO.puts(expand)
+    IO.puts("\u000B")
+    IO.puts(expand_partial)
+    IO.puts("\u000B")
+    IO.puts(expand_all)
   end
 
 end

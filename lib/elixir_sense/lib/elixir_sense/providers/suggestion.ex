@@ -93,7 +93,7 @@ defmodule ElixirSense.Providers.Suggestion do
     |> Kernel.++(find_attributes(attributes, hint))
     |> Kernel.++(find_vars(vars, hint))
     |> Kernel.++(mods_and_funcs)
-    |> Enum.uniq
+    |> Enum.uniq_by(&(&1))
   end
 
   @spec find_hint_mods_funcs(String.t, [module], [{module, module}]) :: %{hint: hint, suggestions: [mod | func]}

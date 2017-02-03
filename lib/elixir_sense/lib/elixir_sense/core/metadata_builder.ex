@@ -350,7 +350,7 @@ defmodule ElixirSense.Core.MetadataBuilder do
 
   defp find_vars(ast) do
     {_ast, vars} = Macro.prewalk(ast, [], &match_var/2)
-    vars |> Enum.uniq
+    vars |> Enum.uniq_by(&(&1))
   end
 
   defp match_var({var, [line: _], context} = ast, vars) when is_atom(var) and context in [nil, Elixir] do

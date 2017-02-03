@@ -12,6 +12,7 @@ requires = [
   "elixir_sense/providers/docs.ex",
   "elixir_sense/providers/suggestion.ex",
   "elixir_sense/providers/signature.ex",
+  "elixir_sense/providers/expand.ex",
   "elixir_sense.ex",
   "alchemist/api/comp.ex",
   "alchemist/api/defl.ex",
