@@ -44,7 +44,7 @@ getDocURL = (mod, func, arity) ->
     "http://www.erlang.org/doc/man/#{mod.replace(/^:/, '')}.html#{erl_func_arity}"
   else
     module = mod || 'Kernel'
-    "http://elixir-lang.org/docs/v#{elixir_version}/elixir/#{module}.html#{elixir_func_arity}"
+    "https://hexdocs.pm/elixir/#{elixir_version}/#{module}.html#{elixir_func_arity}"
 
 convertCodeBlocksToAtomEditors = (domFragment, defaultLanguage='text') ->
   if fontFamily = atom.config.get('editor.fontFamily')
