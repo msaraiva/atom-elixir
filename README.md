@@ -11,10 +11,6 @@ Autocomplete, Go/Jump to Definition, Documentation and more.
 apm install atom-elixir
 ```
 
-### Updating
-
-If you're updating from v0.1.4 to v0.2.0 or above, you will need to restart Atom or hit `ctrl-option-cmd-l`.
-
 ### Features
 
 - Autocomplete [(Screenshots)](#screenshots-autocomplete)
@@ -45,7 +41,7 @@ If you're updating from v0.1.4 to v0.2.0 or above, you will need to restart Atom
 
 > **IMPORTANT:** Most of the features only work properly if you have the related `.beam` files in the project's `_build` folder. So please, before opening an issue, make sure you can successfully compile your project in the environment you're trying to use it ("dev" and/or "test"). You can also hit `ALT+CMD+i` to open the Atom's console (ALT+CTRL+i on windows/linux) in order to see the server's output. When successfully started, atom-elixir prints:
 ```
-[atom-elixir] Initializing alchemist-server for environment "dev" (Elixir version 1.2.0)
+[atom-elixir] Initializing ElixirSense server for environment "dev" (Elixir version 1.4.0)
 [atom-elixir] Working directory is "/Users/your_name/workspace/your_project/"
 ```
 All error messages from the server should also be displayed in the console. Please send those messages when reporting an issue.
@@ -105,4 +101,3 @@ All error messages from the server should also be displayed in the console. Plea
 
 - The Elixir Server is an extended version of [alchemist-server](https://github.com/tonini/alchemist-server) by Samuel Tonini. Pay attention that the current API is no longer compatible with the original one.
 - The Expand View was inspired by the [mex](https://github.com/mrluc/mex) tool by Luc Fueston. There's also a very nice post where he describes the whole process of [Building A Macro-Expansion Helper for IEx](http://blog.maketogether.com/building-a-macro-expansion-helper/).
-- The initEnv trick was based on the code from [Atom Runner](https://github.com/lsegal/atom-runner/blob/master/lib/atom-runner.coffee).
