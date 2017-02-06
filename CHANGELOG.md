@@ -1,12 +1,14 @@
 ## v0.2.2
 
 ### Features
-* Compatibility with Elixir 1.4.0
+* Compatibility with Elixir 1.4
 
 ### Bug fixes
-* Fix deprecated selector in `atom-elixir/styles/atom-elixir.less` [(#56)](https://github.com/msaraiva/atom-elixir/issues/56) and [(#57)](https://github.com/msaraiva/atom-elixir/issues/57) thanks to @jayjun
-* Fix high CPU usage when parsing/expanding code containing recursive macros [(#51)](https://github.com/msaraiva/atom-elixir/issues/56)
-* Fix server busy problem after unexpected exceptions
+* Fix high CPU usage when parsing/expanding code containing recursive macros [(#51)](https://github.com/msaraiva/atom-elixir/issues/51).
+* Fix server busy problem after untreated exceptions are raised.
+* Use a more stricter selector for only elixir files and not editor wide [(#44)](https://github.com/msaraiva/atom-elixir/issues/44). Thanks to @halohalospecial.
+* Fix deprecated selector in `atom-elixir/styles/atom-elixir.less` [(#49)](https://github.com/msaraiva/atom-elixir/issues/49), [(#56)](https://github.com/msaraiva/atom-elixir/issues/56) and [(#57)](https://github.com/msaraiva/atom-elixir/issues/57). Thanks to @jaimevelaz and @jayjun.
+* Point docs link to HexDocs instead of elixir-lang.org. Thanks to @jayjun.
 
 ## v0.2.1
 

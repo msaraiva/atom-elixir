@@ -33,7 +33,7 @@ isFunction = (word) ->
 
 getDocURL = (mod, func, arity) ->
   #TODO: Retrieve from the environment or from the server process
-  elixir_version = '1.2'
+  elixir_version = '1.4'
 
   erl_func_arity = elixir_func_arity = ''
   if func? && arity?
