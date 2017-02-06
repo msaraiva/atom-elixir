@@ -13,7 +13,7 @@ class ElixirAutocompleteProvider
     @subscriptions = new CompositeDisposable
     @subscriptions.add(atom.config.observe('autocomplete-plus.minimumWordLength', (@minimumWordLength) => ))
 
-    @subscriptions.add atom.commands.add 'atom-text-editor',
+    @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)[data-grammar^="source elixir"]',
       # Replacing default autocomplete 'tab' key so that the snippet's tab-stops have precedence
       'atom-elixir:autocomplete-tab': (event) ->
         editor = atom.workspace.getActiveTextEditor()
