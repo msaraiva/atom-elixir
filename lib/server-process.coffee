@@ -71,13 +71,13 @@ class ServerProcess
 
   getSuggestionsForCodeComplete: (hint, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'COMP', "\"#{hint}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'COMP', "\"#{hint}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
   getDefinitionFile: (expr, filePath, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'DEFL', "\"#{expr}\", \"#{filePath}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'DEFL', "\"#{expr}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
@@ -125,7 +125,7 @@ class ServerProcess
 
   getDocumentation: (subject, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'DOCL', "\"#{subject}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'DOCL', "\"#{subject}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
