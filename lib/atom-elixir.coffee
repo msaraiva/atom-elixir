@@ -2,6 +2,14 @@
 spawn = require('child_process').spawn
 
 module.exports = AtomElixir =
+  config:
+    remoteUriHost:
+      type: 'string'
+      default: '127.0.0.1'
+    remoteUriPort:
+      type: 'integer'
+      default: 50501
+
   expandProvider: null
   autocompleteProvider: null
   gotoDefinitionProvider: null

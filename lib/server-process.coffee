@@ -1,4 +1,4 @@
-spawn = require('child_process').spawn
+net   = require('net');
 path  = require 'path'
 {createTempFile} = require './utils'
 fs = require('fs')
@@ -8,26 +8,27 @@ module.exports =
 class ServerProcess
   ready: false
   testing: false
-  proc: null
+  client: null
   env: null
   projectPath: null
 
   constructor: (projectPath) ->
     @projectPath = projectPath
     @command     = "elixir"
-    @args        = [path.join(__dirname, "elixir_sense/run.exs")]
-    @proc        = null
+    @args        = [path.join(__dirname, "elixir_sense/run.exs"), "--listen", "--port 50501"]
+    @client      = null
     @busy        = false
     @lastRequestType = null
     @lastRequestWhenBusy = null
 
   start: (env) ->
     @env = env
-    @proc = @spawnChildProcess(env)
+    @client = @connectToServer(env)
+    console.log(@client)
 
     buffer = ''
 
-    @proc.stdout.on 'data', (chunk) =>
+    @client.on 'data', (chunk) =>
       @ready = true
       if ~chunk.indexOf("END-OF-#{@lastRequestType}")
         [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")
@@ -50,42 +51,33 @@ class ServerProcess
         buffer += chunk.toString()
       return
 
-    @proc.stderr.on 'data', (chunk) =>
-      @ready = true
-      @busy = false
-      message = "[atom-elixir] " + chunk.toString()
-      if ~chunk.indexOf("Server Error")
-        console.warn(message)
-      else
-        console.log(message)
-
-    @proc.on 'close', (exitCode) =>
-      console.log  "[atom-elixir] Child process exited with code " + exitCode
+    @client.on 'close', () =>
+      console.log  "[atom-elixir] Connection to server closed"
       @ready = false
       @busy = false
-      @proc = null
+      @client = null
 
-    @proc.on 'error', (error) =>
+    @client.on 'error', (error) =>
       console.error "[atom-elixir] " + error.toString()
       @ready = false
       @busy = false
-      @proc = null
+      @client = null
 
   stop: ->
-    @proc.stdin.end()
+    @client.close()
     @ready = false
     @busy = false
-    @proc = null
+    @client = null
 
   getSuggestionsForCodeComplete: (hint, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'COMP', "\"#{hint}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'COMP', "\"#{hint}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
   getDefinitionFile: (expr, filePath, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'DEFL', "\"#{expr}\", \"#{filePath}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'DEFL', "\"#{expr}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
@@ -133,7 +125,7 @@ class ServerProcess
 
   getDocumentation: (subject, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
-    @sendRequest 'DOCL', "\"#{subject}\", \"#{tmpBufferFile}\", #{line}", (result) ->
+    @sendRequest 'DOCL', "\"#{subject}\", [ context: Elixir, imports: [], aliases: [] ]", (result) ->
       fs.unlink(tmpBufferFile)
       onResult(result)
 
@@ -156,23 +148,33 @@ class ServerProcess
     if process.platform == 'win32'
       args = args.replace(/\\/g, '/')
     request = "#{type} { #{args} }\n"
-    # console.log('[Server] ' + request)
-    if !@busy
+    console.log('[Server] ' + request)
+    if @client != null && !@busy
       @onResult = onResult
       @busy = true
       @lastRequestType = type
-      @proc.stdin.write(request);
+      @client.write(request)
     else
       console.log('Server busy!')
       @lastRequestWhenBusy = [type, args, onResult]
 
-  spawnChildProcess: (env) ->
-    options =
-      cwd: @projectPath
-      stdio: "pipe"
+  connectToServer: (env) ->
+    if atom.config.get('atom-elixir.remoteUri') == null
+      options =
+        cwd: @projectPath
+        stdio: "pipe"
 
-    if process.platform == 'win32'
-      options.windowsVerbatimArguments = true
-      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(env).join(' ') + '"'], options)
-    else
-      spawn(@command, @args.concat(env), options)
+      console.log("Command is " + @command, @args.concat(env), options)
+
+      if process.platform == 'win32'
+        options.windowsVerbatimArguments = true
+        spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(env).join(' ') + '"'], options)
+      else
+        spawn(@command, @args.concat(env), options)
+
+
+    client = new net.Socket();
+    client.connect(atom.config.get('atom-elixir.remoteUriPort'), atom.config.get('atom-elixir.remoteUriHost'), ->
+      console.log("Connected")
+    )
+    return client
