@@ -131,6 +131,14 @@ class ServerProcess
       fs.unlink(tmpFile)
       onResult(result)
 
+  signatureInfo: (buffer, prefix, line, onResult) ->
+    tmpBufferFile = createTempFile(buffer)
+    tmpFile = createTempFile(prefix)
+    @sendRequest 'EVAL', ":signature_info, \"#{tmpBufferFile}\", \"#{tmpFile}\", #{line}", (result) ->
+      fs.unlink(tmpFile)
+      fs.unlink(tmpBufferFile)
+      onResult(result)
+
   getDocumentation: (subject, buffer, line, onResult) ->
     tmpBufferFile = createTempFile(buffer)
     @sendRequest 'DOCL', "\"#{subject}\", \"#{tmpBufferFile}\", #{line}", (result) ->

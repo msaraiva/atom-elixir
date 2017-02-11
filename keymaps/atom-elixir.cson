@@ -13,6 +13,17 @@
   'f2': 'atom-elixir:show-elixir-docs'
   'ctrl-shift-t': 'atom-elixir:quote-selected-text'
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
+  '(': 'atom-elixir:show-signature'
+  'escape': 'atom-elixir:hide-signature'
+
+'.platform-darwin atom-text-editor:not(mini)[data-grammar^="source elixir"]':
+  'cmd-shift-space': 'atom-elixir:show-signature'
+
+'.platform-windows atom-text-editor:not(mini)[data-grammar^="source elixir"]':
+  'ctrl-shift-space': 'atom-elixir:show-signature'
+
+'.platform-linux atom-text-editor:not(mini)[data-grammar^="source elixir"]':
+  'ctrl-shift-space': 'atom-elixir:show-signature'
 
 'atom-text-editor':
   'alt-up': 'atom-elixir:return-from-definition'

@@ -7,6 +7,7 @@ module.exports = AtomElixir =
   gotoDefinitionProvider: null
   docsProvider: null
   quotedProvider: null
+  signatureProvider: null
 
   activate: (state) ->
     console.log "[atom-elixir] Activating atom-elixir version #{@packageVersion()}"
@@ -16,6 +17,7 @@ module.exports = AtomElixir =
     ElixirDocsProvider = require('./elixir-docs-provider')
     ElixirQuotedProvider = require('./elixir-quoted-provider')
     ElixirGotoDefinitionProvider = require('./elixir-goto-definition-provider')
+    ElixirSignatureProvider = require('./elixir-signature-provider');
 
     @initEnv()
     @expandProvider = new ElixirExpandProvider
@@ -23,6 +25,7 @@ module.exports = AtomElixir =
     @gotoDefinitionProvider = new ElixirGotoDefinitionProvider
     @docsProvider = new ElixirDocsProvider
     @quotedProvider = new ElixirQuotedProvider
+    @signatureProvider = new ElixirSignatureProvider
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
@@ -35,6 +38,31 @@ module.exports = AtomElixir =
     sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:debug', =>
       @server.debug()
+
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-signature', (e) =>
+      editor = atom.workspace.getActiveTextEditor()
+      @signatureProvider.showSignature(editor, editor.getLastCursor())
+      if e.originalEvent.key == '('
+        e.abortKeyBinding()
+
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:hide-signature', (e) =>
+      if (@signatureProvider.show)
+        @signatureProvider.hideSignature()
+      else
+        e.abortKeyBinding()
+
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+      if (editor.getGrammar().scopeName != 'source.elixir')
+        return
+
+      editorChangeCursorPositionSubscription = editor.onDidChangeCursorPosition (e) =>
+        @signatureProvider.queryType(editor, e.cursor)
+
+      editorDestroyedSubscription = editor.onDidDestroy =>
+        editorChangeCursorPositionSubscription.dispose()
+        editorDestroyedSubscription.dispose()
+
+      @subscriptions.add(editorDestroyedSubscription)
 
   deactivate: ->
     console.log "[atom-elixir] Deactivating atom-elixir version #{@packageVersion()}"
@@ -50,6 +78,8 @@ module.exports = AtomElixir =
     @docsProvider = null
     @quotedProvider.dispose()
     @quotedProvider = null
+    @signatureProvider.destroy()
+    @signatureProvider = null
     @server.stop()
     @server = null
     @subscriptions.dispose()
@@ -93,5 +123,6 @@ module.exports = AtomElixir =
       @gotoDefinitionProvider.setServer(@server)
       @docsProvider.setServer(@server)
       @quotedProvider.setServer(@server)
+      @signatureProvider.setServer(@server)
 
     pid.stdin.end()

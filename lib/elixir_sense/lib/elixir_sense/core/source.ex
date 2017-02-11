@@ -11,8 +11,10 @@ defmodule ElixirSense.Core.Source do
         {:ok, _, _, tokens} ->
           tokens |> Enum.reverse
         {:error, {_line, _error_prefix, _token}, _rest, sofar} ->
+          # DEBUG
           # IO.puts :stderr, :elixir_utils.characters_to_binary(error_prefix)
-          # IO.inspect(:stderr, sofar, [])
+          # IO.inspect(:stderr, {:sofar, sofar}, [])
+          # IO.inspect(:stderr, {:rest, rest}, [])
           sofar
       end
 

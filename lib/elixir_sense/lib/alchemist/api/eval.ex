@@ -2,8 +2,6 @@ defmodule Alchemist.API.Eval do
 
   @moduledoc false
 
-  alias ElixirSense.Core.Introspection
-
   def request(args) do
     _no_return =
       args
@@ -34,34 +32,20 @@ defmodule Alchemist.API.Eval do
       {:error, e} ->
         IO.inspect(e)
       expanded_code_map ->
-        format_expand_full(expanded_code_map)
+        print_expand_full(expanded_code_map)
     end
   end
 
   def process({:match, file}) do
-    try do
-      file_content = File.read!("#{file}")
-      {:=, _, [pattern|_]} = file_content |> Code.string_to_quoted!
-      vars = extract_vars(pattern)
+    file_content = File.read!("#{file}")
 
-      bindings = file_content
-      |> Code.eval_string
-      |> Tuple.to_list
-      |> List.last
-
-      if Enum.empty?(vars) do
-        IO.puts "# No bindings"
-      else
-        IO.puts "# Bindings"
-      end
-
-      Enum.each(vars, fn var ->
-        IO.puts ""
-        IO.write "#{var} = "
-        IO.inspect Keyword.get(bindings, var)
-      end)
-    rescue
-      e -> print_match_error(e)
+    case ElixirSense.match(file_content) do
+      :no_match ->
+        IO.puts "# No match"
+      {:error, message} ->
+        IO.puts message
+      bindings ->
+        print_match_bindings(bindings)
     end
   end
 
@@ -78,35 +62,14 @@ defmodule Alchemist.API.Eval do
     expr
   end
 
-  defp extract_vars(ast) do
-    {_ast, acc} = Macro.postwalk(ast, [], &extract_var/2)
-    acc |> Enum.reverse
-  end
-
-  defp extract_var(ast = {var_name, [line: _], nil}, acc) when is_atom(var_name) and var_name != :_ do
-    {ast, [var_name|acc]}
-  end
-
-  defp extract_var(ast, acc) do
-    {ast, acc}
-  end
-
-  defp print_match_error(%{__struct__: type, description: description, line: line}) do
-    IO.puts "# #{Introspection.module_to_string(type)} on line #{line}:\n#  ↳ #{description}"
-  end
-
-  defp print_match_error(%MatchError{}) do
-    IO.puts "# No match"
-  end
-
   defp format_signatures(signatures) do
     for %{name: name, params: params} <- signatures do
-      fun_args_text = params |> Enum.join(",") |> String.replace("\\\\", "\\\\\\\\")
+      fun_args_text = params |> Enum.join(",")
       "#{name};#{fun_args_text}"
     end |> Enum.join("\n")
   end
 
-  defp format_expand_full(expanded_code_map) do
+  defp print_expand_full(expanded_code_map) do
     %{
       expand_once: expand_once,
       expand: expand,
@@ -121,6 +84,19 @@ defmodule Alchemist.API.Eval do
     IO.puts(expand_partial)
     IO.puts("\u000B")
     IO.puts(expand_all)
+  end
+
+  defp print_match_bindings(bindings) do
+    if Enum.empty?(bindings) do
+      IO.puts "# No bindings"
+    else
+      IO.puts "# Bindings"
+    end
+
+    Enum.each(bindings, fn {var, val} ->
+      IO.puts ""
+      IO.puts "#{var} = #{inspect(val)}"
+    end)
   end
 
 end

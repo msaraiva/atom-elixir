@@ -184,3 +184,20 @@ atom-text-editor:not([mini]).keyclick.editor .editor-contents--private {
    */
   cursor: pointer;
 }
+
+elixir-signature-view {
+
+  > div:not(:empty) {
+    padding: 5px 10px;
+    background: fade(@inset-panel-background-color, 95%);
+    border: 1px solid fade(@text-color-highlight, 30%);
+    color: @text-color;
+    border-radius: @component-border-radius;
+  }
+
+  .current-param {
+    font-weight: 500;
+    color: @text-color-highlight;
+    text-decoration: underline;
+  }
+}
