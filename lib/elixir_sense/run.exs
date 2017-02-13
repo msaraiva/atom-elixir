@@ -13,7 +13,9 @@ requires = [
   "elixir_sense/providers/suggestion.ex",
   "elixir_sense/providers/signature.ex",
   "elixir_sense/providers/expand.ex",
+  "elixir_sense/providers/eval.ex",
   "elixir_sense.ex",
+  "elixir_sense/server/tcp_server.ex",
   "alchemist/api/comp.ex",
   "alchemist/api/defl.ex",
   "alchemist/api/docl.ex",
@@ -24,5 +26,7 @@ requires = [
 requires |> Enum.each(fn file ->
   Code.require_file("lib/#{file}", __DIR__)
 end)
+
+ElixirSense.Server.TCPServer.start(host: "localhost", port: 0)
 
 Alchemist.Server.start([System.argv])

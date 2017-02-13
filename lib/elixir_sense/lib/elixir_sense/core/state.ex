@@ -58,8 +58,14 @@ defmodule ElixirSense.Core.State do
     end |> Atom.to_string
   end
 
-  def add_mod_fun_to_line(state, {module, fun, arity}, line) do
-    %{state | mods_funs_to_lines: Map.put(state.mods_funs_to_lines, {module, fun, arity}, line)}
+  def add_mod_fun_to_line(state, {module, fun, arity}, line, params) do
+    current_info = Map.get(state.mods_funs_to_lines, {module, fun, arity}, %{})
+    current_params = current_info |> Map.get(:params, [])
+    current_lines = current_info |> Map.get(:lines, [])
+    new_params = [params|current_params]
+    new_lines = [line|current_lines]
+
+    %{state | mods_funs_to_lines: Map.put(state.mods_funs_to_lines, {module, fun, arity}, %{lines: new_lines, params: new_params})}
   end
 
   def new_namespace(state, module) do
@@ -85,18 +91,14 @@ defmodule ElixirSense.Core.State do
 
   def add_current_module_to_index(state, line) do
     current_module = state.namespace |> :lists.reverse |> Module.concat
-    add_mod_fun_to_line(state, {current_module, nil, nil}, line)
+    add_mod_fun_to_line(state, {current_module, nil, nil}, line, nil)
   end
 
-  def add_func_to_index(state, func, arity, line) do
+  def add_func_to_index(state, func, params, line) do
     current_module = state.namespace |> :lists.reverse |> Module.concat
-    new_state = state |> add_mod_fun_to_line({current_module, func, arity}, line)
-
-    if Map.has_key?(state.mods_funs_to_lines, {current_module, func, nil}) do
-      new_state
-    else
-      new_state |> add_mod_fun_to_line({current_module, func, nil}, line)
-    end
+    state
+    |> add_mod_fun_to_line({current_module, func, length(params)}, line, params)
+    |> add_mod_fun_to_line({current_module, func, nil}, line, params)
   end
 
   def new_alias_scope(state) do

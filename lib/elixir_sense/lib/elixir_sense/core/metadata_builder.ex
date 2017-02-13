@@ -51,7 +51,7 @@ defmodule ElixirSense.Core.MetadataBuilder do
     state
     |> new_named_func(name, length(params || []))
     |> add_current_env_to_line(line)
-    |> add_func_to_index(name, length(params || []), line)
+    |> add_func_to_index(name, params || [], line)
     |> new_alias_scope
     |> new_import_scope
     |> new_require_scope

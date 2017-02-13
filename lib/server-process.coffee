@@ -12,7 +12,7 @@ class ServerProcess
   env: null
   projectPath: null
 
-  constructor: (projectPath) ->
+  constructor: (projectPath, onTcpServerReady) ->
     @projectPath = projectPath
     @command     = "elixir"
     @args        = [path.join(__dirname, "elixir_sense/run.exs")]
@@ -20,6 +20,7 @@ class ServerProcess
     @busy        = false
     @lastRequestType = null
     @lastRequestWhenBusy = null
+    @onTcpServerReady = onTcpServerReady
 
   start: (env) ->
     @env = env
@@ -28,6 +29,13 @@ class ServerProcess
     buffer = ''
 
     @proc.stdout.on 'data', (chunk) =>
+      if @onTcpServerReady
+        if ~chunk.indexOf("ok|localhost:")
+          [_, port] = chunk.toString().split(":")
+        @onTcpServerReady(port)
+        @onTcpServerReady = null
+        return
+
       @ready = true
       if ~chunk.indexOf("END-OF-#{@lastRequestType}")
         [before, after] = chunk.toString().split("END-OF-#{@lastRequestType}")

@@ -6,7 +6,6 @@ class ElixirSignatureProvider
   view: null
   overlayDecoration: null
   marker: null
-  server: null
   lastResult: null
   timeout: null
   show: false
@@ -53,29 +52,27 @@ class ElixirSignatureProvider
     paramPosition = 0
 
     bufferPosition = editor.getCursorBufferPosition()
-    # textBeforeCursor = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
     textBeforeCursor = editor.getTextInRange([[0, 0], bufferPosition])
     line = bufferPosition.row + 1
     @timeout = setTimeout =>
-      @server.signatureInfo buffer.getText(), textBeforeCursor, line, (result) =>
+      if !@client
+        @show = false
+        console.log("ElixirSense client not ready")
+        return
+
+      @client.write {request: "signature", payload: {buffer: buffer.getText(), textBeforeCursor: textBeforeCursor, line: line}}, (result) =>
         @destroyOverlay()
         if result == 'none'
           @show = false
           return
 
-        [paramPosition, signatures...] = result.trim().split("\n")
-
-        signatures = signatures.map (sig) ->
-          [func_name, params_str] = sig.split(';')
-          params = params_str.split(',')
-          {name: func_name, params: params}
-
-        signatures = signatures.filter (sig) ->
+        paramPosition = result.active_param
+        signatures = result.signatures.filter (sig) ->
           sig.params.length > paramPosition
 
         signatures = signatures.map (sig, i) ->
           params = sig.params.map (param, i) ->
-            if "#{i}" == paramPosition
+            if i == paramPosition
               "<span class=\"current-param\">#{param}</span>"
             else
               param
@@ -91,8 +88,8 @@ class ElixirSignatureProvider
     @view?.destroy()
     @view = null
 
-  setServer: (server) ->
-    @server = server
+  setClient: (client) ->
+    @client = client
 
   showSignature: (editor, cursor)->
     @show = true

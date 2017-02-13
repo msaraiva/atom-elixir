@@ -1,5 +1,6 @@
 {TextEditor, CompositeDisposable} = require 'atom'
 spawn = require('child_process').spawn
+ElixirSenseClient = require './elixir-sense-client'
 
 module.exports = AtomElixir =
   expandProvider: null
@@ -115,7 +116,10 @@ module.exports = AtomElixir =
       for line in out.split('\n')
         match = line.match(/^(\S+?)=(.+)/)
         process.env[match[1]] = match[2] if match
-      @server = new ServerProcess(atom.project.getPaths()[0])
+      @server = new ServerProcess atom.project.getPaths()[0], (port) =>
+        @elixirSenseClient = new ElixirSenseClient(port)
+        @signatureProvider.setClient(@elixirSenseClient)
+
       editor = atom.workspace.getActiveTextEditor()
       @server.start(@getEditorEnv(editor))
       @expandProvider.setServer(@server)
@@ -123,6 +127,5 @@ module.exports = AtomElixir =
       @gotoDefinitionProvider.setServer(@server)
       @docsProvider.setServer(@server)
       @quotedProvider.setServer(@server)
-      @signatureProvider.setServer(@server)
 
     pid.stdin.end()
