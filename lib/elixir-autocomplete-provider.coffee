@@ -5,7 +5,6 @@ module.exports =
 class ElixirAutocompleteProvider
   selector: ".source.elixir"
   # disableForSelector: '.source.elixir .comment'
-  server: null
   inclusionPriority: 1
   excludeLowerPriority: true
 
@@ -36,13 +35,6 @@ class ElixirAutocompleteProvider
   dispose: ->
     @subscriptions.dispose()
 
-  setServer: (server) ->
-    @server = server
-
-    # This is a hack until descriptionHTML is suported. See:
-    # https://github.com/atom/autocomplete-plus/issues/423
-    replaceUpdateDescription()
-
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix, activatedManually}) ->
     scopeChain = scopeDescriptor.getScopeChain()
     editorElement = atom.views.getView(editor)
@@ -70,11 +62,14 @@ class ElixirAutocompleteProvider
       line       = editor.getCursorBufferPosition().row + 1
       bufferText = editor.buffer.getText()
 
-      @server.getSuggestionsForCodeComplete prefix, bufferText, line, (result) ->
-        suggestions = result.split('\n')
+      if !@client
+        console.log("ElixirSense client not ready")
+        resolve([])
+        return
 
-        [hint, _type] = suggestions[0].split(';')
-        suggestions = suggestions[1...]
+      @client.write {request: "suggestions", payload: {prefix: prefix, buffer: bufferText, line: line}}, (result) =>
+        hint = result[0].value
+        suggestions = result[1...]
         modulesToAdd = []
         isPrefixFunctionCall = !!(prefix.match(/\.[^A-Z][^\.]*$/) || prefix.match(/^[^A-Z:][^\.]*$/))
 
@@ -87,11 +82,10 @@ class ElixirAutocompleteProvider
             lastModuleHint = hintModules[hintModules.length-1]
 
         suggestions = suggestions.map (serverSuggestion, index) ->
-          fields = serverSuggestion.replace(/;/g, '\u000B').replace(/\\\u000B/g, ';').split('\u000B')
-          name = fields[0]
+          name = serverSuggestion.name
           if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modulesToAdd.length > 0
-            fields[0] = modulesToAdd.join('.') + '.' + name
-          createSuggestion(serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore)
+            serverSuggestion.name = modulesToAdd.join('.') + '.' + name
+          createSuggestion(serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore)
 
         suggestions = suggestions.filter (item) -> item? && item != ''
         suggestions = sortSuggestions(suggestions)
@@ -101,33 +95,31 @@ class ElixirAutocompleteProvider
     regex = /[\w0-9\._!\?\:@]+$/
     textBeforeCursor.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, index, fields, prefix, pipeBefore, captureBefore, defBefore) ->
-    if fields[1] == 'module'
-      [name, kind, subtype, desc] = fields
-    else if fields[1] == 'return'
-      [name, kind, spec, snippet] = fields
+  createSuggestion = (serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore) ->
+    if serverSuggestion.type == 'module'
+      [name, kind, subtype, desc] = [serverSuggestion.name, serverSuggestion.type, serverSuggestion.subtype, serverSuggestion.summary]
+    else if serverSuggestion.type == 'return'
+      [name, kind, spec, snippet] = [serverSuggestion.name, serverSuggestion.type, serverSuggestion.spec, serverSuggestion.snippet]
     else
-      [name, kind, signature, mod, desc, spec] = fields
+      [name, kind, signature, mod, desc, spec] = [serverSuggestion.name, serverSuggestion.type, serverSuggestion.args, serverSuggestion.origin, serverSuggestion.summary, serverSuggestion.spec]
 
     return "" if defBefore and kind != 'callback'
-
-    return "" if serverSuggestion.match(/^[\s\d]/)
 
     suggestion =
       if kind == 'attribute'
         createSuggestionForAttribute(name, prefix)
-      else if kind == 'var'
+      else if kind == 'variable'
         createSuggestionForVariable(name)
       else if kind == 'module'
         createSuggestionForModule(serverSuggestion, name, desc, prefix, subtype)
       else if kind == 'callback'
-        createSuggestionForCallback(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, defBefore)
+        createSuggestionForCallback(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, mod, desc, spec, prefix, defBefore)
       else if kind == 'return'
         createSuggestionForReturn(serverSuggestion, name, kind, spec, snippet)
-      else if kind in ['private_function', 'public_function', 'public_macro']
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
-      else if kind in ['function', 'macro']
-        createSuggestionForFunction(serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
+      else if ['private_function', 'public_function', 'public_macro'].indexOf(kind) > -1
+        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
+      else if ['function', 'macro'].indexOf(kind) > -1
+        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
       else
         console.log("Unknown kind: #{serverSuggestion}")
         {
@@ -170,8 +162,8 @@ class ElixirAutocompleteProvider
     params = []
     displayText = ''
     snippet = func
-    description = desc.replace(/\\n/g, "\n")
-    spec = spec.replace(/\\n/g, "\n")
+    description = desc
+    spec = spec
 
     if signature
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
@@ -222,8 +214,8 @@ class ElixirAutocompleteProvider
     params = []
     displayText = ''
     snippet = func
-    description = desc.replace(/\\n/g, "\n")
-    spec = spec.replace(/\\n/g, "\n")
+    description = desc
+    spec = spec
 
     if signature
       params = args.map (arg, i) -> "${#{i+1}:#{arg.replace(/\s+\\.*$/, '')}}"
@@ -275,12 +267,9 @@ class ElixirAutocompleteProvider
     }
 
   createSuggestionForModule = (serverSuggestion, name, desc, prefix, subtype) ->
-    return "" if serverSuggestion.match(/^[\s\d]/)
-
     snippet = name.replace(/^:/, '')
     name = ':' + name if name.match(/^[^A-Z:]/)
     description = desc || "No documentation available."
-    description = description.replace(/\\n/g, "\n")
 
     iconHTML =
       switch subtype
@@ -414,3 +403,9 @@ class ElixirAutocompleteProvider
       module = moduleParts[0]
       funcName = func
     [module, funcName]
+
+  setClient: (client) ->
+    @client = client
+    # This is a hack until descriptionHTML is suported. See:
+    # https://github.com/atom/autocomplete-plus/issues/423
+    replaceUpdateDescription()

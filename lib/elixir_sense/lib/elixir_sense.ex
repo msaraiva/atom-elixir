@@ -144,9 +144,10 @@ defmodule ElixirSense do
     %State.Env{
       imports: imports,
       aliases: aliases,
+      module: module,
     } = Metadata.get_env(buffer_file_metadata, line)
 
-    Signature.find(prefix, imports, aliases)
+    Signature.find(prefix, imports, aliases, module, buffer_file_metadata)
   end
 
   @doc """

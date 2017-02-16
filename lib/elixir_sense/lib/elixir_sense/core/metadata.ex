@@ -1,6 +1,7 @@
 defmodule ElixirSense.Core.Metadata do
 
   alias ElixirSense.Core.State
+  alias ElixirSense.Core.Introspection
 
   defstruct source: nil,
             mods_funs_to_lines: %{},
@@ -23,7 +24,7 @@ defmodule ElixirSense.Core.Metadata do
 
   def get_function_info(%__MODULE__{} = metadata, module, function) do
     case Map.get(metadata.mods_funs_to_lines, {module, function, nil}) do
-      nil -> get_function_line_using_docs(module, function)
+      nil -> %{lines: [], params: []}
       info -> info
     end
   end
@@ -36,6 +37,17 @@ defmodule ElixirSense.Core.Metadata do
 
     Enum.map(params, fn param ->
       Macro.to_string(param) |> String.slice(1..-2)
+    end)
+  end
+
+  def get_function_signatures(%__MODULE__{} = metadata, module, function) do
+    params_list =
+      get_function_info(metadata, module, function)
+      |> Map.get(:params)
+      |> Enum.reverse
+
+    Enum.map(params_list, fn params ->
+      %{name: Atom.to_string(function), params: Enum.with_index(params) |> Enum.map(&Introspection.param_to_var/1)}
     end)
   end
 

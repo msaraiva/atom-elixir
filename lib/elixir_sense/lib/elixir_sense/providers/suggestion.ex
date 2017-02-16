@@ -150,7 +150,6 @@ defmodule ElixirSense.Providers.Suggestion do
         desc = Introspection.extract_summary_from_docs(doc)
         [_, args_str] = Regex.run(~r/.\((.*)\)/, signature)
         args = args_str |> String.replace(~r/\s/, "")
-        spec = spec |> String.replace(~r/\n/, "\\\\n")
         %{type: :callback, name: name, arity: arity, args: args, origin: mod_name, summary: desc, spec: spec}
       end
     end) |> Enum.sort

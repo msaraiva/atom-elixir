@@ -119,11 +119,10 @@ module.exports = AtomElixir =
       @server = new ServerProcess atom.project.getPaths()[0], (port) =>
         @elixirSenseClient = new ElixirSenseClient(port)
         @signatureProvider.setClient(@elixirSenseClient)
-
+        @autocompleteProvider.setClient(@elixirSenseClient)
       editor = atom.workspace.getActiveTextEditor()
       @server.start(@getEditorEnv(editor))
       @expandProvider.setServer(@server)
-      @autocompleteProvider.setServer(@server)
       @gotoDefinitionProvider.setServer(@server)
       @docsProvider.setServer(@server)
       @quotedProvider.setServer(@server)

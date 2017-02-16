@@ -37,7 +37,7 @@ defmodule ElixirSense.Core.Introspection do
     docs = Code.get_docs(mod, :docs)
     funcs_str =
       for {{f, arity}, _, _, args, text} <- docs, f == fun do
-        fun_args_text = Enum.map_join(args, ", ", &print_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
+        fun_args_text = Enum.map_join(args, ", ", &format_doc_arg(&1)) |> String.replace("\\\\", "\\\\\\\\")
         mod_str = module_to_string(mod)
         fun_str = Atom.to_string(fun)
         "> #{mod_str}.#{fun_str}(#{fun_args_text})\n\n#{get_spec_text(mod, fun, arity)}#{text}"
@@ -49,7 +49,7 @@ defmodule ElixirSense.Core.Introspection do
   def get_signatures(mod, fun) do
     docs = Code.get_docs(mod, :docs) || []
     for {{f, _arity}, _, _, args, _text} <- docs, f == fun do
-      fun_args = Enum.map(args, &print_doc_arg(&1))
+      fun_args = Enum.map(args, &format_doc_arg(&1))
       fun_str = Atom.to_string(fun)
       %{name: fun_str, params: fun_args}
     end
@@ -121,8 +121,6 @@ defmodule ElixirSense.Core.Introspection do
     doc
     |> String.split("\n\n")
     |> Enum.at(0)
-    |> String.replace(~r/\n/, "\\\\n")
-    |> String.replace(";", "\\;")
   end
 
   defp format_type({:opaque, type}) do
@@ -310,19 +308,35 @@ defmodule ElixirSense.Core.Introspection do
     {"${#{index}:#{spec_ast_to_string(ast)}}$", index+1}
   end
 
+  def param_to_var({{:=, _, [_lhs, {name, _, _} = rhs]}, arg_index}) when is_atom(name) do
+    to_var(rhs, arg_index + 1) |> Macro.to_string
+  end
+
+  def param_to_var({{:=, _, [{name, _, _} = lhs, _rhs]}, arg_index}) when is_atom(name) do
+    to_var(lhs, arg_index + 1) |> Macro.to_string
+  end
+
+  def param_to_var({{:\\, _, _} = ast, _}) do
+    ast |> Macro.to_string
+  end
+
+  def param_to_var({ast, arg_index}) do
+    to_var(ast, arg_index + 1) |> Macro.to_string
+  end
+
+  defp to_var({:{}, _, _}, _),
+    do: {:tuple, [], nil}
+  defp to_var({_, _}, _),
+    do: {:tuple, [], nil}
   defp to_var({name, meta, _}, _) when is_atom(name),
     do: {name, meta, nil}
   defp to_var({:<<>>, _, _}, _),
     do: {:binary, [], nil}
   defp to_var({:%{}, _, _}, _),
     do: {:map, [], nil}
-  defp to_var({:{}, _, _}, _),
-    do: {:tuple, [], nil}
-  defp to_var({_, _}, _),
-    do: {:tuple, [], nil}
   defp to_var(integer, _) when is_integer(integer),
     do: {:integer, [], nil}
-  defp to_var(float, _) when is_integer(float),
+  defp to_var(float, _) when is_float(float),
     do: {:float, [], nil}
   defp to_var(list, _) when is_list(list),
     do: {:list, [], nil}
@@ -349,7 +363,7 @@ defmodule ElixirSense.Core.Introspection do
   end
 
   def extract_fun_args_and_desc({ { _fun, _ }, _line, _kind, args, doc }) do
-    args = Enum.map_join(args, ",", &print_doc_arg(&1)) |> String.replace(~r/\s+/, " ")
+    args = Enum.map_join(args, ",", &format_doc_arg(&1)) |> String.replace(~r/\s+/, " ")
     desc = extract_summary_from_docs(doc)
     {args, desc}
   end
@@ -418,11 +432,11 @@ defmodule ElixirSense.Core.Introspection do
     Kernel.Typespec.spec_to_ast(name, spec)
   end
 
-  defp print_doc_arg({ :\\, _, [left, right] }) do
-    print_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
+  defp format_doc_arg({ :\\, _, [left, right] }) do
+    format_doc_arg(left) <> " \\\\ " <> Macro.to_string(right)
   end
 
-  defp print_doc_arg({ var, _, _ }) do
+  defp format_doc_arg({ var, _, _ }) do
     Atom.to_string(var)
   end
 

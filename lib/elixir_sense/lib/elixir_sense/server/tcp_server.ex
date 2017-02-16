@@ -58,12 +58,17 @@ defmodule ElixirSense.Server.TCPServer do
 
   def process_request(data) do
     %{ "request" => request, "payload" => payload } = :erlang.binary_to_term(data)
-    dispatch_request(request, payload)
+    request
+    |> dispatch_request(payload)
     |> :erlang.term_to_binary
   end
 
   defp dispatch_request("signature", %{"buffer" => buffer, "textBeforeCursor" => textBeforeCursor, "line" => line}) do
     ElixirSense.signature(textBeforeCursor, buffer, line)
+  end
+
+  defp dispatch_request("suggestions", %{"prefix" => prefix, "buffer" => buffer, "line" => line}) do
+    ElixirSense.suggestions(prefix, buffer, line)
   end
 
   defp send_response(data, socket) do
