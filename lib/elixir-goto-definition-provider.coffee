@@ -41,8 +41,8 @@ class ElixirGotoDefinitionProvider
   dispose: ->
     @subscriptions.dispose()
 
-  setServer: (server) ->
-    @server = server
+  setClient: (client) ->
+    @client = client
 
   keyClickHandler: (editor, subject, position) =>
     @gotoDefinition(editor, subject, position)
@@ -54,18 +54,16 @@ class ElixirGotoDefinitionProvider
     @gotoStack.push([editor.getPath(), position])
 
     [mod, fun] = splitModuleAndFunc(subject)
-    expr = "#{mod || 'nil'},#{fun || 'nil'}"
 
-    @server.getDefinitionFile expr, filePath, bufferText, line, (file) ->
+    if !@client
+      console.log("ElixirSense client not ready")
+      return
 
+    @client.write {request: "definition", payload: {buffer: bufferText, module: mod, function: fun, line: line}}, (file) =>
       switch file
         when 'non_existing'
           # atom.notifications.addInfo("Can't find <b>#{subject}</b>");
           console.log "Can't find \"#{subject}\""
-          return
-        when 'preloaded'
-          # atom.notifications.addInfo("Module <b>#{subject}</b> is preloaded");
-          console.log "Module \"#{subject}\" is preloaded"
           return
         when ''
           return
