@@ -5,7 +5,7 @@ defmodule Alchemist.Server do
   @minimal_reload_time 2000
 
   @moduledoc false
-  
+
   # The Alchemist-Server operates as an informant for a specific desired
   # Elixir Mix project and serves with informations as the following:
   #

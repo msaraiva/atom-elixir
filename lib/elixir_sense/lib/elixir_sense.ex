@@ -18,6 +18,18 @@ defmodule ElixirSense do
   alias ElixirSense.Providers.Expand
   alias ElixirSense.Providers.Eval
 
+  def start(host: host, port: port, env: env) do
+    import Supervisor.Spec
+
+    children = [
+      supervisor(ElixirSense.Server.TCPServer, [[host: host, port: port]]),
+      worker(ContextLoader, [env])
+    ]
+
+    opts = [strategy: :one_for_one, name: __MODULE__]
+    Supervisor.start_link(children, opts)
+  end
+
   @doc ~S"""
   Returns all documentation related a module or function, including types and callback information.
 

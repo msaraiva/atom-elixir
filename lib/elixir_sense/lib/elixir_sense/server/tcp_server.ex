@@ -1,17 +1,16 @@
 defmodule ElixirSense.Server.TCPServer do
 
-  @tcp_server_supervisor ElixirSense.Server.TCPServer.Supervisor
-  @request_handler_supervisor ElixirSense.Server.TCPServer.RequestHandlerSupervisor
+  @connection_handler_supervisor ElixirSense.Server.TCPServer.ConnectionHandlerSupervisor
 
-  def start([host: host, port: port]) do
+  def start_link([host: host, port: port]) do
     import Supervisor.Spec
 
     children = [
-      supervisor(Task.Supervisor, [[name: @request_handler_supervisor]]),
+      supervisor(Task.Supervisor, [[name: @connection_handler_supervisor]]),
       worker(Task, [__MODULE__, :listen, [host, port]])
     ]
 
-    opts = [strategy: :one_for_one, name: @tcp_server_supervisor]
+    opts = [strategy: :one_for_one, name: __MODULE__]
     Supervisor.start_link(children, opts)
   end
 
@@ -19,28 +18,28 @@ defmodule ElixirSense.Server.TCPServer do
     {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
     {:ok, port} = :inet.port(socket)
     IO.puts "ok|#{host}:#{port}"
-    accept_loop(socket)
+    accept(socket)
   end
 
-  defp accept_loop(socket) do
+  defp accept(socket) do
     {:ok, client_socket} = :gen_tcp.accept(socket)
-    {:ok, pid} = start_request_handler(client_socket)
+    {:ok, pid} = start_connection_handler(client_socket)
     :ok = :gen_tcp.controlling_process(client_socket, pid)
-    accept_loop(socket)
+    accept(socket)
   end
 
-  defp start_request_handler(client_socket) do
-    Task.Supervisor.start_child(@request_handler_supervisor, fn ->
-      request_handler(client_socket)
+  defp start_connection_handler(client_socket) do
+    Task.Supervisor.start_child(@connection_handler_supervisor, fn ->
+      connection_handler(client_socket)
     end)
   end
 
-  defp request_handler(socket, rest \\ <<>>) do
+  defp connection_handler(socket, rest \\ <<>>) do
     case :gen_tcp.recv(socket, 0) do
       {:error, :closed} ->
         IO.puts :stderr, "Client socket is closed"
       {:ok, data} ->
-        request_handler(socket, match_packet(rest <> data, socket))
+        connection_handler(socket, match_packet(rest <> data, socket))
     end
   end
 
@@ -57,18 +56,21 @@ defmodule ElixirSense.Server.TCPServer do
   end
 
   def process_request(data) do
-    %{ "request" => request, "payload" => payload } = :erlang.binary_to_term(data)
-    request
-    |> dispatch_request(payload)
-    |> :erlang.term_to_binary
+    try do
+      %{ "request" => request, "payload" => payload } = :erlang.binary_to_term(data)
+      request
+      |> dispatch_request(payload)
+      |> :erlang.term_to_binary
+    rescue
+      e ->
+        IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
+        :erlang.term_to_binary(nil)
+    end
   end
 
-  defp dispatch_request("signature", %{"buffer" => buffer, "textBeforeCursor" => textBeforeCursor, "line" => line}) do
-    ElixirSense.signature(textBeforeCursor, buffer, line)
-  end
-
-  defp dispatch_request("suggestions", %{"prefix" => prefix, "buffer" => buffer, "line" => line}) do
-    ElixirSense.suggestions(prefix, buffer, line)
+  defp dispatch_request(type, payload) do
+    ContextLoader.reload
+    RequestHandler.handle_request(type, payload)
   end
 
   defp send_response(data, socket) do
