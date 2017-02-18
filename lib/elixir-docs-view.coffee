@@ -106,7 +106,9 @@ class ElixirDocsView extends ScrollView
 
   setSource: (source) ->
     @source = source
-    [@docs, @types, @callbacks] = @source.split('\u000B')
+    @docs = @source.docs
+    @types = @source.types
+    @callbacks = @source.callbacks
 
     if @types
       @types = "> Types\n\n____\n\n#{@types}"

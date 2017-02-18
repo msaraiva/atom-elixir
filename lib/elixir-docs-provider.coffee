@@ -16,7 +16,6 @@ atom.deserializers.add
 
 module.exports =
 class ElixirDocsProvider
-  server: null
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -40,8 +39,8 @@ class ElixirDocsProvider
   dispose: ->
     @subscriptions.dispose()
 
-  setServer: (server) ->
-    @server = server
+  setClient: (client) ->
+    @client = client
 
   showElixirDocs: ->
     editor = atom.workspace.getActiveTextEditor()
@@ -62,8 +61,9 @@ class ElixirDocsProvider
     line       = editor.getCursorBufferPosition().row + 1
     bufferText = editor.buffer.getText()
 
-    @server.getDocumentation word, bufferText, line, (result) =>
+    @client.write {request: "docs", payload: {buffer: bufferText, subject: word, line: line}}, (result) =>
       return if result == ""
+
       uri = @uriForElement(word)
 
       options = {searchAllPanes: true, split: 'right'}

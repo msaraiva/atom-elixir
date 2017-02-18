@@ -121,11 +121,11 @@ module.exports = AtomElixir =
         @signatureProvider.setClient(@elixirSenseClient)
         @autocompleteProvider.setClient(@elixirSenseClient)
         @gotoDefinitionProvider.setClient(@elixirSenseClient)
+        @docsProvider.setClient(@elixirSenseClient)
 
       editor = atom.workspace.getActiveTextEditor()
       @server.start(@getEditorEnv(editor))
       @expandProvider.setServer(@server)
-      @docsProvider.setServer(@server)
       @quotedProvider.setServer(@server)
 
     pid.stdin.end()
