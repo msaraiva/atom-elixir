@@ -16,6 +16,14 @@ defmodule RequestHandler do
     ElixirSense.expand_full(buffer, selected_code, line)
   end
 
+  def handle_request("quote", %{"code" => code}) do
+    ElixirSense.quote(code)
+  end
+
+  def handle_request("match", %{"code" => code}) do
+    ElixirSense.match(code)
+  end
+
   def handle_request("definition", %{"buffer" => buffer, "module" => module, "function" => function, "line" => line}) do
     {mod, _} = Code.eval_string(module)
     fun = function && String.to_atom(function)

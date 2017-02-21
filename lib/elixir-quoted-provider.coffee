@@ -15,7 +15,6 @@ atom.deserializers.add
 
 module.exports =
 class ElixirQuotedProvider
-  server: null
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -42,15 +41,15 @@ class ElixirQuotedProvider
   dispose: ->
     @subscriptions.dispose()
 
-  setServer: (server) ->
-    @server = server
+  setClient: (client) ->
+    @client = client
 
   getQuotedCode: (code, onResult) =>
     if code.trim() == ""
       onResult("")
       return
 
-    @server.getQuotedCode code, (result) =>
+    @client.write {request: "quote", payload: {code: code}}, (result) =>
       onResult(result)
 
   getMatches: (pattern, quotedCode, onResult) =>
@@ -59,7 +58,7 @@ class ElixirQuotedProvider
       return
 
     code = "(#{pattern}) = (#{quotedCode})"
-    @server.match code, (result) =>
+    @client.write {request: "match", payload: {code: code}}, (result) =>
       onResult(result)
 
   showQuotedCodeView: (code) ->

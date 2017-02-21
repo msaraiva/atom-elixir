@@ -9,6 +9,14 @@ defmodule ElixirSense.Providers.Eval do
   @type binding :: {name :: String.t, value :: String.t}
   @type bindings :: [binding] | :no_match | {:error, message :: String.t}
 
+  def quote(code) do
+    code
+    |> Code.string_to_quoted
+    |> Tuple.to_list
+    |> List.last
+    |> inspect
+  end
+
   @doc """
   Evaluate a pattern matching expression and returns its bindings, if any.
   """

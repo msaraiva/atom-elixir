@@ -251,6 +251,11 @@ defmodule ElixirSense do
     Expand.expand_full(code, requires, imports, module)
   end
 
+  @spec match(String.t) :: String.t
+  def quote(code) do
+    Eval.quote(code)
+  end
+
   @doc ~S"""
   Evaluate a pattern matching expression and returns its bindings, if any.
 
@@ -264,7 +269,29 @@ defmodule ElixirSense do
   """
   @spec match(String.t) :: Eval.bindings
   def match(code) do
-    Eval.match(code)
+    case Eval.match(code) do
+      :no_match ->
+        "# No match"
+      {:error, message} ->
+        message
+      bindings ->
+        bindings_to_string(bindings)
+    end
+  end
+
+  defp bindings_to_string(bindings) do
+    header =
+      if Enum.empty?(bindings) do
+        "# No bindings"
+      else
+        "# Bindings"
+      end
+
+    body =
+      Enum.map_join(bindings, "\n\n", fn {var, val} ->
+        "#{var} = #{inspect(val)}"
+      end)
+    header <> "\n\n" <> body
   end
 
 end
