@@ -37,8 +37,14 @@ module.exports = AtomElixir =
           @server.setEnv(@getEditorEnv(item), projectPath)
 
     sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:debug', =>
-      @server.debug()
+
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-start', =>
+      @elixirSenseClient.write {request: "observer", payload: {action: "start"}}, (result) =>
+        console.log("Observer response: " + result)
+
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-stop', =>
+      @elixirSenseClient.write {request: "observer", payload: {action: "stop"}}, (result) =>
+        console.log("Observer response: " + result)
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-signature', (e) =>
       editor = atom.workspace.getActiveTextEditor()
@@ -122,10 +128,10 @@ module.exports = AtomElixir =
         @autocompleteProvider.setClient(@elixirSenseClient)
         @gotoDefinitionProvider.setClient(@elixirSenseClient)
         @docsProvider.setClient(@elixirSenseClient)
+        @expandProvider.setClient(@elixirSenseClient)
 
       editor = atom.workspace.getActiveTextEditor()
       @server.start(@getEditorEnv(editor))
-      @expandProvider.setServer(@server)
       @quotedProvider.setServer(@server)
 
     pid.stdin.end()

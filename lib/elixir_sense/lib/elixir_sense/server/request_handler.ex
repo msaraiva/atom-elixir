@@ -4,12 +4,16 @@ defmodule RequestHandler do
     ElixirSense.signature(buffer, line, column)
   end
 
-  def handle_request("suggestions", %{"prefix" => prefix, "buffer" => buffer, "line" => line}) do
+  def handle_request("suggestions", %{"buffer" => buffer, "prefix" => prefix, "line" => line}) do
     ElixirSense.suggestions(prefix, buffer, line)
   end
 
   def handle_request("docs", %{"buffer" => buffer, "subject" => subject, "line" => line}) do
     ElixirSense.docs(subject, buffer, line)
+  end
+
+  def handle_request("expand_full", %{"buffer" => buffer, "selected_code" => selected_code, "line" => line}) do
+    ElixirSense.expand_full(buffer, selected_code, line)
   end
 
   def handle_request("definition", %{"buffer" => buffer, "module" => module, "function" => function, "line" => line}) do
@@ -21,6 +25,14 @@ defmodule RequestHandler do
       {file, nil}  -> "#{file}:0"
       {file, line} -> "#{file}:#{line}"
     end
+  end
+
+  def handle_request("observer", %{"action" => "start"}) do
+    :observer.start()
+  end
+
+  def handle_request("observer", %{"action" => "stop"}) do
+    :observer.stop()
   end
 
   def handle_request(request, paylod) do

@@ -27,7 +27,8 @@
 
 'atom-text-editor':
   'alt-up': 'atom-elixir:return-from-definition'
-  'ctrl-alt-cmd-i': 'atom-elixir:debug'
+  'ctrl-alt-cmd-i': 'atom-elixir:observer-start'
+  'ctrl-alt-cmd-u': 'atom-elixir:observer-stop'
 
 '.platform-darwin atom-text-editor:not(mini)':
   'alt-up': 'atom-elixir:return-from-definition'

@@ -15,7 +15,6 @@ atom.deserializers.add
 
 module.exports =
 class ElixirExpandProvider
-  server: null
 
   constructor: ->
     @subscriptions = new CompositeDisposable
@@ -44,15 +43,20 @@ class ElixirExpandProvider
   dispose: ->
     @subscriptions.dispose()
 
-  setServer: (server) ->
-    @server = server
+  setClient: (client) ->
+    @client = client
 
   getExpandFull: (buffer, selectedCode, line, onResult) =>
+
+    if !@client
+      console.log("ElixirSense client not ready")
+      return
+
     if selectedCode.trim() == ""
       onResult("")
       return
 
-    @server.expandFull buffer, selectedCode, line, (result) =>
+    @client.write {request: "expand_full", payload: {buffer: buffer, selected_code: selectedCode, line: line}}, (result) =>
       onResult(result)
 
   showExpandCodeView: (buffer, code, line) ->

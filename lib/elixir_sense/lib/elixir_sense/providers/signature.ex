@@ -29,8 +29,6 @@ defmodule ElixirSense.Providers.Signature do
   def find(prefix, imports, aliases, module, metadata) do
     case Source.which_func(prefix) do
       %{candidate: {mod, func}, npar: npar, pipe_before: pipe_before} ->
-        # pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
-        # Introspection.module_to_string(mod) <> "."
         %{active_param: npar, pipe_before: pipe_before, signatures: find_signatures(mod, func, imports, aliases, module, metadata)}
       _ ->
         :none
@@ -49,7 +47,8 @@ defmodule ElixirSense.Providers.Signature do
     with {nil, nil} <- look_for_kernel_functions(mod, function),
          {nil, nil} <- look_for_imported_functions(mod, function, imports),
          {nil, nil} <- look_for_aliased_functions(mod, function, aliases),
-         {nil, nil} <- look_for_functions_in_module(mod, function, current_module)
+         {nil, nil} <- look_for_functions_in_module(mod, function),
+         {nil, nil} <- look_for_functions_in_module(current_module, function)
     do
       {mod, function}
     else
@@ -98,11 +97,7 @@ defmodule ElixirSense.Providers.Signature do
     end
   end
 
-  defp look_for_functions_in_module(nil, function, current_module) do
-    look_for_functions_in_module(current_module, function, current_module)
-  end
-
-  defp look_for_functions_in_module(module, function, _current_module) do
+  defp look_for_functions_in_module(module, function) do
     if ModuleInfo.has_function?(module, function) do
       {module, function}
     else

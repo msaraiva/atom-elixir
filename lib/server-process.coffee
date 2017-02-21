@@ -15,8 +15,7 @@ class ServerProcess
   constructor: (projectPath, onTcpServerReady) ->
     @projectPath = projectPath
     @command     = "elixir"
-    # @args        = [path.join(__dirname, "elixir_sense/run.exs")]
-    @args        = [path.join("/Users/marlus/workspace/msaraiva/", "elixir_sense/run.exs")]
+    @args        = [path.join(__dirname, "elixir_sense/run.exs")]
     @proc        = null
     @busy        = false
     @lastRequestType = null

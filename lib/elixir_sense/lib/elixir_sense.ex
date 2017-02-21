@@ -152,7 +152,7 @@ defmodule ElixirSense do
           %{name: "flatten", params: ["list"]},
           %{name: "flatten", params: ["list", "tail"]}]}
   """
-  @spec signature(String.t, String.t, pos_integer) :: Signature.signature_info
+  @spec signature(String.t, pos_integer, pos_integer) :: Signature.signature_info
   def signature(code, line, column) do
     prefix = Source.text_before(code, line, column)
     buffer_file_metadata = Parser.parse_string(code, true, true, line)

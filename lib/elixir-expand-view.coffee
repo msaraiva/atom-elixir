@@ -182,11 +182,11 @@ class ElixirExpandedView extends ScrollView
   setCode:(code) ->
     @code = code
     @expandFullGetter @buffer, @code, @line, (result) =>
-      [expandedOnce, expanded, expandedPartial, expandedAll] = result.split('\u000B')
-      @setExpandOnceCode(expandedOnce?.trim() || "")
-      @setExpandCode(expanded?.trim() || "")
-      @setExpandPartialCode(expandedPartial?.trim() || "")
-      @setExpandAllCode(expandedAll?.trim() || "")
+      {expand_once, expand, expand_partial, expand_all} = result
+      @setExpandOnceCode(expand_once?.trim() || "")
+      @setExpandCode(expand?.trim() || "")
+      @setExpandPartialCode(expand_partial?.trim() || "")
+      @setExpandAllCode(expand_all?.trim() || "")
       @refreshView()
 
   refreshView: ->
