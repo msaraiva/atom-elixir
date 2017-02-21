@@ -19,6 +19,7 @@ defmodule ElixirSense.Providers.Signature do
 
       iex> Signature.find("MyList.flatten(par0, par1, ", [], [{MyList, List}], MyModule, %ElixirSense.Core.Metadata{})
       %{active_param: 2,
+        pipe_before: false,
         signatures: [
           %{name: "flatten", params: ["list"]},
           %{name: "flatten", params: ["list", "tail"]}]}
@@ -26,9 +27,11 @@ defmodule ElixirSense.Providers.Signature do
   """
   @spec find(String.t, [module], [{module, module}], module, map) :: signature_info
   def find(prefix, imports, aliases, module, metadata) do
-    case prefix |> Source.which_func do
-      {mod, func, npar} ->
-        %{active_param: npar, signatures: find_signatures(mod, func, imports, aliases, module, metadata)}
+    case Source.which_func(prefix) do
+      %{candidate: {mod, func}, npar: npar, pipe_before: pipe_before} ->
+        # pipeBefore = !!textBeforeCursor.match(///\|>\s*#{prefix}$///)
+        # Introspection.module_to_string(mod) <> "."
+        %{active_param: npar, pipe_before: pipe_before, signatures: find_signatures(mod, func, imports, aliases, module, metadata)}
       _ ->
         :none
     end

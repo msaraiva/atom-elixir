@@ -54,25 +54,29 @@ class ElixirSignatureProvider
     bufferPosition = editor.getCursorBufferPosition()
     textBeforeCursor = editor.getTextInRange([[0, 0], bufferPosition])
     line = bufferPosition.row + 1
+    col = bufferPosition.column + 1
     @timeout = setTimeout =>
       if !@client
         @show = false
         console.log("ElixirSense client not ready")
         return
 
-      @client.write {request: "signature", payload: {buffer: buffer.getText(), textBeforeCursor: textBeforeCursor, line: line}}, (result) =>
+      @client.write {request: "signature", payload: {buffer: buffer.getText(), line: line, column: col}}, (result) =>
         @destroyOverlay()
         if result == 'none'
           @show = false
           return
 
         paramPosition = result.active_param
+        pipeBefore = result.pipe_before
         signatures = result.signatures.filter (sig) ->
           sig.params.length > paramPosition
 
         signatures = signatures.map (sig, i) ->
           params = sig.params.map (param, i) ->
-            if i == paramPosition
+            if pipeBefore && i == 0
+              "<span class=\"pipe-subject-param\">#{param}</span>"
+            else if i == paramPosition
               "<span class=\"current-param\">#{param}</span>"
             else
               param

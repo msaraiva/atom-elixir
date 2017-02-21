@@ -11,6 +11,7 @@ defmodule ElixirSense do
   alias ElixirSense.Core.Metadata
   alias ElixirSense.Core.Parser
   alias ElixirSense.Core.Introspection
+  alias ElixirSense.Core.Source
   alias ElixirSense.Providers.Docs
   alias ElixirSense.Providers.Definition
   alias ElixirSense.Providers.Suggestion
@@ -144,14 +145,16 @@ defmodule ElixirSense do
       ...>   MyList.flatten(par0,
       ...> end
       ...> '''
-      iex> ElixirSense.signature("MyList.flatten(par0, ", code, 3)
+      iex> ElixirSense.signature(code, 3, 23)
       %{active_param: 1,
+        pipe_before: false,
         signatures: [
           %{name: "flatten", params: ["list"]},
           %{name: "flatten", params: ["list", "tail"]}]}
   """
   @spec signature(String.t, String.t, pos_integer) :: Signature.signature_info
-  def signature(prefix, code, line) do
+  def signature(code, line, column) do
+    prefix = Source.text_before(code, line, column)
     buffer_file_metadata = Parser.parse_string(code, true, true, line)
     %State.Env{
       imports: imports,
