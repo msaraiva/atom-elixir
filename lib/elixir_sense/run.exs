@@ -22,13 +22,11 @@ requires = [
   "alchemist/api/defl.ex",
   "alchemist/api/docl.ex",
   "alchemist/api/eval.ex",
-  "alchemist/server.ex"
+  "elixir_sense/server.ex"
 ]
 
 requires |> Enum.each(fn file ->
   Code.require_file("lib/#{file}", __DIR__)
 end)
 
-ElixirSense.start(host: "localhost", port: 0, env: "dev")
-
-Alchemist.Server.start([System.argv])
+ElixirSense.Server.start([System.argv])

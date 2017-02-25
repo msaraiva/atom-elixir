@@ -49,6 +49,7 @@ defmodule ContextLoader do
   end
 
   defp all_loaded() do
+    Code.ensure_loaded(Inspect)
     for {m,_} <- :code.all_loaded, do: m
   end
 

@@ -24,6 +24,10 @@ defmodule RequestHandler do
     ElixirSense.match(code)
   end
 
+  def handle_request("set_context", %{"env" => env, "cwd" => cwd}) do
+    ContextLoader.set_context(env, cwd)
+  end
+
   def handle_request("definition", %{"buffer" => buffer, "module" => module, "function" => function, "line" => line}) do
     {mod, _} = Code.eval_string(module)
     fun = function && String.to_atom(function)

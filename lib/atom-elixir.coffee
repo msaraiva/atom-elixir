@@ -30,11 +30,11 @@ module.exports = AtomElixir =
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.observeActivePaneItem (item) =>
-      if @server?.proc && item instanceof TextEditor
+      if @elixirSenseClient && item instanceof TextEditor
         env = @getEditorEnv(item)
-        projectPath = atom.project.getPaths()[0]
-        if (env != @server.env) or (projectPath != @server.projectPath)
-          @server.setEnv(@getEditorEnv(item), projectPath)
+        projectPath = @getProjectPath()
+        if (env != @elixirSenseClient.env) or (projectPath != @elixirSenseClient.projectPath)
+          @elixirSenseClient.setContext(@getEditorEnv(item), projectPath)
 
     sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
 
@@ -110,6 +110,9 @@ module.exports = AtomElixir =
       .forEach (p) ->
         delete require.cache[p]
 
+  getProjectPath: ->
+    atom.project.getPaths()[0]
+
   initEnv: ->
     ServerProcess = require './server-process'
 
@@ -122,8 +125,10 @@ module.exports = AtomElixir =
       for line in out.split('\n')
         match = line.match(/^(\S+?)=(.+)/)
         process.env[match[1]] = match[2] if match
-      @server = new ServerProcess atom.project.getPaths()[0], (port) =>
-        @elixirSenseClient = new ElixirSenseClient(port)
+
+      @server = new ServerProcess @getProjectPath(), (host, port) =>
+        env = @getEditorEnv(atom.workspace.getActiveTextEditor())
+        @elixirSenseClient = new ElixirSenseClient(host, port, env, @getProjectPath())
         @signatureProvider.setClient(@elixirSenseClient)
         @autocompleteProvider.setClient(@elixirSenseClient)
         @gotoDefinitionProvider.setClient(@elixirSenseClient)
@@ -131,7 +136,6 @@ module.exports = AtomElixir =
         @expandProvider.setClient(@elixirSenseClient)
         @quotedProvider.setClient(@elixirSenseClient)
 
-      editor = atom.workspace.getActiveTextEditor()
-      @server.start(@getEditorEnv(editor))
+      @server.start(@getEditorEnv(atom.workspace.getActiveTextEditor()))
 
     pid.stdin.end()

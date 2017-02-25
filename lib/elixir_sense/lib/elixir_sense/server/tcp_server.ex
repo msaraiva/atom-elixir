@@ -17,11 +17,11 @@ defmodule ElixirSense.Server.TCPServer do
   def listen(host, port) do
     {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
     {:ok, port} = :inet.port(socket)
-    IO.puts "ok|#{host}:#{port}"
+    IO.puts "ok:#{host}:#{port}"
     accept(socket)
   end
 
-  defp accept(socket) do
+  def accept(socket) do
     {:ok, client_socket} = :gen_tcp.accept(socket)
     {:ok, pid} = start_connection_handler(client_socket)
     :ok = :gen_tcp.controlling_process(client_socket, pid)
