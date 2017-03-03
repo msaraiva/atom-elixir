@@ -36,26 +36,30 @@ defmodule ElixirSense do
 
   ## Example
 
-      iex> code = '''
+      iex> code = ~S'''
       ...> defmodule MyModule do
       ...>   alias Enum, as: MyEnum
       ...>   MyEnum.to_list(1..3)
       ...> end
       ...> '''
-      iex> ElixirSense.docs("MyEnum.to_list", code, 3) |> Map.get(:docs) |> String.split("\n") |> Enum.at(6)
+      iex> %{docs: %{types: types, docs: docs}} = ElixirSense.docs(code, 3, 11)
+      iex> docs |> String.split("\n") |> Enum.at(6)
       "Converts `enumerable` to a list."
-      iex> ElixirSense.docs("Enum.to_list", code, 3) |> Map.get(:types) |> String.split("\n") |> Enum.at(0)
+      iex> types |> String.split("\n") |> Enum.at(0)
       "  `@type t :: Enumerable.t"
   """
-  @spec docs(String.t, String.t, pos_integer) :: Introspection.docs
-  def docs(expr, code, line) do
+  @spec docs(String.t, pos_integer, pos_integer) :: %{subject: String.t, actual_subject: String.t, docs: Introspection.docs}
+  def docs(code, line, column) do
+    subject = Source.subject(code, line, column)
     metadata = Parser.parse_string(code, true, true, line)
     %State.Env{
       imports: imports,
-      aliases: aliases
+      aliases: aliases,
+      module: module
     } = Metadata.get_env(metadata, line)
 
-    Docs.all(expr, imports, aliases)
+    {actual_subject, docs} = Docs.all(subject, imports, aliases, module)
+    %{subject: subject, actual_subject: actual_subject, docs: docs}
   end
 
   @doc ~S"""
@@ -63,19 +67,19 @@ defmodule ElixirSense do
 
   ## Example
 
-      iex> code = '''
+      iex> code = ~S'''
       ...> defmodule MyModule do
       ...>   alias Enum, as: MyEnum
       ...>   MyEnum.to_list(1..3)
       ...> end
       ...> '''
-      iex> {path, line} = ElixirSense.definition(MyEnum, :to_list, code, 3)
-      iex> file = path |> Path.basename
-      iex> file <> ":" <> to_string(line)
+      iex> {path, line} = ElixirSense.definition(code, 3, 11)
+      iex> "#{Path.basename(path)}:#{to_string(line)}"
       "enum.ex:2523"
   """
-  @spec definition(module, atom, String.t, pos_integer) :: Definition.location
-  def definition(mod, fun, code, line) do
+  @spec definition(String.t, String.t, pos_integer) :: Definition.location
+  def definition(code, line, column) do
+    subject = Source.subject(code, line, column)
     buffer_file_metadata = Parser.parse_string(code, true, true, line)
     %State.Env{
       imports: imports,
@@ -83,7 +87,7 @@ defmodule ElixirSense do
       module: module
     } = Metadata.get_env(buffer_file_metadata, line)
 
-    Definition.find(mod, fun, [module|imports], aliases)
+    Definition.find(subject, imports, aliases, module)
   end
 
   @doc """
@@ -105,7 +109,7 @@ defmodule ElixirSense do
 
   ## Example
 
-      iex> code = '''
+      iex> code = ~S'''
       ...> defmodule MyModule do
       ...>   alias List, as: MyList
       ...>   MyList.fi
@@ -265,7 +269,7 @@ defmodule ElixirSense do
       ...>   {_, %{status: status, msg: message}, [arg1|_]} = {:error, %{status: 404, msg: "Not found"}, [1,2,3]}
       ...> '''
       iex> ElixirSense.match(code)
-      [status: 404, message: "Not found", arg1: 1]
+      "# Bindings\n\nstatus = 404\n\nmessage = \"Not found\"\n\narg1 = 1"
   """
   @spec match(String.t) :: Eval.bindings
   def match(code) do

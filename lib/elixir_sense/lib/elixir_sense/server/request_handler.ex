@@ -4,12 +4,20 @@ defmodule RequestHandler do
     ElixirSense.signature(buffer, line, column)
   end
 
-  def handle_request("suggestions", %{"buffer" => buffer, "prefix" => prefix, "line" => line}) do
-    ElixirSense.suggestions(prefix, buffer, line)
+  def handle_request("docs", %{"buffer" => buffer, "line" => line, "column" => column}) do
+    ElixirSense.docs(buffer, line, column)
   end
 
-  def handle_request("docs", %{"buffer" => buffer, "subject" => subject, "line" => line}) do
-    ElixirSense.docs(subject, buffer, line)
+  def handle_request("definition", %{"buffer" => buffer, "line" => line, "column" => column}) do
+    case ElixirSense.definition(buffer, line, column) do
+      {"non_existing", nil} -> "non_existing"
+      {file, nil}  -> "#{file}:0"
+      {file, line} -> "#{file}:#{line}"
+    end
+  end
+
+  def handle_request("suggestions", %{"buffer" => buffer, "prefix" => prefix, "line" => line}) do
+    ElixirSense.suggestions(prefix, buffer, line)
   end
 
   def handle_request("expand_full", %{"buffer" => buffer, "selected_code" => selected_code, "line" => line}) do
@@ -26,17 +34,6 @@ defmodule RequestHandler do
 
   def handle_request("set_context", %{"env" => env, "cwd" => cwd}) do
     ContextLoader.set_context(env, cwd)
-  end
-
-  def handle_request("definition", %{"buffer" => buffer, "module" => module, "function" => function, "line" => line}) do
-    {mod, _} = Code.eval_string(module)
-    fun = function && String.to_atom(function)
-
-    case ElixirSense.definition(mod, fun, buffer, line) do
-      {"non_existing", nil} -> "non_existing"
-      {file, nil}  -> "#{file}:0"
-      {file, line} -> "#{file}:#{line}"
-    end
   end
 
   def handle_request("observer", %{"action" => "start"}) do

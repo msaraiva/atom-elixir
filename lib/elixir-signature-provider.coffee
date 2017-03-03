@@ -52,7 +52,6 @@ class ElixirSignatureProvider
     paramPosition = 0
 
     bufferPosition = editor.getCursorBufferPosition()
-    textBeforeCursor = editor.getTextInRange([[0, 0], bufferPosition])
     line = bufferPosition.row + 1
     col = bufferPosition.column + 1
     @timeout = setTimeout =>

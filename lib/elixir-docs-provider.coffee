@@ -43,29 +43,29 @@ class ElixirDocsProvider
     @client = client
 
   showElixirDocs: ->
-    editor = atom.workspace.getActiveTextEditor()
-    position = editor.getCursorBufferPosition()
-    subjectAndMarkerRange = getSubjectAndMarkerRange(editor, position)
-    subject = ''
-    if subjectAndMarkerRange != null
-      subject = subjectAndMarkerRange.subject
-
-    if !subject.match(/^:/)
-      @addViewForElement(subject)
+    @addViewForElement()
 
   uriForElement: (word) ->
     "atom-elixir://elixir-docs-views/#{word}"
 
   addViewForElement: (word) ->
-    editor   = atom.workspace.getActiveTextEditor()
-    line       = editor.getCursorBufferPosition().row + 1
+    editor = atom.workspace.getActiveTextEditor()
     bufferText = editor.buffer.getText()
+    position = editor.getCursorBufferPosition()
+    line = position.row + 1
+    col = position.column + 1
 
-    @client.write {request: "docs", payload: {buffer: bufferText, subject: word, line: line}}, (result) =>
-      return if result == ""
+    if !@client
+      @show = false
+      console.log("ElixirSense client not ready")
+      return
 
-      uri = @uriForElement(word)
+    @client.write {request: "docs", payload: {buffer: bufferText, line: line, column: col}}, (result) =>
+      {actual_subject, docs} = result
 
+      return if !docs
+
+      uri = @uriForElement(actual_subject)
       options = {searchAllPanes: true, split: 'right'}
       # TODO: Create this configuration
       # options = {searchAllPanes: true}
@@ -78,5 +78,4 @@ class ElixirDocsProvider
         # if atom.config.get('atom-elixir.elixirDocs.keepFocusOnEditorAfterOpenDocs')
         #   previousActivePane.activate()
 
-        # elixirDocsView.html(@markdownToHTML(result))
-        elixirDocsView.setSource(result)
+        elixirDocsView.setSource(docs)

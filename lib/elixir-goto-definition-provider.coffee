@@ -16,7 +16,7 @@ class ElixirGotoDefinitionProvider
       position = editor.getCursorBufferPosition()
       subjectAndMarkerRange = getSubjectAndMarkerRange(editor, position)
       if subjectAndMarkerRange != null
-        @gotoDefinition(editor, subjectAndMarkerRange.subject, position)
+        @gotoDefinition(editor, position)
 
     @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)', 'atom-elixir:return-from-definition', =>
       previousPosition = @gotoStack.pop()
@@ -44,26 +44,23 @@ class ElixirGotoDefinitionProvider
   setClient: (client) ->
     @client = client
 
-  keyClickHandler: (editor, subject, position) =>
-    @gotoDefinition(editor, subject, position)
+  keyClickHandler: (editor, _subject, position) =>
+    @gotoDefinition(editor, position)
 
-  gotoDefinition: (editor, subject, position) ->
-    filePath   = editor.getPath()
+  gotoDefinition: (editor, position) ->
     line       = position.row + 1
+    col        = position.column + 1
     bufferText = editor.buffer.getText()
     @gotoStack.push([editor.getPath(), position])
-
-    [mod, fun] = splitModuleAndFunc(subject)
 
     if !@client
       console.log("ElixirSense client not ready")
       return
 
-    @client.write {request: "definition", payload: {buffer: bufferText, module: mod, function: fun, line: line}}, (file) =>
+    @client.write {request: "definition", payload: {buffer: bufferText, line: line, column: col}}, (file) =>
       switch file
         when 'non_existing'
-          # atom.notifications.addInfo("Can't find <b>#{subject}</b>");
-          console.log "Can't find \"#{subject}\""
+          console.log "Can't find subject"
           return
         when ''
           return

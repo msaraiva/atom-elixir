@@ -6,7 +6,6 @@ defmodule ElixirSense.Providers.Signature do
 
   alias ElixirSense.Core.Introspection
   alias ElixirSense.Core.Source
-  alias Alchemist.Helpers.ModuleInfo
   alias ElixirSense.Core.Metadata
 
   @type signature :: %{name: String.t, params: [String.t]}
@@ -36,77 +35,11 @@ defmodule ElixirSense.Providers.Signature do
   end
 
   defp find_signatures(mod, func, imports, aliases, module, metadata) do
-    {actual_mod, actual_func} = actual_mod_fun({mod, func}, imports, aliases, module)
+    {actual_mod, actual_func} = Introspection.actual_mod_fun({mod, func}, imports, aliases, module)
 
     Metadata.get_function_signatures(metadata, module, func)
     |> Kernel.++(Introspection.get_signatures(actual_mod, actual_func))
     |> Enum.uniq_by(fn sig -> sig.params end)
-  end
-
-  defp actual_mod_fun({mod, function}, imports, aliases, current_module) do
-    with {nil, nil} <- look_for_kernel_functions(mod, function),
-         {nil, nil} <- look_for_imported_functions(mod, function, imports),
-         {nil, nil} <- look_for_aliased_functions(mod, function, aliases),
-         {nil, nil} <- look_for_functions_in_module(mod, function),
-         {nil, nil} <- look_for_functions_in_module(current_module, function)
-    do
-      {mod, function}
-    else
-      mod_func -> mod_func
-    end
-  end
-
-  defp look_for_kernel_functions(nil, function) do
-    cond do
-      ModuleInfo.docs?(Kernel, function) ->
-        {Kernel, function}
-      ModuleInfo.docs?(Kernel.SpecialForms, function) ->
-        {Kernel.SpecialForms, function}
-      true -> {nil, nil}
-    end
-  end
-
-  defp look_for_kernel_functions(_module, _function) do
-    {nil, nil}
-  end
-
-  defp look_for_imported_functions(nil, function, imports) do
-    case imports |> Enum.find(&ModuleInfo.has_function?(&1, function)) do
-      nil -> {nil, nil}
-      module  -> {module, function}
-    end
-  end
-
-  defp look_for_imported_functions(_module, _function, _imports) do
-    {nil, nil}
-  end
-
-  defp look_for_aliased_functions(nil, _function, _aliases) do
-    {nil, nil}
-  end
-
-  defp look_for_aliased_functions(module, function, aliases) do
-    if elixir_module?(module) do
-      mod =
-        module
-        |> Module.split
-        |> ModuleInfo.expand_alias(aliases)
-      {mod, function}
-    else
-      {nil, nil}
-    end
-  end
-
-  defp look_for_functions_in_module(module, function) do
-    if ModuleInfo.has_function?(module, function) do
-      {module, function}
-    else
-      {nil, nil}
-    end
-  end
-
-  defp elixir_module?(module) do
-    module == Module.concat(Elixir, module)
   end
 
 end

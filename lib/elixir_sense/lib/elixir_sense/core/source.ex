@@ -1,5 +1,8 @@
 defmodule ElixirSense.Core.Source do
 
+  @empty_graphemes [" ", "\n", "\r\n"]
+  @stop_graphemes ~w/{ } ( ) [ ] < > + - * & ^ , ; ~ % = " ' \\ \/ $ ! ?`#/ ++ @empty_graphemes
+
   def get_prefix(code, line, col) do
     line = code |> String.split("\n") |> Enum.at(line-1)
     line |> String.slice(0, col-1)
@@ -11,6 +14,61 @@ defmodule ElixirSense.Core.Source do
     text
   end
 
+  def subject(code, line, col) do
+    case walk_text(code, &find_subject/5, %{line: line, col: col, pos_found: false, candidate: []}) do
+      %{candidate: []} ->
+        nil
+      %{candidate: candidate} ->
+        candidate |> Enum.reverse |> Enum.join
+    end
+  end
+
+  defp find_subject(grapheme, rest, line, col, %{pos_found: false, line: line, col: col} = acc) do
+    find_subject(grapheme, rest, line, col, %{acc | pos_found: true})
+  end
+  defp find_subject("." = grapheme, rest, _line, _col, %{pos_found: false} = acc) do
+    {rest, %{acc | candidate: [grapheme|acc.candidate]}}
+  end
+  defp find_subject(".", _rest, _line, _col, %{pos_found: true} = acc) do
+    {"", acc}
+  end
+  defp find_subject(grapheme, rest, _line, _col, %{candidate: [_|_]} = acc) when grapheme in ["!", "?"] do
+    {rest, %{acc | candidate: [grapheme|acc.candidate]}}
+  end
+  defp find_subject(grapheme, rest, _line, _col, %{candidate: ["."|_]} = acc) when grapheme in @stop_graphemes do
+    {rest, acc}
+  end
+  defp find_subject(grapheme, rest, _line, _col, %{pos_found: false} = acc) when grapheme in @stop_graphemes do
+    {rest, %{acc | candidate: []}}
+  end
+  defp find_subject(grapheme, _rest, _line, _col, %{pos_found: true} = acc) when grapheme in @stop_graphemes do
+    {"", acc}
+  end
+  defp find_subject(grapheme, rest, _line, _col, acc) do
+    {rest, %{acc | candidate: [grapheme|acc.candidate]}}
+  end
+
+  defp walk_text(text, func, acc) do
+    do_walk_text(text, func, 1, 1, acc)
+  end
+
+  defp do_walk_text(text, func, line, col, acc) do
+    case String.next_grapheme(text) do
+      nil ->
+        acc
+      {grapheme, rest} ->
+        {new_rest, new_acc} = func.(grapheme, rest, line, col, acc)
+        {new_line, new_col} =
+          if grapheme in ["\n", "\r\n"] do
+            {line + 1, 1}
+          else
+            {line, col + 1}
+          end
+
+        do_walk_text(new_rest, func, new_line, new_col, new_acc)
+    end
+  end
+
   defp find_position(_text, line, col, {pos, line, col}) do
     pos
   end
@@ -19,7 +77,7 @@ defmodule ElixirSense.Core.Source do
     case String.next_grapheme(text) do
       {grapheme, rest} ->
         {new_pos, new_line, new_col} =
-          if grapheme == "\n" || grapheme == "\r\n" do
+          if grapheme in ["\n", "\r\n"] do
             {pos + 1, current_line + 1, 1}
           else
             {pos + 1, current_line, current_col + 1}
