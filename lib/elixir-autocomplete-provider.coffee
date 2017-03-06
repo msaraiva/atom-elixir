@@ -10,6 +10,17 @@ class ElixirAutocompleteProvider
 
   constructor: ->
     @subscriptions = new CompositeDisposable
+    @config = {}
+    @subscriptions.add(atom.config.observe('atom-elixir.enableSuggestionSnippet', (value) =>
+      @config.enableSuggestionSnippet = value
+    ))
+    @subscriptions.add(atom.config.observe('atom-elixir.addParenthesesAfterSuggestionConfirmed', (value) =>
+      @config.addParenthesesAfterSuggestionConfirmed = value
+    ))
+    @subscriptions.add(atom.config.observe('atom-elixir.showSignatureInfoAfterSuggestionConfirm', (value) =>
+      @config.showSignatureInfoAfterSuggestionConfirm = value
+    ))
+
     @subscriptions.add(atom.config.observe('autocomplete-plus.minimumWordLength', (@minimumWordLength) => ))
 
     @subscriptions.add atom.commands.add 'atom-text-editor:not(mini)[data-grammar^="source elixir"]',
@@ -34,6 +45,10 @@ class ElixirAutocompleteProvider
 
   dispose: ->
     @subscriptions.dispose()
+
+  onDidInsertSuggestion: ({editor, triggerPosition, suggestion}) =>
+    if @config.showSignatureInfoAfterSuggestionConfirm
+      atom.commands.dispatch(atom.views.getView(editor), 'atom-elixir:show-signature')
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix, activatedManually}) ->
     scopeChain = scopeDescriptor.getScopeChain()
@@ -81,21 +96,25 @@ class ElixirAutocompleteProvider
             modulesToAdd = (m for m,i in hintModules when m != prefixModules[i])
             lastModuleHint = hintModules[hintModules.length-1]
 
-        suggestions = suggestions.map (serverSuggestion, index) ->
+        suggestions = suggestions.map (serverSuggestion, index) =>
           name = serverSuggestion.name
           if lastModuleHint && (lastModuleHint not in [name, ":#{name}"]) && modulesToAdd.length > 0
             serverSuggestion.name = modulesToAdd.join('.') + '.' + name
-          createSuggestion(serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore)
+          createSuggestion(serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore, @config)
 
         suggestions = suggestions.filter (item) -> item? && item != ''
         suggestions = sortSuggestions(suggestions)
+
+        if suggestions.length > 0
+          atom.commands.dispatch(atom.views.getView(editor), 'atom-elixir:hide-signature')
+
         resolve(suggestions)
 
   getPrefix = (textBeforeCursor) ->
     regex = /[\w0-9\._!\?\:@]+$/
     textBeforeCursor.match(regex)?[0] or ''
 
-  createSuggestion = (serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore) ->
+  createSuggestion = (serverSuggestion, index, prefix, pipeBefore, captureBefore, defBefore, config) ->
     if serverSuggestion.type == 'module'
       [name, kind, subtype, desc] = [serverSuggestion.name, serverSuggestion.type, serverSuggestion.subtype, serverSuggestion.summary]
     else if serverSuggestion.type == 'return'
@@ -117,9 +136,9 @@ class ElixirAutocompleteProvider
       else if kind == 'return'
         createSuggestionForReturn(serverSuggestion, name, kind, spec, snippet)
       else if ['private_function', 'public_function', 'public_macro'].indexOf(kind) > -1
-        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore)
+        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, "", desc, spec, prefix, pipeBefore, captureBefore, config)
       else if ['function', 'macro'].indexOf(kind) > -1
-        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore)
+        createSuggestionForFunction(serverSuggestion, name + "/" + serverSuggestion.arity, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore, config)
       else
         console.log("Unknown kind: #{serverSuggestion}")
         {
@@ -154,7 +173,7 @@ class ElixirAutocompleteProvider
       rightLabel: 'variable'
     }
 
-  createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore) ->
+  createSuggestionForFunction = (serverSuggestion, name, kind, signature, mod, desc, spec, prefix, pipeBefore, captureBefore, config) ->
     args = signature.split(',')
     [_, func, arity] = name.match(/(.+)\/(\d+)/)
     [moduleParts..., postfix] = prefix.split('.')
@@ -178,7 +197,12 @@ class ElixirAutocompleteProvider
     if captureBefore
       snippet = "#{func}/#{arity}"
     else if snippetParams.length > 0
-      snippet = "#{func}(#{snippetParams.join(', ')})"
+      if config.enableSuggestionSnippet
+        snippet = "#{func}(#{snippetParams.join(', ')})"
+      else if !config.enableSuggestionSnippet && config.addParenthesesAfterSuggestionConfirmed == "addOpeningParenthesis"
+        snippet = "#{func}("
+      else if !config.enableSuggestionSnippet && config.addParenthesesAfterSuggestionConfirmed == "addParentheses"
+        snippet = "#{func}(${1})"
 
     snippet = snippet.replace(/^:/, '') + "$0"
 

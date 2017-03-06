@@ -3,6 +3,31 @@ spawn = require('child_process').spawn
 ElixirSenseClient = require './elixir-sense-client'
 
 module.exports = AtomElixir =
+
+  config:
+    enableSuggestionSnippet:
+      type: 'boolean'
+      default: false
+      description: 'Enable autocomplete suggestion snippets for functions/macros'
+      order: 1
+    addParenthesesAfterSuggestionConfirmed:
+      type: 'string'
+      default: 'addOpeningParenthesis'
+      title: 'Add Parentheses After Comfirm Suggestion'
+      description: 'Add parentheses for functions/macros after comfirming a suggestion. Notice: this setting has no affect if "Autocomplete Snippets" is enabled'
+      order: 2
+      enum: [
+        {value: 'disabled', description: "Disabled"}
+        {value: 'addParentheses', description: 'Add Parentheses'}
+        {value: 'addOpeningParenthesis', description: 'Add Opening Parenthesis'}
+      ]
+    showSignatureInfoAfterSuggestionConfirm:
+      type: 'boolean'
+      default: true
+      title: 'Show signature info after confirm sugggestion'
+      description: 'Open the signature info view for functions/macros after confirming a suggestion. Only applicable if "Add Parentheses After Comfirm Suggestion" is also enabled'
+      order: 3
+
   expandProvider: null
   autocompleteProvider: null
   gotoDefinitionProvider: null
@@ -49,7 +74,7 @@ module.exports = AtomElixir =
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-signature', (e) =>
       editor = atom.workspace.getActiveTextEditor()
       @signatureProvider.showSignature(editor, editor.getLastCursor())
-      if e.originalEvent.key == '('
+      if e.originalEvent && e.originalEvent.key == '('
         e.abortKeyBinding()
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:hide-signature', (e) =>
