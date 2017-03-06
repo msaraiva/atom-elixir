@@ -40,14 +40,27 @@ defmodule ElixirSense.Core.Metadata do
     end)
   end
 
-  def get_function_signatures(%__MODULE__{} = metadata, module, function) do
+  def get_function_signatures(%__MODULE__{} = metadata, module, function, code_docs \\ nil) do
+    docs = code_docs || Code.get_docs(module, :docs) || []
+
     params_list =
       get_function_info(metadata, module, function)
       |> Map.get(:params)
       |> Enum.reverse
 
     Enum.map(params_list, fn params ->
-      %{name: Atom.to_string(function), params: Enum.with_index(params) |> Enum.map(&Introspection.param_to_var/1)}
+      arity = length(params)
+      {doc, spec} =
+        Enum.find_value(docs, {"", ""}, fn {{f, a}, _, _, _, text} ->
+          f == function &&
+          a == arity &&
+          {Introspection.extract_summary_from_docs(text), Introspection.get_spec(module, function, arity)}
+        end)
+      %{name: Atom.to_string(function),
+        params: Enum.with_index(params) |> Enum.map(&Introspection.param_to_var/1),
+        documentation: doc,
+        spec: spec
+      }
     end)
   end
 

@@ -101,7 +101,7 @@
     margin-bottom: @margin;
     padding: 10px;
     background-color: @input-background-color;
-    border-radius:5px 5px 5px 5px;
+    border-radius: 5px 5px 5px 5px;
   }
 
   .header {
@@ -194,20 +194,66 @@ atom-text-editor:not([mini]).keyclick.editor .editor-contents--private {
 elixir-signature-view {
 
   > div:not(:empty) {
-    padding: 5px 10px;
-    background: fade(@inset-panel-background-color, 95%);
+    background: fade(@tool-panel-background-color, 95%);
     border: 1px solid fade(@text-color-highlight, 30%);
     color: @text-color;
     border-radius: @component-border-radius;
+
+    atom-text-editor.editor {
+      color: @text-color;
+
+      background-color: @tool-panel-background-color;
+      .cursors {
+        display: none;
+      }
+    }
+
+    .signature {
+      padding: 5px 10px;
+
+      .signature-func {
+        color: @text-color;
+
+        .func-name {
+          color: @text-color-highlight;
+        }
+
+        .current-param {
+          font-weight: 500;
+          color: @text-color-selected;
+          text-decoration: underline;
+        }
+
+        .param {
+          color: @text-color;
+        }
+
+        .pipe-subject-param {
+          text-decoration: line-through;
+        }
+      }
+
+      .signature-spec {
+        padding: 3px;
+        font-size: 12px;
+        margin-left: 10px;
+      }
+
+      .signature-doc {
+        color: @text-color;
+        margin-left: 14px;
+        font-size: 12px;
+        p {
+          margin: 0px;
+        }
+      }
+
+    }
+
+    .signature:not(:last-child) {
+      border-bottom: 1px solid fade(@text-color, 30%);
+    }
+
   }
 
-  .current-param {
-    font-weight: 500;
-    color: @text-color-highlight;
-    text-decoration: underline;
-  }
-
-  .pipe-subject-param {
-    text-decoration: line-through;
-  }
 }

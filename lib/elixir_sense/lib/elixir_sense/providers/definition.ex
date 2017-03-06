@@ -19,21 +19,41 @@ defmodule ElixirSense.Providers.Definition do
   """
   @spec find(String.t, [module], [{module, module}], module) :: location
   def find(subject, imports, aliases, module) do
-    {actual_mod, actual_fun} =
-      subject
-      |> Introspection.split_mod_func_call
-      |> Introspection.actual_mod_fun(imports, aliases, module)
-
-    actual_mod
-    |> source()
-    |> find_line(actual_fun)
+    subject
+    |> Introspection.split_mod_fun_call
+    |> Introspection.actual_mod_fun(imports, aliases, module)
+    |> find_source()
   end
 
-  defp find_line({_, file}, _fun) when file in ["non_existing", nil, ""] do
+  defp find_source({mod, fun}) do
+    mod
+    |> find_mod_file()
+    |> find_fun_line(fun)
+  end
+
+  defp find_mod_file(module) do
+    file = if Code.ensure_loaded? module do
+      case module.module_info(:compile)[:source] do
+        nil    -> nil
+        source -> List.to_string(source)
+      end
+    end
+    file = if file && File.exists?(file) do
+      file
+    else
+      erl_file = module |> :code.which |> to_string |> String.replace(~r/(.+)\/ebin\/([^\s]+)\.beam$/, "\\1/src/\\2.erl")
+      if File.exists?(erl_file) do
+        erl_file
+      end
+    end
+    {module, file}
+  end
+
+  defp find_fun_line({_, file}, _fun) when file in ["non_existing", nil, ""] do
     {"non_existing", nil}
   end
 
-  defp find_line({mod, file}, fun) do
+  defp find_fun_line({mod, file}, fun) do
     line = if String.ends_with?(file, ".erl") do
       find_fun_line_in_erl_file(file, fun)
     else
@@ -52,24 +72,6 @@ defmodule ElixirSense.Providers.Definition do
       |> Enum.find_index(&String.match?(&1, ~r/^#{fun_name}\b/))
 
     (index || 0) + 1
-  end
-
-  defp source(module) do
-    file = if Code.ensure_loaded? module do
-      case module.module_info(:compile)[:source] do
-        nil    -> nil
-        source -> List.to_string(source)
-      end
-    end
-    file = if file && File.exists?(file) do
-      file
-    else
-      erl_file = module |> :code.which |> to_string |> String.replace(~r/(.+)\/ebin\/([^\s]+)\.beam$/, "\\1/src/\\2.erl")
-      if File.exists?(erl_file) do
-        erl_file
-      end
-    end
-    {module, file}
   end
 
 end

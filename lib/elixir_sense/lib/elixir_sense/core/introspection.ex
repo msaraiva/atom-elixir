@@ -11,6 +11,7 @@ defmodule ElixirSense.Core.Introspection do
   alias Kernel.Typespec
   alias Alchemist.Helpers.ModuleInfo
 
+  @type mod_fun :: {mod :: module | nil, fun :: atom | nil}
   @type markdown :: String.t
   @type mod_docs :: %{docs: markdown, types: markdown, callbacks: markdown}
   @type fun_docs :: %{docs: markdown, types: markdown}
@@ -21,21 +22,23 @@ defmodule ElixirSense.Core.Introspection do
     :gen_event   => GenEvent
   }
 
-  @spec get_all_docs(mod :: module, fun :: atom | nil) :: docs
-  def get_all_docs(mod, nil) do
+  @spec get_all_docs(mod_fun) :: docs
+  def get_all_docs({mod, nil}) do
     %{docs: get_docs_md(mod), types: get_types_md(mod), callbacks: get_callbacks_md(mod)}
   end
 
-  def get_all_docs(mod, fun) do
+  def get_all_docs({mod, fun}) do
     %{docs: get_func_docs_md(mod, fun), types: get_types_md(mod)}
   end
 
-  def get_signatures(mod, fun) do
-    docs = Code.get_docs(mod, :docs) || []
-    for {{f, _arity}, _, _, args, _text} <- docs, f == fun do
+  def get_signatures(mod, fun, code_docs \\ nil) do
+    docs = code_docs || Code.get_docs(mod, :docs) || []
+    for {{f, arity}, _, _, args, text} <- docs, f == fun do
       fun_args = Enum.map(args, &format_doc_arg(&1))
       fun_str = Atom.to_string(fun)
-      %{name: fun_str, params: fun_args}
+      doc = extract_summary_from_docs(text)
+      spec = get_spec(mod, fun, arity)
+      %{name: fun_str, params: fun_args, documentation: doc, spec: spec}
     end
   end
 
@@ -416,7 +419,7 @@ defmodule ElixirSense.Core.Introspection do
     end
   end
 
-  def split_mod_func_call(call) do
+  def split_mod_fun_call(call) do
     case Code.string_to_quoted(call) do
       {:error, _} ->
         {nil, nil}
@@ -482,66 +485,74 @@ defmodule ElixirSense.Core.Introspection do
     Enum.map(specs, &{tag, &1})
   end
 
-  def actual_mod_fun({mod, function}, imports, aliases, current_module) do
-    with {nil, nil} <- find_kernel_function(mod, function),
-         {nil, nil} <- find_imported_function(mod, function, imports),
-         {nil, nil} <- find_aliased_function(mod, function, aliases),
-         {nil, nil} <- find_function_in_module(mod, function),
-         {nil, nil} <- find_function_in_module(current_module, function)
+  def actual_mod_fun(mod_fun, imports, aliases, current_module) do
+    with {nil, nil} <- find_kernel_function(mod_fun),
+         {nil, nil} <- find_imported_function(mod_fun, imports),
+         {nil, nil} <- find_aliased_function(mod_fun, aliases),
+         {nil, nil} <- find_function_in_module(mod_fun),
+         {nil, nil} <- find_function_in_current_module(mod_fun, current_module)
     do
-      {mod, function}
+      mod_fun
     else
-      mod_func -> mod_func
+      new_mod_fun -> new_mod_fun
     end
   end
 
-  defp find_kernel_function(nil, function) do
+  defp find_kernel_function({nil, fun}) do
     cond do
-      ModuleInfo.docs?(Kernel, function) ->
-        {Kernel, function}
-      ModuleInfo.docs?(Kernel.SpecialForms, function) ->
-        {Kernel.SpecialForms, function}
+      ModuleInfo.docs?(Kernel, fun) ->
+        {Kernel, fun}
+      ModuleInfo.docs?(Kernel.SpecialForms, fun) ->
+        {Kernel.SpecialForms, fun}
       true -> {nil, nil}
     end
   end
 
-  defp find_kernel_function(_module, _function) do
+  defp find_kernel_function({_mod, _fun}) do
     {nil, nil}
   end
 
-  defp find_imported_function(nil, function, imports) do
-    case imports |> Enum.find(&ModuleInfo.has_function?(&1, function)) do
+  defp find_imported_function({nil, fun}, imports) do
+    case imports |> Enum.find(&ModuleInfo.has_function?(&1, fun)) do
       nil -> {nil, nil}
-      module  -> {module, function}
+      mod  -> {mod, fun}
     end
   end
 
-  defp find_imported_function(_module, _function, _imports) do
+  defp find_imported_function({_mod, _fun}, _imports) do
     {nil, nil}
   end
 
-  defp find_aliased_function(nil, _function, _aliases) do
+  defp find_aliased_function({nil, _fun}, _aliases) do
     {nil, nil}
   end
 
-  defp find_aliased_function(module, function, aliases) do
-    if elixir_module?(module) do
-      mod =
-        module
+  defp find_aliased_function({mod, fun}, aliases) do
+    if elixir_module?(mod) do
+      module =
+        mod
         |> Module.split
         |> ModuleInfo.expand_alias(aliases)
-      {mod, function}
+      {module, fun}
     else
       {nil, nil}
     end
   end
 
-  defp find_function_in_module(module, function) do
-    if elixir_module?(module) && ModuleInfo.has_function?(module, function) do
-      {module, function}
+  defp find_function_in_module({mod, fun}) do
+    if elixir_module?(mod) && ModuleInfo.has_function?(mod, fun) do
+      {mod, fun}
     else
       {nil, nil}
     end
+  end
+
+  defp find_function_in_current_module({nil, fun}, current_module) do
+    {current_module, fun}
+  end
+
+  defp find_function_in_current_module(_, _) do
+    {nil, nil}
   end
 
   defp elixir_module?(module) when is_atom(module) do

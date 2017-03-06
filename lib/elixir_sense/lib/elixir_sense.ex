@@ -153,8 +153,16 @@ defmodule ElixirSense do
       %{active_param: 1,
         pipe_before: false,
         signatures: [
-          %{name: "flatten", params: ["list"]},
-          %{name: "flatten", params: ["list", "tail"]}]}
+          %{name: "flatten",
+            params: ["list"],
+            documentation: "Flattens the given `list` of nested lists.",
+            spec: "@spec flatten(deep_list) :: list when deep_list: [any | deep_list]"},
+          %{name: "flatten",
+            params: ["list", "tail"],
+            documentation: "Flattens the given `list` of nested lists.\\nThe list `tail` will be added at the end of\\nthe flattened list.",
+            spec: "@spec flatten(deep_list, [elem]) :: [elem] when deep_list: [elem | deep_list], elem: var"}
+        ]
+      }
   """
   @spec signature(String.t, pos_integer, pos_integer) :: Signature.signature_info
   def signature(code, line, column) do

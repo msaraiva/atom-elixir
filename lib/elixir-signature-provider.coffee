@@ -66,22 +66,7 @@ class ElixirSignatureProvider
           @show = false
           return
 
-        paramPosition = result.active_param
-        pipeBefore = result.pipe_before
-        signatures = result.signatures.filter (sig) ->
-          sig.params.length > paramPosition
-
-        signatures = signatures.map (sig, i) ->
-          params = sig.params.map (param, i) ->
-            if pipeBefore && i == 0
-              "<span class=\"pipe-subject-param\">#{param}</span>"
-            else if i == paramPosition
-              "<span class=\"current-param\">#{param}</span>"
-            else
-              param
-          "#{sig.name}(#{params.join(', ')})"
-
-        @view.setData({label: signatures.join('<br>')})
+        @view.setData(result)
         @setPosition()
         @timeout = null
     , 20
