@@ -57,7 +57,7 @@ class ElixirGotoDefinitionProvider
       console.log("ElixirSense client not ready")
       return
 
-    @client.write {request: "definition", payload: {buffer: bufferText, line: line, column: col}}, (file) =>
+    @client.send "definition", {buffer: bufferText, line: line, column: col}, (file) =>
       switch file
         when 'non_existing'
           console.log "Can't find subject"

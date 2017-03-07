@@ -31,45 +31,38 @@ class ElixirSignatureProvider
     @overlayDecoration = null
     @marker = null
 
-  queryType: (editor, cursor) ->
-    return if !@show
+  updateSignatures: (editor, cursor, fromAction) ->
+    return if !@show || cursor.destroyed
 
-    if @timeout != null
-      clearTimeout(@timeout)
-      @timeout = null
-
-    return if cursor.destroyed
+    buffer = editor.getBuffer()
+    bufferPosition = editor.getCursorBufferPosition()
+    line = bufferPosition.row + 1
+    col = bufferPosition.column + 1
 
     scopeDescriptor = cursor.getScopeDescriptor()
     if scopeDescriptor.scopes.join().match(/comment/)
       @destroyOverlay()
       return
 
-    position = cursor.getBufferPosition()
-    lineCount = editor.getLineCount()
+    editorElement = atom.views.getView(editor)
+    if 'autocomplete-active' in editorElement.classList
+      return
 
-    buffer = editor.getBuffer()
-    paramPosition = 0
+    @querySignatures(buffer.getText(), line, col)
 
-    bufferPosition = editor.getCursorBufferPosition()
-    line = bufferPosition.row + 1
-    col = bufferPosition.column + 1
-    @timeout = setTimeout =>
-      if !@client
+  querySignatures: (buffer, line, col) ->
+    if !@client
+      @show = false
+      console.log("ElixirSense client not ready")
+      return
+
+    @client.send "signature", {buffer: buffer, line: line, column: col}, (result) =>
+      @destroyOverlay()
+      if result == 'none'
         @show = false
-        console.log("ElixirSense client not ready")
         return
-
-      @client.write {request: "signature", payload: {buffer: buffer.getText(), line: line, column: col}}, (result) =>
-        @destroyOverlay()
-        if result == 'none'
-          @show = false
-          return
-
-        @view.setData(result)
-        @setPosition()
-        @timeout = null
-    , 20
+      @view.setData(result)
+      @setPosition()
 
   destroy: ->
     @destroyOverlay()
@@ -79,10 +72,21 @@ class ElixirSignatureProvider
   setClient: (client) ->
     @client = client
 
-  showSignature: (editor, cursor)->
-    @show = true
-    @queryType(editor, cursor)
+  showSignature: (editor, cursor, fromAction) ->
+    if @timeout != null
+      clearTimeout(@timeout)
+      @timeout = null
+
+    if fromAction
+      @show = true
+
+    @timeout = setTimeout =>
+      @updateSignatures(editor, cursor, fromAction)
+    , 20
+
+  closeSignature: ->
+    @show = false
+    @destroyOverlay()
 
   hideSignature: ->
-    @show = false
     @destroyOverlay()

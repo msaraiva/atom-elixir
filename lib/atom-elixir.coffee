@@ -14,7 +14,7 @@ module.exports = AtomElixir =
       type: 'string'
       default: 'addOpeningParenthesis'
       title: 'Add Parentheses After Comfirm Suggestion'
-      description: 'Add parentheses for functions/macros after comfirming a suggestion. Notice: this setting has no affect if "Autocomplete Snippets" is enabled'
+      description: 'Add parentheses for functions/macros after comfirm suggestion. NOTICE: Only applicable when "Autocomplete Snippets" is disabled'
       order: 2
       enum: [
         {value: 'disabled', description: "Disabled"}
@@ -25,7 +25,7 @@ module.exports = AtomElixir =
       type: 'boolean'
       default: true
       title: 'Show signature info after confirm sugggestion'
-      description: 'Open the signature info view for functions/macros after confirming a suggestion. Only applicable if "Add Parentheses After Comfirm Suggestion" is also enabled'
+      description: 'Open the signature info view for functions/macros after confirm suggestion. NOTICE: Only applicable when "Add Parentheses After Comfirm Suggestion" is also enabled'
       order: 3
 
   expandProvider: null
@@ -64,31 +64,35 @@ module.exports = AtomElixir =
     sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-start', =>
-      @elixirSenseClient.write {request: "observer", payload: {action: "start"}}, (result) =>
+      @elixirSenseClient.send "observer", {action: "start"}, (result) =>
         console.log("Observer response: " + result)
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-stop', =>
-      @elixirSenseClient.write {request: "observer", payload: {action: "stop"}}, (result) =>
+      @elixirSenseClient.send "observer", {action: "stop"}, (result) =>
         console.log("Observer response: " + result)
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-signature', (e) =>
       editor = atom.workspace.getActiveTextEditor()
-      @signatureProvider.showSignature(editor, editor.getLastCursor())
+      @signatureProvider.showSignature(editor, editor.getLastCursor(), true)
       if e.originalEvent && e.originalEvent.key == '('
+        e.abortKeyBinding()
+
+    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:close-signature', (e) =>
+      if (@signatureProvider.show)
+        @signatureProvider.closeSignature()
+      else
         e.abortKeyBinding()
 
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:hide-signature', (e) =>
       if (@signatureProvider.show)
         @signatureProvider.hideSignature()
-      else
-        e.abortKeyBinding()
 
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
       if (editor.getGrammar().scopeName != 'source.elixir')
         return
 
       editorChangeCursorPositionSubscription = editor.onDidChangeCursorPosition (e) =>
-        @signatureProvider.queryType(editor, e.cursor)
+        @signatureProvider.showSignature(editor, e.cursor, false)
 
       editorDestroyedSubscription = editor.onDidDestroy =>
         editorChangeCursorPositionSubscription.dispose()

@@ -56,11 +56,10 @@ class ElixirDocsProvider
     col = position.column + 1
 
     if !@client
-      @show = false
       console.log("ElixirSense client not ready")
       return
 
-    @client.write {request: "docs", payload: {buffer: bufferText, line: line, column: col}}, (result) =>
+    @client.send "docs", {buffer: bufferText, line: line, column: col}, (result) =>
       {actual_subject, docs} = result
 
       return if !docs

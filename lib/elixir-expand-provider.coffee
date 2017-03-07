@@ -56,7 +56,7 @@ class ElixirExpandProvider
       onResult("")
       return
 
-    @client.write {request: "expand_full", payload: {buffer: buffer, selected_code: selectedCode, line: line}}, (result) =>
+    @client.send "expand_full", {buffer: buffer, selected_code: selectedCode, line: line}, (result) =>
       onResult(result)
 
   showExpandCodeView: (buffer, code, line) ->

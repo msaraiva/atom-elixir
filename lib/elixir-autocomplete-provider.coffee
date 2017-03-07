@@ -82,7 +82,7 @@ class ElixirAutocompleteProvider
         resolve([])
         return
 
-      @client.write {request: "suggestions", payload: {prefix: prefix, buffer: bufferText, line: line}}, (result) =>
+      @client.send "suggestions", {prefix: prefix, buffer: bufferText, line: line}, (result) =>
         hint = result[0].value
         suggestions = result[1...]
         modulesToAdd = []

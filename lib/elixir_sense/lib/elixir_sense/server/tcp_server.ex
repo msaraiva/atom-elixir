@@ -57,14 +57,16 @@ defmodule ElixirSense.Server.TCPServer do
 
   def process_request(data) do
     try do
-      %{ "request" => request, "payload" => payload } = :erlang.binary_to_term(data)
-      request
-      |> dispatch_request(payload)
-      |> :erlang.term_to_binary
+      %{ "request_id" => request_id, "request" => request, "payload" => payload } = :erlang.binary_to_term(data)
+      :erlang.term_to_binary(%{
+        request_id: request_id,
+        payload: dispatch_request(request, payload),
+        error: nil
+      })
     rescue
       e ->
         IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
-        :erlang.term_to_binary(nil)
+        :erlang.term_to_binary(%{request_id: nil, payload: nil, error: Exception.message(e)})
     end
   end
 

@@ -14,7 +14,7 @@
   'ctrl-shift-t': 'atom-elixir:quote-selected-text'
   'ctrl-shift-x': 'atom-elixir:expand-selected-text'
   '(': 'atom-elixir:show-signature'
-  'escape': 'atom-elixir:hide-signature'
+  'escape': 'atom-elixir:close-signature'
 
 '.platform-darwin atom-text-editor:not(mini)[data-grammar^="source elixir"]':
   'cmd-shift-space': 'atom-elixir:show-signature'

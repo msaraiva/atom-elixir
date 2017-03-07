@@ -49,7 +49,7 @@ class ElixirQuotedProvider
       onResult("")
       return
 
-    @client.write {request: "quote", payload: {code: code}}, (result) =>
+    @client.send "quote", {code: code}, (result) =>
       onResult(result)
 
   getMatches: (pattern, quotedCode, onResult) =>
@@ -58,7 +58,7 @@ class ElixirQuotedProvider
       return
 
     code = "(#{pattern}) = (#{quotedCode})"
-    @client.write {request: "match", payload: {code: code}}, (result) =>
+    @client.send "match", {code: code}, (result) =>
       onResult(result)
 
   showQuotedCodeView: (code) ->
