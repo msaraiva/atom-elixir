@@ -82,7 +82,7 @@ class ElixirSignatureProvider
 
     @timeout = setTimeout =>
       @updateSignatures(editor, cursor, fromAction)
-    , 20
+    , 50
 
   closeSignature: ->
     @show = false

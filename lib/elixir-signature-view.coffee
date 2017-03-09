@@ -61,12 +61,12 @@ class ElixirSignatureView extends HTMLElement
 
       e.children[0].innerHTML = "<span class=\"func-name\">#{sig.name}</span>(#{params.join(', ')})"
 
-      specElement = e.querySelector('.signature-spec > atom-text-editor')
+      specElement = e.querySelector('.signature-spec')
       if sig.spec == ""
         specElement.style.display = 'none'
       else
         specElement.style.display = 'block'
-        specElement.getModel().setText(sig.spec)
+        specElement.children[0].getModel().setText(sig.spec)
 
       docElement = e.querySelector('.signature-doc')
       if sig.documentation == ""
