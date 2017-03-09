@@ -19,18 +19,6 @@ defmodule ElixirSense do
   alias ElixirSense.Providers.Expand
   alias ElixirSense.Providers.Eval
 
-  def start(host: host, port: port, env: env) do
-    import Supervisor.Spec
-
-    children = [
-      supervisor(ElixirSense.Server.TCPServer, [[host: host, port: port]]),
-      worker(ContextLoader, [env])
-    ]
-
-    opts = [strategy: :one_for_one, name: __MODULE__]
-    Supervisor.start_link(children, opts)
-  end
-
   @doc ~S"""
   Returns all documentation related a module or function, including types and callback information.
 
@@ -263,13 +251,17 @@ defmodule ElixirSense do
     Expand.expand_full(code, requires, imports, module)
   end
 
-  @spec match(String.t) :: String.t
+  @doc """
+  Converts a string to its quoted form.
+  """
+  @spec quote(String.t) :: String.t
   def quote(code) do
     Eval.quote(code)
   end
 
   @doc ~S"""
-  Evaluate a pattern matching expression and returns its bindings, if any.
+  Evaluate a pattern matching expression and format its results, including
+  the list of bindings, if any.
 
   ## Example
 
@@ -281,29 +273,7 @@ defmodule ElixirSense do
   """
   @spec match(String.t) :: Eval.bindings
   def match(code) do
-    case Eval.match(code) do
-      :no_match ->
-        "# No match"
-      {:error, message} ->
-        message
-      bindings ->
-        bindings_to_string(bindings)
-    end
-  end
-
-  defp bindings_to_string(bindings) do
-    header =
-      if Enum.empty?(bindings) do
-        "# No bindings"
-      else
-        "# Bindings"
-      end
-
-    body =
-      Enum.map_join(bindings, "\n\n", fn {var, val} ->
-        "#{var} = #{inspect(val)}"
-      end)
-    header <> "\n\n" <> body
+    Eval.match_and_format(code)
   end
 
 end

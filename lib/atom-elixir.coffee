@@ -63,14 +63,6 @@ module.exports = AtomElixir =
 
     sourceElixirSelector = 'atom-text-editor[data-grammar^="source elixir"]'
 
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-start', =>
-      @elixirSenseClient.send "observer", {action: "start"}, (result) =>
-        console.log("Observer response: " + result)
-
-    @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:observer-stop', =>
-      @elixirSenseClient.send "observer", {action: "stop"}, (result) =>
-        console.log("Observer response: " + result)
-
     @subscriptions.add atom.commands.add sourceElixirSelector, 'atom-elixir:show-signature', (e) =>
       editor = atom.workspace.getActiveTextEditor()
       @signatureProvider.showSignature(editor, editor.getLastCursor(), true)

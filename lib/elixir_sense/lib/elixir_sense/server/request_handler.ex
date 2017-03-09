@@ -36,14 +36,6 @@ defmodule RequestHandler do
     ContextLoader.set_context(env, cwd)
   end
 
-  def handle_request("observer", %{"action" => "start"}) do
-    :observer.start()
-  end
-
-  def handle_request("observer", %{"action" => "stop"}) do
-    :observer.stop()
-  end
-
   def handle_request(request, paylod) do
     IO.puts :stderr, "Cannot handle request \"#{request}\". Payload: #{inspect(paylod)}"
   end
