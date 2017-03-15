@@ -157,6 +157,6 @@ module.exports = AtomElixir =
         @expandProvider.setClient(@elixirSenseClient)
         @quotedProvider.setClient(@elixirSenseClient)
 
-      @server.start(@getEditorEnv(atom.workspace.getActiveTextEditor()))
+      @server.start(0, @getEditorEnv(atom.workspace.getActiveTextEditor()))
 
     pid.stdin.end()

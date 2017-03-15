@@ -15,8 +15,8 @@ class ServerProcess
     @proc        = null
     @onTcpServerReady = onTcpServerReady
 
-  start: (env) ->
-    @proc = @spawnChildProcess(env)
+  start: (port, env) ->
+    @proc = @spawnChildProcess(port, env)
     @proc.stdout.on 'data', (chunk) =>
       if @onTcpServerReady
         if ~chunk.indexOf("ok:")
@@ -51,13 +51,13 @@ class ServerProcess
     @ready = false
     @proc = null
 
-  spawnChildProcess: (env) ->
+  spawnChildProcess: (port, env) ->
     options =
       cwd: @projectPath
       stdio: "pipe"
 
     if process.platform == 'win32'
       options.windowsVerbatimArguments = true
-      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(env).join(' ') + '"'], options)
+      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(port).concat(env).join(' ') + '"'], options)
     else
-      spawn(@command, @args.concat(env), options)
+      spawn(@command, @args.concat(port).concat(env), options)

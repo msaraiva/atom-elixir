@@ -1,9 +1,9 @@
 defmodule ElixirSense.Server do
 
-  def start([env]) do
+  def start([port, env]) do
     IO.puts(:stderr, "Initializing ElixirSense server for environment \"#{env}\" (Elixir version #{System.version})")
     IO.puts(:stderr, "Working directory is \"#{Path.expand(".")}\"")
-    start_supervisor(host: "localhost", port: 0, env: "dev")
+    start_supervisor(host: "localhost", port: String.to_integer(port), env: env)
     ContextLoader.set_context(env, Path.expand("."))
     loop()
   end
@@ -23,7 +23,7 @@ defmodule ElixirSense.Server do
   defp loop() do
     case IO.gets("") do
       :eof ->
-        IO.puts(:stderr, "Stopping alchemist-server")
+        IO.puts(:stderr, "Stopping ElixirSense server")
       _  ->
         loop()
     end
