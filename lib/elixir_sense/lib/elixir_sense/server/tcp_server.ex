@@ -15,7 +15,7 @@ defmodule ElixirSense.Server.TCPServer do
   end
 
   def listen(host, port) do
-    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true, packet: 4])
     {:ok, port} = :inet.port(socket)
     IO.puts "ok:#{host}:#{port}"
     accept(socket)
@@ -34,24 +34,15 @@ defmodule ElixirSense.Server.TCPServer do
     end)
   end
 
-  defp connection_handler(socket, rest \\ <<>>) do
+  defp connection_handler(socket) do
     case :gen_tcp.recv(socket, 0) do
       {:error, :closed} ->
         IO.puts :stderr, "Client socket is closed"
       {:ok, data} ->
-        connection_handler(socket, match_packet(rest <> data, socket))
-    end
-  end
-
-  defp match_packet(data, socket) do
-    case data do
-      <<101, length :: size(32), body :: binary-size(length), rest :: bitstring>> ->
-        body
+        data
         |> process_request()
         |> send_response(socket)
-        match_packet(rest, socket)
-      rest ->
-        rest
+        connection_handler(socket)
     end
   end
 
