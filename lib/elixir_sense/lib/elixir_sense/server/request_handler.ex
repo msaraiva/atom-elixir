@@ -33,7 +33,7 @@ defmodule RequestHandler do
   end
 
   def handle_request("set_context", %{"env" => env, "cwd" => cwd}) do
-    ContextLoader.set_context(env, cwd)
+    ContextLoader.set_context(env, cwd) |> Tuple.to_list
   end
 
   def handle_request(request, paylod) do
