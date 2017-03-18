@@ -74,7 +74,9 @@ class ElixirAutocompleteProvider
 
     new Promise (resolve) =>
       editor     = atom.workspace.getActiveTextEditor()
-      line       = editor.getCursorBufferPosition().row + 1
+      position   = editor.getCursorBufferPosition()
+      line       = position.row + 1
+      col = position.column + 1
       bufferText = editor.buffer.getText()
 
       if !@client
@@ -82,7 +84,7 @@ class ElixirAutocompleteProvider
         resolve([])
         return
 
-      @client.send "suggestions", {prefix: prefix, buffer: bufferText, line: line}, (result) =>
+      @client.send "suggestions", {buffer: bufferText, line: line, column: col}, (result) =>
         hint = result[0].value
         suggestions = result[1...]
         modulesToAdd = []

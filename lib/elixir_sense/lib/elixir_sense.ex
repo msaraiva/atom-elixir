@@ -103,16 +103,17 @@ defmodule ElixirSense do
       ...>   MyList.fi
       ...> end
       ...> '''
-      iex> ElixirSense.suggestions("MyList.fi", code, 3)
+      iex> ElixirSense.suggestions(code, 3, 12)
       [%{type: :hint, value: "MyList.first"},
        %{type: "function", name: "first", arity: 1, origin: "List",
          spec: "@spec first([elem]) :: nil | elem when elem: var",
          summary: "Returns the first element in `list` or `nil` if `list` is empty.",
          args: "list"}]
   """
-  @spec suggestions(String.t, String.t, non_neg_integer) :: [Suggestion.suggestion]
-  def suggestions(hint, code, line) do
-    buffer_file_metadata = Parser.parse_string(code, true, true, line)
+  @spec suggestions(String.t, non_neg_integer, non_neg_integer) :: [Suggestion.suggestion]
+  def suggestions(buffer, line, column) do
+    hint = Source.prefix(buffer, line, column)
+    buffer_file_metadata = Parser.parse_string(buffer, true, true, line)
     %State.Env{
       imports: imports,
       aliases: aliases,

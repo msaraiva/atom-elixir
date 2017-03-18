@@ -16,8 +16,8 @@ defmodule RequestHandler do
     end
   end
 
-  def handle_request("suggestions", %{"buffer" => buffer, "prefix" => prefix, "line" => line}) do
-    ElixirSense.suggestions(prefix, buffer, line)
+  def handle_request("suggestions", %{"buffer" => buffer, "line" => line, "column" => column}) do
+    ElixirSense.suggestions(buffer, line, column)
   end
 
   def handle_request("expand_full", %{"buffer" => buffer, "selected_code" => selected_code, "line" => line}) do

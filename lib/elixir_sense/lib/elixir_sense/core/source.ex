@@ -3,9 +3,13 @@ defmodule ElixirSense.Core.Source do
   @empty_graphemes [" ", "\n", "\r\n"]
   @stop_graphemes ~w/{ } ( ) [ ] < > + - * & ^ , ; ~ % = " ' \\ \/ $ ! ?`#/ ++ @empty_graphemes
 
-  def get_prefix(code, line, col) do
+  def prefix(code, line, col) do
     line = code |> String.split("\n") |> Enum.at(line-1)
-    line |> String.slice(0, col-1)
+    line_str = line |> String.slice(0, col-1)
+    case Regex.run(~r/[\w0-9\._!\?\:@]+$/, line_str) do
+      nil -> ""
+      [prefix] -> prefix
+    end
   end
 
   def text_before(code, line, col) do
