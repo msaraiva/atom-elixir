@@ -58,6 +58,6 @@ class ServerProcess
 
     if process.platform == 'win32'
       options.windowsVerbatimArguments = true
-      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat(port).concat(env).join(' ') + '"'], options)
+      spawn('cmd', ['/s', '/c', '"' + [@command].concat(@args).concat('tcpip', port, env).join(' ') + '"'], options)
     else
-      spawn(@command, @args.concat(port).concat(env), options)
+      spawn(@command, @args.concat('unix', port, env), options)
