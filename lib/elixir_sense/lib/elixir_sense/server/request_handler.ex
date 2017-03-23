@@ -1,4 +1,6 @@
-defmodule RequestHandler do
+defmodule ElixirSense.Server.RequestHandler do
+
+  alias ElixirSense.Server.ContextLoader
 
   def handle_request("signature", %{"buffer" => buffer, "line" => line, "column" => column}) do
     ElixirSense.signature(buffer, line, column)
