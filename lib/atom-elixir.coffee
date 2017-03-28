@@ -147,9 +147,9 @@ module.exports = AtomElixir =
         match = line.match(/^(\S+?)=(.+)/)
         process.env[match[1]] = match[2] if match
 
-      @server = new ServerProcess @getProjectPath(), (host, port) =>
+      @server = new ServerProcess @getProjectPath(), (host, port, auth_token) =>
         env = @getEditorEnv(atom.workspace.getActiveTextEditor())
-        @elixirSenseClient = new ElixirSenseClient(host, port, env, @getProjectPath())
+        @elixirSenseClient = new ElixirSenseClient(host, port, auth_token, env, @getProjectPath())
         @signatureProvider.setClient(@elixirSenseClient)
         @autocompleteProvider.setClient(@elixirSenseClient)
         @gotoDefinitionProvider.setClient(@elixirSenseClient)

@@ -1,5 +1,9 @@
 defmodule ElixirSense.Server.RequestHandler do
 
+  @moduledoc """
+  Handles all requests received by the TCP Server and maps those requests to ElixirSense API calls.
+  """
+
   alias ElixirSense.Server.ContextLoader
 
   def handle_request("signature", %{"buffer" => buffer, "line" => line, "column" => column}) do
@@ -38,8 +42,8 @@ defmodule ElixirSense.Server.RequestHandler do
     ContextLoader.set_context(env, cwd) |> Tuple.to_list
   end
 
-  def handle_request(request, paylod) do
-    IO.puts :stderr, "Cannot handle request \"#{request}\". Payload: #{inspect(paylod)}"
+  def handle_request(request, payload) do
+    IO.puts :stderr, "Cannot handle request \"#{request}\". Payload: #{inspect(payload)}"
   end
 
 end

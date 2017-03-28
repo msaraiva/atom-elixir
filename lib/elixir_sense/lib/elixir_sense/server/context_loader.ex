@@ -48,8 +48,14 @@ defmodule ElixirSense.Server.ContextLoader do
     {:reply, state, state}
   end
 
+  defp preload_modules(modules) do
+    modules |> Enum.each(fn mod ->
+      {:module, _} = Code.ensure_loaded(mod)
+    end)
+  end
+
   defp all_loaded() do
-    {:module, _} = Code.ensure_loaded(Inspect)
+    preload_modules([Inspect, :base64, :crypto])
     for {m,_} <- :code.all_loaded, do: m
   end
 

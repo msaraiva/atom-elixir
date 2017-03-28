@@ -20,8 +20,8 @@ class ServerProcess
     @proc.stdout.on 'data', (chunk) =>
       if @onTcpServerReady
         if ~chunk.indexOf("ok:")
-          [_, host, port] = chunk.toString().split(":")
-        @onTcpServerReady(host, port)
+          [_, host, port, auth_token] = chunk.toString().split(":")
+        @onTcpServerReady(host, port, auth_token || null)
         @onTcpServerReady = null
         return
 
