@@ -1,3 +1,8 @@
+## v0.2.3
+
+### Bug fixes
+* Fix plugin stop working periodically due to `:expand_error`. Fixes [(#69)](https://github.com/msaraiva/atom-elixir/issues/69) and [(#66)](https://github.com/msaraiva/atom-elixir/issues/66).
+
 ## v0.2.2
 
 ### Features

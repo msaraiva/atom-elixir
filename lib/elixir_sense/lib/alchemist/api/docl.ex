@@ -26,4 +26,8 @@ defmodule Alchemist.API.Docl do
     docs <> "\u000B" <> types
   end
 
+  defp format_docs(true) do
+    ""
+  end
+
 end

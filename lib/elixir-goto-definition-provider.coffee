@@ -59,11 +59,11 @@ class ElixirGotoDefinitionProvider
     @server.getDefinitionFile expr, filePath, bufferText, line, (file) ->
 
       switch file
-        when 'non_existing'
+        when 'non_existing:0'
           # atom.notifications.addInfo("Can't find <b>#{subject}</b>");
           console.log "Can't find \"#{subject}\""
           return
-        when 'preloaded'
+        when 'preloaded:0'
           # atom.notifications.addInfo("Module <b>#{subject}</b> is preloaded");
           console.log "Module \"#{subject}\" is preloaded"
           return

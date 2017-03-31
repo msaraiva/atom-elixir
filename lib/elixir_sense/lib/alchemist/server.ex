@@ -63,6 +63,10 @@ defmodule Alchemist.Server do
         e ->
           IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
           {env, cwd}
+      catch
+        e ->
+          IO.puts(:stderr, "Server Error: Uncaught value #{inspect(e)}\n" <> Exception.format_stacktrace(System.stacktrace))
+          {env, cwd}
       end
     {paths, apps, env, cwd, time}
   end

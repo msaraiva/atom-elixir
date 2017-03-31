@@ -20,6 +20,8 @@ defmodule ElixirSense.Core.Ast do
         # IO.puts(:stderr, "Expanding #{Macro.to_string(use_ast)} failed.")
         # IO.puts(:stderr, Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
         @empty_env_info
+    catch
+      {:expand_error, _} -> @empty_env_info
     end
   end
 
