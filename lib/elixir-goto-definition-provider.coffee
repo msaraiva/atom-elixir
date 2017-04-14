@@ -59,8 +59,8 @@ class ElixirGotoDefinitionProvider
 
     @client.send "definition", {buffer: bufferText, line: line, column: col}, (file) =>
       switch file
-        when 'non_existing'
-          console.log "Can't find subject"
+        when 'non_existing:0'
+          console.log "[atom-elixir] Cannot find subject's definition. Either the source is not available or a required macro could not be properly expanded"
           return
         when ''
           return
