@@ -97,10 +97,10 @@ defmodule ElixirSense.Providers.Suggestion do
 
     {hint_suggestion, suggestions} =
       case List.first(list2) do
-        sug when sug in [nil, ""] ->
-          {%{type: :hint, value: "#{hint}"}, list1 ++ list2}
-        sug ->
+        %{type: :hint} = sug ->
           {sug, list1 ++ List.delete_at(list2, 0)}
+        _ ->
+          {%{type: :hint, value: "#{hint}"}, list1 ++ list2}
       end
 
     %{hint: hint_suggestion, suggestions: suggestions}

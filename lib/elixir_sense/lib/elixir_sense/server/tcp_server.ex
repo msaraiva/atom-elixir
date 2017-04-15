@@ -89,6 +89,11 @@ defmodule ElixirSense.Server.TCPServer do
       e ->
         IO.puts(:stderr, "Server Error: \n" <> Exception.message(e) <> "\n" <> Exception.format_stacktrace(System.stacktrace))
         :erlang.term_to_binary(%{request_id: nil, payload: nil, error: Exception.message(e)})
+    catch
+      e ->
+        error = "Uncaught value #{inspect(e)}"
+        IO.puts(:stderr, "Server Error: #{error}\n" <> Exception.format_stacktrace(System.stacktrace))
+        :erlang.term_to_binary(%{request_id: nil, payload: nil, error: error})
     end
   end
 
